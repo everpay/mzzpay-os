@@ -1,10 +1,11 @@
-import { mockEvents } from '@/lib/mock-data';
+import { useProviderEvents } from '@/hooks/useProviderEvents';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime } from '@/lib/format';
 import { Zap } from 'lucide-react';
 
 export function ActivityFeed({ limit = 5 }: { limit?: number }) {
-  const events = mockEvents.slice(0, limit);
+  const { data: allEvents = [], isLoading } = useProviderEvents();
+  const events = allEvents.slice(0, limit);
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card animate-fade-in">
