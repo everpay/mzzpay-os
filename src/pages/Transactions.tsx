@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { TransactionTable } from '@/components/TransactionTable';
-import { mockTransactions } from '@/lib/mock-data';
+import { useTransactions } from '@/hooks/useTransactions';
 import { Provider, TransactionStatus, Currency } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 
 export default function Transactions() {
+  const { data: transactions = [], isLoading } = useTransactions();
   const [providerFilter, setProviderFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currencyFilter, setCurrencyFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
 
-  const filtered = mockTransactions.filter((tx) => {
+  const filtered = transactions.filter((tx) => {
     if (providerFilter !== 'all' && tx.provider !== providerFilter) return false;
     if (statusFilter !== 'all' && tx.status !== statusFilter) return false;
     if (currencyFilter !== 'all' && tx.currency !== currencyFilter) return false;
@@ -77,8 +78,16 @@ export default function Transactions() {
         </Select>
       </div>
 
-      <TransactionTable transactions={filtered} />
-      <p className="mt-3 text-xs text-muted-foreground">{filtered.length} transaction{filtered.length !== 1 ? 's' : ''}</p>
+      {isLoading ? (
+        <div className="flex items-center justify-center p-12 rounded-xl border border-border bg-card">
+          <p className="text-muted-foreground">Loading transactions...</p>
+        </div>
+      ) : (
+        <>
+          <TransactionTable transactions={filtered} />
+          <p className="mt-3 text-xs text-muted-foreground">{filtered.length} transaction{filtered.length !== 1 ? 's' : ''}</p>
+        </>
+      )}
     </AppLayout>
   );
 }

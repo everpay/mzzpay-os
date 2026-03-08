@@ -1,10 +1,11 @@
-import { mockEvents } from '@/lib/mock-data';
+import { useProviderEvents } from '@/hooks/useProviderEvents';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime } from '@/lib/format';
 import { Zap } from 'lucide-react';
 
 export function ActivityFeed({ limit = 5 }: { limit?: number }) {
-  const events = mockEvents.slice(0, limit);
+  const { data: allEvents = [], isLoading } = useProviderEvents();
+  const events = allEvents.slice(0, limit);
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card animate-fade-in">
@@ -12,8 +13,17 @@ export function ActivityFeed({ limit = 5 }: { limit?: number }) {
         <Zap className="h-4 w-4 text-primary" />
         <h3 className="font-heading text-sm font-semibold text-foreground">Activity Feed</h3>
       </div>
-      <div className="space-y-3">
-        {events.map((event) => (
+      {isLoading ? (
+        <div className="flex items-center justify-center p-6">
+          <p className="text-sm text-muted-foreground">Loading events...</p>
+        </div>
+      ) : events.length === 0 ? (
+        <div className="flex items-center justify-center p-6">
+          <p className="text-sm text-muted-foreground">No recent events</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {events.map((event) => (
           <div key={event.id} className="flex items-start gap-3 rounded-lg p-2 transition-colors hover:bg-muted/30">
             <div className="mt-0.5 h-2 w-2 rounded-full bg-primary animate-pulse-glow flex-shrink-0" />
             <div className="min-w-0 flex-1">
@@ -29,8 +39,9 @@ export function ActivityFeed({ limit = 5 }: { limit?: number }) {
               </div>
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

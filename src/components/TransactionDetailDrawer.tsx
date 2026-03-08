@@ -1,5 +1,5 @@
 import { Transaction } from '@/lib/types';
-import { mockEvents } from '@/lib/mock-data';
+import { useProviderEvents } from '@/hooks/useProviderEvents';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -12,9 +12,11 @@ interface TransactionDetailDrawerProps {
 }
 
 export function TransactionDetailDrawer({ transaction, open, onOpenChange }: TransactionDetailDrawerProps) {
+  const { data: allEvents = [] } = useProviderEvents();
+  
   if (!transaction) return null;
 
-  const relatedEvents = mockEvents.filter((e) => e.transaction_id === transaction.id);
+  const relatedEvents = allEvents.filter((e) => e.transaction_id === transaction.id);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
