@@ -14,6 +14,157 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          available_balance: number
+          balance: number
+          created_at: string
+          currency: string
+          id: string
+          merchant_id: string
+          pending_balance: number
+          updated_at: string
+        }
+        Insert: {
+          available_balance?: number
+          balance?: number
+          created_at?: string
+          currency: string
+          id?: string
+          merchant_id: string
+          pending_balance?: number
+          updated_at?: string
+        }
+        Update: {
+          available_balance?: number
+          balance?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          merchant_id?: string
+          pending_balance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      idempotency_keys: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          key: string
+          merchant_id: string
+          response: Json | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          key: string
+          merchant_id: string
+          response?: Json | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          key?: string
+          merchant_id?: string
+          response?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "idempotency_keys_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ledger_entries: {
+        Row: {
+          account_id: string
+          amount: number
+          created_at: string
+          currency: string
+          entry_type: string
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          created_at?: string
+          currency: string
+          entry_type: string
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          created_at?: string
+          currency?: string
+          entry_type?: string
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchants: {
+        Row: {
+          api_key_hash: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+          webhook_url: string | null
+        }
+        Insert: {
+          api_key_hash?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+          webhook_url?: string | null
+        }
+        Update: {
+          api_key_hash?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -40,6 +191,113 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      provider_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          merchant_id: string
+          payload: Json
+          provider: string
+          transaction_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          merchant_id: string
+          payload?: Json
+          provider: string
+          transaction_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          merchant_id?: string
+          payload?: Json
+          provider?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_events_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          customer_email: string | null
+          description: string | null
+          fx_rate: number | null
+          id: string
+          idempotency_key: string | null
+          merchant_id: string
+          provider: string
+          provider_ref: string | null
+          settlement_amount: number | null
+          settlement_currency: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          customer_email?: string | null
+          description?: string | null
+          fx_rate?: number | null
+          id?: string
+          idempotency_key?: string | null
+          merchant_id: string
+          provider: string
+          provider_ref?: string | null
+          settlement_amount?: number | null
+          settlement_currency?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          description?: string | null
+          fx_rate?: number | null
+          id?: string
+          idempotency_key?: string | null
+          merchant_id?: string
+          provider?: string
+          provider_ref?: string | null
+          settlement_amount?: number | null
+          settlement_currency?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
