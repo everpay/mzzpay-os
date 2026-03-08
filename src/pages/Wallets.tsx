@@ -79,6 +79,7 @@ export default function Wallets() {
           </div>
         ))}
       </div>
+      )}
     </AppLayout>
   );
 }
