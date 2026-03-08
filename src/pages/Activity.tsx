@@ -1,10 +1,12 @@
 import { AppLayout } from '@/components/AppLayout';
-import { mockEvents } from '@/lib/mock-data';
+import { useProviderEvents } from '@/hooks/useProviderEvents';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/format';
 import { Zap } from 'lucide-react';
 
 export default function Activity() {
+  const { data: events = [], isLoading } = useProviderEvents();
+
   return (
     <AppLayout>
       <div className="mb-6">
@@ -12,9 +14,18 @@ export default function Activity() {
         <p className="mt-1 text-sm text-muted-foreground">Provider webhook events and system activity</p>
       </div>
 
-      <div className="rounded-xl border border-border bg-card shadow-card">
-        <div className="divide-y divide-border">
-          {mockEvents.map((event) => (
+      {isLoading ? (
+        <div className="flex items-center justify-center p-12 rounded-xl border border-border bg-card">
+          <p className="text-muted-foreground">Loading events...</p>
+        </div>
+      ) : events.length === 0 ? (
+        <div className="flex items-center justify-center p-12 rounded-xl border border-border bg-card">
+          <p className="text-muted-foreground">No events yet</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-card shadow-card">
+          <div className="divide-y divide-border">
+            {events.map((event) => (
             <div key={event.id} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/30">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
                 <Zap className="h-4 w-4 text-primary" />
