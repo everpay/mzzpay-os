@@ -1,5 +1,5 @@
 import { AppLayout } from '@/components/AppLayout';
-import { mockAccounts } from '@/lib/mock-data';
+import { useAccounts } from '@/hooks/useAccounts';
 import { formatCurrency } from '@/lib/format';
 import { Wallet, TrendingUp, Clock } from 'lucide-react';
 
@@ -8,6 +8,8 @@ const currencyFlags: Record<string, string> = {
 };
 
 export default function Wallets() {
+  const { data: accounts = [], isLoading } = useAccounts();
+
   return (
     <AppLayout>
       <div className="mb-6">
@@ -15,8 +17,17 @@ export default function Wallets() {
         <p className="mt-1 text-sm text-muted-foreground">Balances per currency from ledger</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {mockAccounts.map((account) => (
+      {isLoading ? (
+        <div className="flex items-center justify-center p-12 rounded-xl border border-border bg-card">
+          <p className="text-muted-foreground">Loading wallets...</p>
+        </div>
+      ) : accounts.length === 0 ? (
+        <div className="flex items-center justify-center p-12 rounded-xl border border-border bg-card">
+          <p className="text-muted-foreground">No wallets yet</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {accounts.map((account) => (
           <div key={account.id} className="rounded-xl border border-border bg-card p-5 shadow-card animate-fade-in">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-2xl">{currencyFlags[account.currency]}</span>
