@@ -44,12 +44,12 @@ export function VolumeChart() {
           <p className="text-xs text-muted-foreground">Last 7 days</p>
         </div>
         <div className="text-right">
-          <p className="font-heading text-lg font-bold text-foreground">$414,000</p>
-          <p className="text-xs text-success">+12.4%</p>
+          <p className="font-heading text-lg font-bold text-foreground">${totalVolume.toLocaleString()}</p>
+          <p className="text-xs text-success">Last 7 days</p>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={mockVolumeData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+        <AreaChart data={volumeData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="hsl(172, 72%, 48%)" stopOpacity={0.3} />

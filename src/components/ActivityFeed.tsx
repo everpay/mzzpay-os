@@ -39,8 +39,9 @@ export function ActivityFeed({ limit = 5 }: { limit?: number }) {
               </div>
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

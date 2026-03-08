@@ -78,8 +78,16 @@ export default function Transactions() {
         </Select>
       </div>
 
-      <TransactionTable transactions={filtered} />
-      <p className="mt-3 text-xs text-muted-foreground">{filtered.length} transaction{filtered.length !== 1 ? 's' : ''}</p>
+      {isLoading ? (
+        <div className="flex items-center justify-center p-12 rounded-xl border border-border bg-card">
+          <p className="text-muted-foreground">Loading transactions...</p>
+        </div>
+      ) : (
+        <>
+          <TransactionTable transactions={filtered} />
+          <p className="mt-3 text-xs text-muted-foreground">{filtered.length} transaction{filtered.length !== 1 ? 's' : ''}</p>
+        </>
+      )}
     </AppLayout>
   );
 }
