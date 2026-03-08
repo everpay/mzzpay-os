@@ -29,13 +29,13 @@ export default function Transactions() {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search transactions..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-[260px] pl-9 bg-card border-border"
+            className="w-full sm:w-[260px] pl-9 bg-card border-border"
           />
         </div>
         <Select value={providerFilter} onValueChange={setProviderFilter}>

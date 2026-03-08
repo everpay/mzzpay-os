@@ -7,7 +7,14 @@ import {
   Zap,
   Settings,
   CreditCard,
+  Menu,
+  X,
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -18,11 +25,11 @@ const navItems = [
   { to: '/activity', icon: Zap, label: 'Activity' },
 ];
 
-export function AppSidebar() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[240px] flex-col border-r border-border bg-sidebar">
+    <>
       <div className="flex h-16 items-center gap-2.5 border-b border-border px-6">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
           <CreditCard className="h-4 w-4 text-primary-foreground" />
@@ -39,6 +46,7 @@ export function AppSidebar() {
             <NavLink
               key={item.to}
               to={item.to}
+              onClick={onNavigate}
               className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-sidebar-accent text-foreground'
@@ -55,12 +63,61 @@ export function AppSidebar() {
       <div className="border-t border-border px-3 py-4">
         <NavLink
           to="/settings"
+          onClick={onNavigate}
           className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground transition-colors"
         >
           <Settings className="h-4 w-4" />
           Settings
         </NavLink>
       </div>
+    </>
+  );
+}
+
+export function MobileMenuButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={onClick}
+      className="md:hidden fixed top-3 left-3 z-50 h-10 w-10 bg-card border border-border shadow-card"
+    >
+      <Menu className="h-5 w-5" />
+    </Button>
+  );
+}
+
+export function AppSidebar() {
+  const isMobile = useIsMobile();
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  if (isMobile) {
+    return (
+      <>
+        <MobileMenuButton onClick={() => setOpen(true)} />
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent side="left" className="w-[240px] p-0 bg-sidebar border-border">
+            <VisuallyHidden>
+              <SheetTitle>Navigation</SheetTitle>
+            </VisuallyHidden>
+            <div className="flex h-full flex-col">
+              <SidebarContent onNavigate={() => setOpen(false)} />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  return (
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[240px] flex-col border-r border-border bg-sidebar">
+      <SidebarContent />
     </aside>
   );
 }
