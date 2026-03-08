@@ -8,10 +8,11 @@ import {
   Settings,
   CreditCard,
   Menu,
-  X,
+  LogOut,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
@@ -27,6 +28,7 @@ const navItems = [
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
+  const { signOut, user } = useAuth();
 
   return (
     <>
@@ -60,7 +62,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
 
-      <div className="border-t border-border px-3 py-4">
+      <div className="border-t border-border px-3 py-4 space-y-1">
+        {user && (
+          <div className="px-3 py-2 mb-1">
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+          </div>
+        )}
         <NavLink
           to="/settings"
           onClick={onNavigate}
@@ -69,21 +76,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <Settings className="h-4 w-4" />
           Settings
         </NavLink>
+        <button
+          onClick={() => { signOut(); onNavigate?.(); }}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </button>
       </div>
     </>
-  );
-}
-
-export function MobileMenuButton({ onClick }: { onClick: () => void }) {
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={onClick}
-      className="md:hidden fixed top-3 left-3 z-50 h-10 w-10 bg-card border border-border shadow-card"
-    >
-      <Menu className="h-5 w-5" />
-    </Button>
   );
 }
 
@@ -92,7 +93,6 @@ export function AppSidebar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
-  // Close mobile menu on route change
   useEffect(() => {
     setOpen(false);
   }, [location.pathname]);
@@ -100,7 +100,14 @@ export function AppSidebar() {
   if (isMobile) {
     return (
       <>
-        <MobileMenuButton onClick={() => setOpen(true)} />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setOpen(true)}
+          className="md:hidden fixed top-3 left-3 z-50 h-10 w-10 bg-card border border-border shadow-card"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent side="left" className="w-[240px] p-0 bg-sidebar border-border">
             <VisuallyHidden>
