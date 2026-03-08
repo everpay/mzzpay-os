@@ -1,7 +1,41 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { mockVolumeData } from '@/lib/mock-data';
+import { useTransactions } from '@/hooks/useTransactions';
+import { useMemo } from 'react';
 
 export function VolumeChart() {
+  const { data: transactions = [], isLoading } = useTransactions();
+
+  // Calculate volume data for the last 7 days
+  const volumeData = useMemo(() => {
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      return date.toISOString().split('T')[0];
+    });
+
+    return last7Days.map((date) => {
+      const dayTransactions = transactions.filter(tx => tx.created_at.startsWith(date));
+      const volume = dayTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+      return {
+        date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        volume,
+        count: dayTransactions.length,
+      };
+    });
+  }, [transactions]);
+
+  const totalVolume = volumeData.reduce((sum, day) => sum + day.volume, 0);
+
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-5 shadow-card animate-fade-in">
+        <div className="flex items-center justify-center p-12">
+          <p className="text-muted-foreground">Loading chart...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card animate-fade-in">
       <div className="mb-4 flex items-center justify-between">
