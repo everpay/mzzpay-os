@@ -204,7 +204,12 @@ function HeroSection() {
       <div className="container mx-auto px-6">
         <div className="max-w-[800px] mx-auto text-center">
           {/* Trust badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5 mb-8"
+          >
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
                 <svg key={i} className="w-4 h-4 text-[#1aa478]" fill="currentColor" viewBox="0 0 20 20">
@@ -213,21 +218,38 @@ function HeroSection() {
               ))}
             </div>
             <span className="text-sm font-medium text-gray-700">Trusted by 1,000+ merchants</span>
-          </div>
+          </motion.div>
 
           {/* Headline */}
-          <h1 className="text-4xl md:text-[56px] lg:text-[64px] font-extrabold text-gray-900 leading-[1.08] tracking-tight mb-6" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="text-4xl md:text-[56px] lg:text-[64px] font-extrabold text-gray-900 leading-[1.08] tracking-tight mb-6"
+            style={{ fontFamily: 'Manrope, sans-serif' }}
+          >
             Accept payments everywhere.{' '}
             <span className="text-[#1aa478]">Grow faster.</span>
-          </h1>
+          </motion.h1>
 
           {/* Subtitle */}
-          <p className="text-lg md:text-xl text-gray-500 max-w-[580px] mx-auto mb-10 leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-lg md:text-xl text-gray-500 max-w-[580px] mx-auto mb-10 leading-relaxed"
+            style={{ fontFamily: 'Inter, sans-serif' }}
+          >
             Everpay gives your business the same payment infrastructure as the biggest brands. One platform for cards, wallets, and local payment methods worldwide.
-          </p>
+          </motion.p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.45 }}
+            className="flex flex-col sm:flex-row gap-3 justify-center items-center"
+          >
             <Button size="lg" className="bg-[#1aa478] hover:bg-[#158f68] text-white rounded-full px-8 h-12 text-base font-semibold shadow-none min-w-[200px]">
               Get a free demo
             </Button>
@@ -236,7 +258,7 @@ function HeroSection() {
                 Start accepting payments
               </Button>
             </Link>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
