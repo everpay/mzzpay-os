@@ -3,11 +3,13 @@ import { StatCard } from '@/components/StatCard';
 import { VolumeChart } from '@/components/VolumeChart';
 import { TransactionTable } from '@/components/TransactionTable';
 import { ActivityFeed } from '@/components/ActivityFeed';
+import { ProviderAnalytics } from '@/components/ProviderAnalytics';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useProfile } from '@/hooks/useProfile';
 import { formatCurrency } from '@/lib/format';
 import { DollarSign, ArrowUpRight, ArrowLeftRight, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Index = () => {
   const { data: transactions = [], isLoading: loadingTx } = useTransactions();
@@ -15,7 +17,7 @@ const Index = () => {
   const { data: profile } = useProfile();
 
   // Calculate total balance across all currencies (simplified conversion)
-  const rates: Record<string, number> = { USD: 1, EUR: 1.08, GBP: 1.27, BRL: 0.195, MXN: 0.057, COP: 0.00024 };
+  const rates: Record<string, number> = { USD: 1, EUR: 1.08, GBP: 1.27, BRL: 0.195, MXN: 0.057, COP: 0.00024, CAD: 0.74 };
   const totalBalance = accounts.reduce((sum, a) => {
     return sum + a.balance * (rates[a.currency] || 1);
   }, 0);
@@ -93,11 +95,24 @@ const Index = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
-        <div className="lg:col-span-2">
-          <VolumeChart />
-        </div>
-        <ActivityFeed />
+      <div className="mb-6">
+        <Tabs defaultValue="volume">
+          <TabsList>
+            <TabsTrigger value="volume">Volume Chart</TabsTrigger>
+            <TabsTrigger value="providers">Provider Analytics</TabsTrigger>
+          </TabsList>
+          <TabsContent value="volume" className="mt-4">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <VolumeChart />
+              </div>
+              <ActivityFeed />
+            </div>
+          </TabsContent>
+          <TabsContent value="providers" className="mt-4">
+            <ProviderAnalytics />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <div>
