@@ -30,7 +30,8 @@ export const MagicLinkEmail = ({
     <Preview>Your Everpay login link</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>💳 Everpay</Text>
+        <Img src={LOGO_URL} width="40" height="40" alt="Everpay" style={logoImg} />
+        <Text style={logo}>Everpay</Text>
         <Heading style={h1}>Sign in to your dashboard</Heading>
         <Text style={text}>
           Click the button below to securely sign in to your Everpay merchant dashboard. This link will expire
