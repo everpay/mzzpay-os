@@ -3,11 +3,13 @@ import { StatCard } from '@/components/StatCard';
 import { VolumeChart } from '@/components/VolumeChart';
 import { TransactionTable } from '@/components/TransactionTable';
 import { ActivityFeed } from '@/components/ActivityFeed';
+import { ProviderAnalytics } from '@/components/ProviderAnalytics';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useProfile } from '@/hooks/useProfile';
 import { formatCurrency } from '@/lib/format';
 import { DollarSign, ArrowUpRight, ArrowLeftRight, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Index = () => {
   const { data: transactions = [], isLoading: loadingTx } = useTransactions();
