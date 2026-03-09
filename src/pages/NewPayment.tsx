@@ -376,7 +376,6 @@ export default function NewPayment() {
             </div>
           </div>
         </div>
-        </div>
       </div>
     </AppLayout>
   );
