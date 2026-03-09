@@ -41,6 +41,7 @@ interface PayoutRecord {
 const mockPayouts: PayoutRecord[] = [];
 
 export default function Payouts() {
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('CAD');
@@ -48,10 +49,52 @@ export default function Payouts() {
   const [transitNumber, setTransitNumber] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolderName, setAccountHolderName] = useState('');
+  const [saveAccount, setSaveAccount] = useState(true);
+  const [selectedSavedAccount, setSelectedSavedAccount] = useState<string>('');
   const [payouts, setPayouts] = useState<PayoutRecord[]>(mockPayouts);
 
   const { data: accounts = [] } = useAccounts();
   const createPayout = useCreateMonetoPayout();
+
+  // Fetch saved bank accounts
+  const { data: savedBankAccounts = [] } = useQuery({
+    queryKey: ['saved-bank-accounts'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: merchant } = await supabase
+        .from('merchants')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!merchant) throw new Error('Merchant not found');
+
+      const { data, error } = await supabase
+        .from('saved_bank_accounts')
+        .select('*')
+        .eq('merchant_id', merchant.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // When a saved account is selected, populate the form
+  useEffect(() => {
+    if (selectedSavedAccount) {
+      const account = savedBankAccounts.find(a => a.id === selectedSavedAccount);
+      if (account) {
+        setInstitutionNumber(account.institution_number);
+        setTransitNumber(account.transit_number);
+        setAccountNumber(''); // Don't populate full account number for security
+        setAccountHolderName(account.account_holder_name);
+        setCurrency(account.currency);
+      }
+    }
+  }, [selectedSavedAccount, savedBankAccounts]);
 
   const selectedAccount = accounts.find(a => a.currency === currency);
   const availableBalance = selectedAccount?.available_balance || 0;
