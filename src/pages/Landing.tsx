@@ -416,32 +416,42 @@ function FeaturesSection() {
         </div>
 
         <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-5 leading-snug" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                {active.title}
-              </h3>
-              <p className="text-gray-500 text-base leading-relaxed mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
-                {active.description}
-              </p>
-              <ul className="space-y-3">
-                {active.highlights.map((item, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#1aa478]/10 flex items-center justify-center">
-                      <svg className="w-3 h-3 text-[#1aa478]" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="w-full max-w-sm bg-gray-50 rounded-3xl p-10 flex items-center justify-center">
-                <active.icon className="w-32 h-32 text-[#1aa478]/20" strokeWidth={1} />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeIndex}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.35 }}
+              className="grid md:grid-cols-2 gap-12 items-center"
+            >
+              <div>
+                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-5 leading-snug" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                  {active.title}
+                </h3>
+                <p className="text-gray-500 text-base leading-relaxed mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+                  {active.description}
+                </p>
+                <ul className="space-y-3">
+                  {active.highlights.map((item, i) => (
+                    <li key={i} className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#1aa478]/10 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-[#1aa478]" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
+              <div className="flex items-center justify-center">
+                <div className="w-full max-w-sm bg-gray-50 rounded-3xl p-10 flex items-center justify-center">
+                  <active.icon className="w-32 h-32 text-[#1aa478]/20" strokeWidth={1} />
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
           </div>
         </div>
       </div>
