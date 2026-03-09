@@ -53,6 +53,7 @@ export default RecoveryEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }
 const container = { padding: '32px 28px', maxWidth: '480px', margin: '0 auto' }
+const logoImg = { borderRadius: '8px', margin: '0 0 12px' }
 const logo = {
   fontSize: '20px',
   fontWeight: 'bold' as const,
