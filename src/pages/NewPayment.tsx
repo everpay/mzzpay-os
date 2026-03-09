@@ -8,24 +8,85 @@ import { Textarea } from '@/components/ui/textarea';
 import { Currency } from '@/lib/types';
 import { resolveProvider } from '@/lib/providers';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, ArrowRight, Shield } from 'lucide-react';
+import { CreditCard, ArrowRight, Shield, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function NewPayment() {
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<Currency>('USD');
   const [email, setEmail] = useState('');
   const [description, setDescription] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | 'boleto' | 'apple_pay' | 'open_banking'>('card');
+  const [cardNumber, setCardNumber] = useState('');
+  const [expMonth, setExpMonth] = useState('');
+  const [expYear, setExpYear] = useState('');
+  const [cvc, setCvc] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const queryClient = useQueryClient();
   const selectedProvider = resolveProvider(currency);
   const idempotencyKey = `idk_${Date.now()}`;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Payment created', {
-      description: `${amount} ${currency} via ${selectedProvider} — Key: ${idempotencyKey.slice(0, 16)}…`,
-    });
+    setIsSubmitting(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in to create a payment');
+        return;
+      }
+
+      const payload: any = {
+        amount: parseFloat(amount),
+        currency,
+        paymentMethod,
+        customerEmail: email,
+        description,
+        idempotencyKey,
+      };
+
+      if (paymentMethod === 'card' && cardNumber) {
+        payload.cardDetails = {
+          number: cardNumber,
+          expMonth,
+          expYear,
+          cvc,
+        };
+      }
+
+      const { data, error } = await supabase.functions.invoke('process-payment', {
+        body: payload,
+      });
+
+      if (error) throw error;
+
+      toast.success('Payment created successfully!', {
+        description: `${amount} ${currency} via ${selectedProvider} — ${data.transaction.id.slice(0, 8)}`,
+      });
+
+      // Refresh transactions list
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+
+      // Reset form
+      setAmount('');
+      setEmail('');
+      setDescription('');
+      setCardNumber('');
+      setExpMonth('');
+      setExpYear('');
+      setCvc('');
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error('Payment failed', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -70,6 +131,73 @@ export default function NewPayment() {
           </div>
 
           <div className="space-y-2">
+            <Label>Payment Method</Label>
+            <Select value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)}>
+              <SelectTrigger className="bg-background border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="card">💳 Card</SelectItem>
+                <SelectItem value="pix">🇧🇷 PIX</SelectItem>
+                <SelectItem value="boleto">📄 Boleto</SelectItem>
+                <SelectItem value="apple_pay">🍎 Apple Pay</SelectItem>
+                <SelectItem value="open_banking">🏦 Open Banking</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {paymentMethod === 'card' && (
+            <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+              <div className="space-y-2">
+                <Label>Card Number</Label>
+                <Input
+                  type="text"
+                  placeholder="4242 4242 4242 4242"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(e.target.value)}
+                  className="bg-background border-border font-mono"
+                  maxLength={19}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label>Exp Month</Label>
+                  <Input
+                    type="text"
+                    placeholder="12"
+                    value={expMonth}
+                    onChange={(e) => setExpMonth(e.target.value)}
+                    className="bg-background border-border"
+                    maxLength={2}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Exp Year</Label>
+                  <Input
+                    type="text"
+                    placeholder="2025"
+                    value={expYear}
+                    onChange={(e) => setExpYear(e.target.value)}
+                    className="bg-background border-border"
+                    maxLength={4}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>CVC</Label>
+                  <Input
+                    type="text"
+                    placeholder="123"
+                    value={cvc}
+                    onChange={(e) => setCvc(e.target.value)}
+                    className="bg-background border-border"
+                    maxLength={4}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
             <Label>Customer Email</Label>
             <Input
               type="email"
@@ -91,10 +219,19 @@ export default function NewPayment() {
             />
           </div>
 
-          <Button type="submit" className="w-full gap-2" size="lg">
-            <CreditCard className="h-4 w-4" />
-            Create Payment
-            <ArrowRight className="h-4 w-4" />
+          <Button type="submit" className="w-full gap-2" size="lg" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <CreditCard className="h-4 w-4" />
+                Create Payment
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
           </Button>
         </form>
 
