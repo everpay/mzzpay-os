@@ -37,6 +37,13 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
     regions: ['US', 'GLOBAL'],
     methods: ['Card', 'ACH', 'PIX', 'Boleto'],
   },
+  moneto: {
+    name: 'moneto',
+    displayName: 'Moneto',
+    supportedCurrencies: ['CAD'],
+    regions: ['CA'],
+    methods: ['Wallet', 'Bank Transfer'],
+  },
 };
 
 export function resolveProvider(currency: Currency, region?: string): Provider {
@@ -50,6 +57,7 @@ export function getProviderColor(provider: Provider): string {
     case 'mondo': return 'hsl(var(--chart-3))';
     case 'stripe': return 'hsl(var(--chart-1))';
     case 'shieldhub': return 'hsl(var(--chart-2))';
+    case 'moneto': return 'hsl(var(--chart-5))';
     default: return 'hsl(var(--chart-1))';
   }
 }
