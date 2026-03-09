@@ -35,7 +35,8 @@ export const EmailChangeEmail = ({
     <Preview>Confirm your email change for Everpay</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>💳 Everpay</Text>
+        <Img src={LOGO_URL} width="40" height="40" alt="Everpay" style={logoImg} />
+        <Text style={logo}>Everpay</Text>
         <Heading style={h1}>Confirm your email change</Heading>
         <Text style={text}>
           You requested to change your email address for your Everpay merchant account from{' '}
