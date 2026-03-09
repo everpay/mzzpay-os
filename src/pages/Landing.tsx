@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import everpayIcon from '@/assets/everpay-icon.png';
 import {
   ChevronDown,
   Menu,
@@ -67,7 +69,7 @@ function SiteHeader() {
     >
       <div className="container mx-auto flex h-[72px] items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src="/favicon.ico" alt="Everpay Logo" className="h-8 w-8 rounded-lg" />
+          <img src={everpayIcon} alt="Everpay Logo" className="h-8 w-8 rounded-lg" />
           <span className="text-[22px] font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>
             everpay
           </span>
@@ -202,7 +204,12 @@ function HeroSection() {
       <div className="container mx-auto px-6">
         <div className="max-w-[800px] mx-auto text-center">
           {/* Trust badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5 mb-8"
+          >
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
                 <svg key={i} className="w-4 h-4 text-[#1aa478]" fill="currentColor" viewBox="0 0 20 20">
@@ -211,21 +218,38 @@ function HeroSection() {
               ))}
             </div>
             <span className="text-sm font-medium text-gray-700">Trusted by 1,000+ merchants</span>
-          </div>
+          </motion.div>
 
           {/* Headline */}
-          <h1 className="text-4xl md:text-[56px] lg:text-[64px] font-extrabold text-gray-900 leading-[1.08] tracking-tight mb-6" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="text-4xl md:text-[56px] lg:text-[64px] font-extrabold text-gray-900 leading-[1.08] tracking-tight mb-6"
+            style={{ fontFamily: 'Manrope, sans-serif' }}
+          >
             Accept payments everywhere.{' '}
             <span className="text-[#1aa478]">Grow faster.</span>
-          </h1>
+          </motion.h1>
 
           {/* Subtitle */}
-          <p className="text-lg md:text-xl text-gray-500 max-w-[580px] mx-auto mb-10 leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-lg md:text-xl text-gray-500 max-w-[580px] mx-auto mb-10 leading-relaxed"
+            style={{ fontFamily: 'Inter, sans-serif' }}
+          >
             Everpay gives your business the same payment infrastructure as the biggest brands. One platform for cards, wallets, and local payment methods worldwide.
-          </p>
+          </motion.p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.45 }}
+            className="flex flex-col sm:flex-row gap-3 justify-center items-center"
+          >
             <Button size="lg" className="bg-[#1aa478] hover:bg-[#158f68] text-white rounded-full px-8 h-12 text-base font-semibold shadow-none min-w-[200px]">
               Get a free demo
             </Button>
@@ -234,7 +258,7 @@ function HeroSection() {
                 Start accepting payments
               </Button>
             </Link>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
@@ -392,33 +416,42 @@ function FeaturesSection() {
         </div>
 
         <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-5 leading-snug" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                {active.title}
-              </h3>
-              <p className="text-gray-500 text-base leading-relaxed mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
-                {active.description}
-              </p>
-              <ul className="space-y-3">
-                {active.highlights.map((item, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#1aa478]/10 flex items-center justify-center">
-                      <svg className="w-3 h-3 text-[#1aa478]" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="w-full max-w-sm bg-gray-50 rounded-3xl p-10 flex items-center justify-center">
-                <active.icon className="w-32 h-32 text-[#1aa478]/20" strokeWidth={1} />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeIndex}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.35 }}
+              className="grid md:grid-cols-2 gap-12 items-center"
+            >
+              <div>
+                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-5 leading-snug" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                  {active.title}
+                </h3>
+                <p className="text-gray-500 text-base leading-relaxed mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+                  {active.description}
+                </p>
+                <ul className="space-y-3">
+                  {active.highlights.map((item, i) => (
+                    <li key={i} className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#1aa478]/10 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-[#1aa478]" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
-          </div>
+              <div className="flex items-center justify-center">
+                <div className="w-full max-w-sm bg-gray-50 rounded-3xl p-10 flex items-center justify-center">
+                  <active.icon className="w-32 h-32 text-[#1aa478]/20" strokeWidth={1} />
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </section>
