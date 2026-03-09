@@ -370,20 +370,12 @@ export default function NewPayment() {
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">VGS Vault</span>
+                <span className="text-sm text-muted-foreground">Vault</span>
                 <Badge variant="outline" className="text-xs">Parallel</Badge>
               </div>
             </div>
           </div>
-
-          <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-            <div className="flex items-center gap-2 mb-3">
-              <Shield className="h-4 w-4 text-primary" />
-              <h3 className="font-heading text-sm font-semibold text-foreground">Idempotency</h3>
-            </div>
-            <p className="font-mono text-[10px] text-muted-foreground break-all">{idempotencyKey}</p>
-            <p className="mt-2 text-xs text-muted-foreground">Prevents duplicate charges on retry</p>
-          </div>
+        </div>
         </div>
       </div>
     </AppLayout>
