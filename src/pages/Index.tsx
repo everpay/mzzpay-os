@@ -5,36 +5,59 @@ import { TransactionTable } from '@/components/TransactionTable';
 import { ActivityFeed } from '@/components/ActivityFeed';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useAccounts } from '@/hooks/useAccounts';
+import { useProfile } from '@/hooks/useProfile';
 import { formatCurrency } from '@/lib/format';
 import { DollarSign, ArrowUpRight, ArrowLeftRight, Clock } from 'lucide-react';
 
 const Index = () => {
   const { data: transactions = [], isLoading: loadingTx } = useTransactions();
   const { data: accounts = [], isLoading: loadingAccounts } = useAccounts();
+  const { data: profile } = useProfile();
 
   // Calculate total balance across all currencies (simplified conversion)
+  const rates: Record<string, number> = { USD: 1, EUR: 1.08, GBP: 1.27, BRL: 0.195, MXN: 0.057, COP: 0.00024 };
   const totalBalance = accounts.reduce((sum, a) => {
-    const rates: Record<string, number> = { USD: 1, EUR: 1.08, GBP: 1.27, BRL: 0.195, MXN: 0.057, COP: 0.00024 };
     return sum + a.balance * (rates[a.currency] || 1);
   }, 0);
+
+  // Calculate yesterday's balance
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  
+  const yesterdayTransactions = transactions.filter(tx => tx.created_at.startsWith(yesterdayStr));
+  const yesterdayVolume = yesterdayTransactions.reduce((sum, tx) => sum + tx.amount, 0);
 
   // Calculate today's transactions
   const today = new Date().toISOString().split('T')[0];
   const todayTransactions = transactions.filter(tx => tx.created_at.startsWith(today));
   const todayVolume = todayTransactions.reduce((sum, tx) => sum + tx.amount, 0);
 
-  // Calculate pending settlement
+  // Calculate percentage changes
+  const balanceChange = yesterdayVolume > 0 ? ((todayVolume - yesterdayVolume) / yesterdayVolume * 100) : 0;
+  const volumeChange = yesterdayVolume > 0 ? ((todayVolume - yesterdayVolume) / yesterdayVolume * 100) : 0;
+
+  // Calculate pending settlement and its change
   const pendingTransactions = transactions.filter(tx => ['pending', 'processing'].includes(tx.status));
   const pendingAmount = pendingTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+  
+  const completedTransactions = transactions.filter(tx => tx.status === 'completed');
+  const completedAmount = completedTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+  const pendingChange = completedAmount > 0 ? ((pendingAmount - completedAmount) / completedAmount * 100) : 0;
 
   // Get unique providers
   const providers = [...new Set(transactions.map(tx => tx.provider))];
+
+  // Get first name
+  const firstName = profile?.display_name?.split(' ')[0] || 'there';
 
   return (
     <AppLayout>
       <div className="mb-8">
         <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Overview of your payment infrastructure</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Hi, {firstName}! Here's an overview of your account
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
