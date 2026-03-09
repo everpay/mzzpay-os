@@ -186,6 +186,8 @@ export default function Payouts() {
     setTransitNumber('');
     setAccountNumber('');
     setAccountHolderName('');
+    setSelectedSavedAccount('');
+    setSaveAccount(true);
   };
 
   const getStatusIcon = (status: PayoutRecord['status']) => {
