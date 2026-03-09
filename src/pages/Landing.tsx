@@ -203,15 +203,29 @@ function SiteHeader() {
 // ============= HERO SECTION =============
 function HeroSection() {
   return (
-    <section className="relative bg-white pt-16 pb-20 md:pt-24 md:pb-28">
-      <div className="container mx-auto px-6">
+    <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+      {/* Video Background */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+        poster="/images/hero-payments.jpg"
+      >
+        <source src="/video/everpay-intro.mp4" type="video/mp4" />
+      </video>
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/60" />
+
+      <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-[800px] mx-auto text-center">
           {/* Trust badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5 mb-8"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-1.5 mb-8"
           >
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
@@ -220,7 +234,7 @@ function HeroSection() {
                 </svg>
               ))}
             </div>
-            <span className="text-sm font-medium text-gray-700">Trusted by 1,000+ merchants</span>
+            <span className="text-sm font-medium text-white/90">Trusted by 1,000+ merchants</span>
           </motion.div>
 
           {/* Headline */}
@@ -228,7 +242,7 @@ function HeroSection() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="text-4xl md:text-[56px] lg:text-[64px] font-extrabold text-gray-900 leading-[1.08] tracking-tight mb-6"
+            className="text-4xl md:text-[56px] lg:text-[64px] font-extrabold text-white leading-[1.08] tracking-tight mb-6"
             style={{ fontFamily: 'Manrope, sans-serif' }}
           >
             Accept payments everywhere.{' '}
@@ -240,7 +254,7 @@ function HeroSection() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-lg md:text-xl text-gray-500 max-w-[580px] mx-auto mb-10 leading-relaxed"
+            className="text-lg md:text-xl text-white/70 max-w-[580px] mx-auto mb-10 leading-relaxed"
             style={{ fontFamily: 'Inter, sans-serif' }}
           >
             Everpay gives your business the same payment infrastructure as the biggest brands. One platform for cards, wallets, and local payment methods worldwide.
@@ -257,7 +271,7 @@ function HeroSection() {
               Get a free demo
             </Button>
             <Link to="/auth">
-              <Button size="lg" variant="outline" className="border-2 border-gray-200 bg-transparent text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-full px-8 h-12 text-base font-semibold shadow-none min-w-[200px]">
+              <Button size="lg" variant="outline" className="border-2 border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:border-white/50 rounded-full px-8 h-12 text-base font-semibold shadow-none min-w-[200px]">
                 Start accepting payments
               </Button>
             </Link>
@@ -301,11 +315,17 @@ function StatsSection() {
 function PaymentPartnersSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const paymentMethods = [
-    'Visa', 'Mastercard', 'American Express', 'Discover', 'PayPal', 'Apple Pay',
-    'Google Pay', 'JCB', 'UnionPay', 'Stripe', 'Square', 'Alipay', 'WeChat Pay',
-    'PIX', 'Mercado Pago', 'PagSeguro', 'PayU', 'Boleto', 'OXXO', 'Klarna',
-    'Affirm', 'Afterpay', 'Venmo', 'Cash App', 'Zelle', 'Samsung Pay',
+  const paymentLogos = [
+    { name: 'Visa', src: '/logos/visa.svg' },
+    { name: 'Mastercard', src: '/logos/mastercard.svg' },
+    { name: 'American Express', src: '/logos/amex.svg' },
+    { name: 'PayPal', src: '/logos/paypal.svg' },
+    { name: 'Apple Pay', src: '/logos/apple-pay.svg' },
+    { name: 'Google Pay', src: '/logos/google-pay.svg' },
+    { name: 'Klarna', src: '/logos/klarna.svg' },
+    { name: 'Alipay', src: '/logos/alipay.svg' },
+    { name: 'Bancontact', src: '/logos/bancontact.svg' },
+    { name: 'iDEAL', src: '/logos/ideal.svg' },
   ];
 
   useEffect(() => {
@@ -335,12 +355,15 @@ function PaymentPartnersSection() {
             Trusted Payment Methods Worldwide
           </p>
         </div>
-        <div ref={scrollRef} className="flex gap-12 overflow-x-hidden" style={{ scrollBehavior: 'auto' }}>
-          {[...paymentMethods, ...paymentMethods].map((method, index) => (
-            <div key={`${method}-${index}`} className="flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform duration-300">
-              <div className="relative w-32 h-12 transition-all duration-300 bg-gray-100 rounded-lg flex items-center justify-center px-3">
-                <span className="text-xs font-medium text-gray-600 truncate">{method}</span>
-              </div>
+        <div ref={scrollRef} className="flex gap-12 overflow-x-hidden items-center" style={{ scrollBehavior: 'auto' }}>
+          {[...paymentLogos, ...paymentLogos, ...paymentLogos].map((logo, index) => (
+            <div key={`${logo.name}-${index}`} className="flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform duration-300">
+              <img
+                src={logo.src}
+                alt={logo.name}
+                className="h-10 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity"
+                loading="lazy"
+              />
             </div>
           ))}
         </div>
@@ -449,8 +472,18 @@ function FeaturesSection() {
                 </ul>
               </div>
               <div className="flex items-center justify-center">
-                <div className="w-full max-w-sm bg-gray-50 rounded-3xl p-10 flex items-center justify-center">
-                  <active.icon className="w-32 h-32 text-[#1aa478]/20" strokeWidth={1} />
+                <div className="w-full max-w-sm rounded-3xl overflow-hidden shadow-lg">
+                  <img
+                    src={[
+                      '/images/feature-global.jpg',
+                      '/images/feature-analytics.jpg',
+                      '/images/feature-security.jpg',
+                      '/images/feature-dashboard.jpg',
+                    ][activeIndex]}
+                    alt={active.title}
+                    className="w-full h-64 object-cover"
+                    loading="lazy"
+                  />
                 </div>
               </div>
             </motion.div>

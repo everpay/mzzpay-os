@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="640"
+   height="360"
+   viewBox="0 0 640 360"
+   version="1.1"
+   id="svg931"
+   sodipodi:docname="method-visa-640x360.svg"
+   inkscape:version="1.1.2 (b8e25be8, 2022-02-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview933"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="1"
+     inkscape:cx="202"
+     inkscape:cy="113.5"
+     inkscape:window-width="1689"
+     inkscape:window-height="1113"
+     inkscape:window-x="2381"
+     inkscape:window-y="281"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg931" />
+  <defs
+     id="defs927">
+    <linearGradient
+       id="payment-method-visa-a"
+       x1="0%"
+       y1="50.002%"
+       y2="50.002%">
+      <stop
+         offset="0%"
+         stop-color="#231E5C"
+         id="stop922" />
+      <stop
+         offset="100%"
+         stop-color="#034EA2"
+         id="stop924" />
+    </linearGradient>
+  </defs>
+  <path
+     class="st0"
+     d="m 258.39899,100.24576 -67.03165,159.92982 h -43.73311 l -32.9865,-127.63133 c -2.00265,-7.86129 -3.74398,-10.74128 -9.83461,-14.05326 C 94.86917,113.09635 78.447925,108.03504 64,104.89372 l 0.981333,-4.64796 h 70.396957 c 8.97329,0 17.03992,5.97329 19.07724,16.30658 l 17.42124,92.5435 43.05577,-108.85276 h 43.46645 z m 171.35377,107.71409 c 0.176,-42.21045 -58.36769,-44.53577 -57.96503,-63.39167 0.12534,-5.73864 5.5893,-11.83994 17.54924,-13.39727 5.92797,-0.77599 22.26122,-1.36798 40.78645,7.1573 l 7.26664,-33.91447 c -9.95461,-3.61334 -22.76255,-7.090635 -38.69847,-7.090635 -40.89312,0 -69.67163,21.738555 -69.9143,52.866375 -0.264,23.02388 20.54123,35.87182 36.21581,43.52244 16.12525,7.83463 21.53589,12.86927 21.47456,19.87723 -0.11467,10.72794 -12.86127,15.46392 -24.77321,15.65059 -20.79456,0.31999 -32.86116,-5.62665 -42.47978,-10.09861 l -7.49863,35.03714 c 9.66662,4.43464 27.5092,8.30396 46.00777,8.49862 43.46376,0 71.89561,-21.46921 72.02895,-54.71704 M 537.7362,260.17557 H 576 L 542.60017,100.24576 h -35.31714 c -7.9413,0 -14.63993,4.62396 -17.60525,11.73326 l -62.08235,148.19656 h 43.44245 l 8.62395,-23.88787 h 53.07973 z m -46.16243,-56.66637 21.77589,-60.04769 12.53327,60.04769 z M 317.51068,100.24576 283.30019,260.17557 h -41.37045 l 34.22382,-159.92982 z"
+     id="path826"
+     style="fill:#1434cb;stroke-width:0.266666" />
+</svg>
