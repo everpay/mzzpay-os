@@ -184,7 +184,7 @@ export default function Subscriptions() {
             <CardContent>
               <div className="flex items-baseline gap-1">
                 <DollarSign className="h-5 w-5 text-muted-foreground" />
-                <span className="text-3xl font-bold">{formatCurrency(plan.amount, plan.currency)}</span>
+                <span className="text-3xl font-bold">{formatCurrency(plan.amount, plan.currency as any)}</span>
                 <span className="text-muted-foreground">/ {plan.interval}</span>
               </div>
             </CardContent>
