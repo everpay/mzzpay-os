@@ -38,7 +38,7 @@ export default function PaymentLinks() {
     if (successUrl) params.set('success_url', encodeURIComponent(successUrl));
     if (cancelUrl) params.set('cancel_url', encodeURIComponent(cancelUrl));
     
-    return `https://pay.${DOMAIN}/link?${params.toString()}`;
+    return `https://${DOMAIN}/checkout?${params.toString()}`;
   };
 
   const paymentLink = generatePaymentLink();
