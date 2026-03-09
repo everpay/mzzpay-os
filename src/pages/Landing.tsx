@@ -579,8 +579,8 @@ function SiteFooter() {
   return (
     <footer className="border-t border-gray-200 bg-gray-50 relative">
       <div className="container mx-auto px-4 py-12 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
-          <div></div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8">
+          <div className="hidden lg:block"></div>
 
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Solutions</h3>
