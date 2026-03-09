@@ -10,6 +10,8 @@ import Wallets from "./pages/Wallets";
 import Payouts from "./pages/Payouts";
 import NewPayment from "./pages/NewPayment";
 import Activity from "./pages/Activity";
+import Subscriptions from "./pages/Subscriptions";
+import CustomerPortal from "./pages/CustomerPortal";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
