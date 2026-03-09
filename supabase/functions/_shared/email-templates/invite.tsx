@@ -33,7 +33,8 @@ export const InviteEmail = ({
     <Preview>You've been invited to Everpay</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>💳 Everpay</Text>
+        <Img src={LOGO_URL} width="40" height="40" alt="Everpay" style={logoImg} />
+        <Text style={logo}>Everpay</Text>
         <Heading style={h1}>You've been invited</Heading>
         <Text style={text}>
           You've been invited to join{' '}
