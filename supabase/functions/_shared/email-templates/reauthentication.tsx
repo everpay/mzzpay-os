@@ -25,7 +25,8 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
     <Preview>Your Everpay verification code</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>💳 Everpay</Text>
+        <Img src={LOGO_URL} width="40" height="40" alt="Everpay" style={logoImg} />
+        <Text style={logo}>Everpay</Text>
         <Heading style={h1}>Confirm your identity</Heading>
         <Text style={text}>Use the code below to verify your identity:</Text>
         <Text style={codeStyle}>{token}</Text>
