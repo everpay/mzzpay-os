@@ -64,16 +64,16 @@ const Index = () => {
         <StatCard
           title="Total Balance"
           value={loadingAccounts ? '...' : formatCurrency(totalBalance, 'USD')}
-          change="+8.2%"
-          changeType="positive"
+          change={balanceChange !== 0 ? `${balanceChange > 0 ? '+' : ''}${balanceChange.toFixed(1)}%` : undefined}
+          changeType={balanceChange > 0 ? "positive" : balanceChange < 0 ? "negative" : "neutral"}
           icon={DollarSign}
           subtitle="Across all currencies"
         />
         <StatCard
           title="Today's Volume"
           value={loadingTx ? '...' : formatCurrency(todayVolume, 'USD')}
-          change="+12.4%"
-          changeType="positive"
+          change={volumeChange !== 0 ? `${volumeChange > 0 ? '+' : ''}${volumeChange.toFixed(1)}%` : undefined}
+          changeType={volumeChange > 0 ? "positive" : volumeChange < 0 ? "negative" : "neutral"}
           icon={ArrowUpRight}
           subtitle={`${todayTransactions.length} transactions`}
         />
@@ -86,8 +86,8 @@ const Index = () => {
         <StatCard
           title="Pending Settlement"
           value={loadingTx ? '...' : formatCurrency(pendingAmount, 'USD')}
-          change="-3.1%"
-          changeType="negative"
+          change={pendingChange !== 0 ? `${pendingChange > 0 ? '+' : ''}${pendingChange.toFixed(1)}%` : undefined}
+          changeType={pendingChange < 0 ? "positive" : pendingChange > 0 ? "negative" : "neutral"}
           icon={Clock}
           subtitle={`${pendingTransactions.length} transactions`}
         />
