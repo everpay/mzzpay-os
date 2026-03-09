@@ -19,8 +19,8 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
   const relatedEvents = allEvents.filter((e) => e.transaction_id === transaction.id);
 
   // Extract VGS alias and card brand from enrichment events
-  const tapixEvent = relatedEvents.find((e) => e.provider === 'tapix' && e.event_type === 'enrichment.completed');
-  const vaultEvent = relatedEvents.find((e) => e.provider === 'vgs' || e.event_type === 'vault.completed');
+  const tapixEvent = relatedEvents.find((e) => e.event_type === 'enrichment.completed');
+  const vaultEvent = relatedEvents.find((e) => e.event_type === 'vault.completed');
 
   const vgsAlias = (vaultEvent?.payload as any)?.vgs_alias || (tapixEvent?.payload as any)?.vgs_alias || null;
   const cardBrand = (tapixEvent?.payload as any)?.card_brand || (vaultEvent?.payload as any)?.card_brand || null;
