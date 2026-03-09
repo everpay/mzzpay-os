@@ -329,6 +329,22 @@ export default function Payouts() {
                     onChange={(e) => setAccountHolderName(e.target.value)}
                   />
                 </div>
+
+                {/* Save account checkbox */}
+                {!selectedSavedAccount && (
+                  <div className="flex items-center gap-2 pt-2">
+                    <input
+                      type="checkbox"
+                      id="save-account"
+                      checked={saveAccount}
+                      onChange={(e) => setSaveAccount(e.target.checked)}
+                      className="h-4 w-4 rounded border-input"
+                    />
+                    <Label htmlFor="save-account" className="text-xs cursor-pointer">
+                      Save this account for future payouts
+                    </Label>
+                  </div>
+                )}
               </div>
 
               {/* Summary */}
