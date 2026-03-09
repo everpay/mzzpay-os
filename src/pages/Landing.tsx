@@ -452,7 +452,6 @@ function FeaturesSection() {
               </div>
             </motion.div>
           </AnimatePresence>
-          </div>
         </div>
       </div>
     </section>
