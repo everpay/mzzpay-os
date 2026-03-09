@@ -155,8 +155,8 @@ export function VGSCardForm({ onTokenReceived, isSubmitting = false }: VGSCardFo
         <div className="flex items-center gap-2 mb-4">
           <Shield className="h-5 w-5 text-primary" />
           <div>
-            <p className="text-sm font-medium text-foreground">Secure Card Vault</p>
-            <p className="text-xs text-muted-foreground">Powered by VGS — Your card data never touches our servers</p>
+            <p className="text-sm font-medium text-foreground">Recurring Payment Setup</p>
+            <p className="text-xs text-muted-foreground">Powered by VGS — Securely vault card for recurring billing</p>
           </div>
         </div>
 
