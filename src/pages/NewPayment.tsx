@@ -275,6 +275,10 @@ export default function NewPayment() {
                   <span className="text-sm text-foreground">USD (auto-convert)</span>
                 </div>
               )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">VGS Vault</span>
+                <Badge variant="outline" className="text-xs">Parallel</Badge>
+              </div>
             </div>
           </div>
 

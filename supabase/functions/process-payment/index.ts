@@ -263,14 +263,41 @@ async function processMondoPayment(data: PaymentRequest) {
   return await response.json();
 }
 
-async function processStripePayment(data: PaymentRequest) {
-  // Placeholder for Stripe integration
-  return {
-    id: `stripe_${Date.now()}`,
-    status: 'succeeded',
-    amount: data.amount,
-    currency: data.currency,
-  };
+async function vaultToVGS(cardDetails: { number: string; expMonth: string; expYear: string; cvc: string }) {
+  const vgsVaultId = Deno.env.get('VGS_VAULT_ID');
+  const vgsUsername = Deno.env.get('VGS_USERNAME');
+  const vgsPassword = Deno.env.get('VGS_PASSWORD');
+  const vgsEnvironment = Deno.env.get('VGS_ENVIRONMENT') || 'sandbox';
+
+  if (!vgsVaultId || !vgsUsername || !vgsPassword) {
+    console.log('VGS credentials not configured, skipping vaulting');
+    return null;
+  }
+
+  try {
+    const response = await fetch(`https://${vgsVaultId}.${vgsEnvironment}.verygoodproxy.com/post`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${vgsUsername}:${vgsPassword}`)}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        card_number: cardDetails.number,
+        card_cvc: cardDetails.cvc,
+        card_exp: `${cardDetails.expMonth}/${cardDetails.expYear}`,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('VGS vault response not ok:', response.status);
+      return null;
+    }
+
+    return await response.json();
+  } catch (e) {
+    console.error('VGS vault error:', e);
+    return null;
+  }
 }
 
 async function getFxRate(fromCurrency: string, toCurrency: string): Promise<number> {
