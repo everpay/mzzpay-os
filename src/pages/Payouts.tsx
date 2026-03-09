@@ -264,6 +264,26 @@ export default function Payouts() {
                 </div>
               </div>
 
+              {/* Saved Bank Accounts */}
+              {savedBankAccounts.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Saved Bank Accounts</Label>
+                  <Select value={selectedSavedAccount} onValueChange={setSelectedSavedAccount}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a saved account or enter new details" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Enter new account details</SelectItem>
+                      {savedBankAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.nickname || account.account_holder_name} •••• {account.account_last4} ({account.currency})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Bank Details */}
               <div className="space-y-3 pt-2">
                 <div className="flex items-center gap-2 text-sm font-medium">
