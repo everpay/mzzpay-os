@@ -37,6 +37,13 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
     regions: ['US', 'GLOBAL'],
     methods: ['Card', 'ACH', 'PIX', 'Boleto'],
   },
+  moneto: {
+    name: 'moneto',
+    displayName: 'Moneto',
+    supportedCurrencies: ['CAD'],
+    regions: ['CA'],
+    methods: ['Wallet', 'Bank Transfer'],
+  },
 };
 
 export function resolveProvider(currency: Currency, region?: string): Provider {
