@@ -325,6 +325,56 @@ export type Database = {
           },
         ]
       }
+      saved_bank_accounts: {
+        Row: {
+          account_holder_name: string
+          account_last4: string
+          created_at: string
+          currency: string
+          id: string
+          institution_number: string
+          is_default: boolean
+          merchant_id: string
+          nickname: string | null
+          transit_number: string
+          updated_at: string
+        }
+        Insert: {
+          account_holder_name: string
+          account_last4: string
+          created_at?: string
+          currency?: string
+          id?: string
+          institution_number: string
+          is_default?: boolean
+          merchant_id: string
+          nickname?: string | null
+          transit_number: string
+          updated_at?: string
+        }
+        Update: {
+          account_holder_name?: string
+          account_last4?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          institution_number?: string
+          is_default?: boolean
+          merchant_id?: string
+          nickname?: string | null
+          transit_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_bank_accounts_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           amount: number
