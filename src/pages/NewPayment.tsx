@@ -12,6 +12,8 @@ import { CreditCard, ArrowRight, Shield, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { VGSCardForm } from '@/components/VGSCardForm';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function NewPayment() {
   const [amount, setAmount] = useState('');
@@ -24,6 +26,8 @@ export default function NewPayment() {
   const [expYear, setExpYear] = useState('');
   const [cvc, setCvc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vgsToken, setVgsToken] = useState('');
+  const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
 
   const queryClient = useQueryClient();
   const selectedProvider = resolveProvider(currency);
@@ -49,13 +53,17 @@ export default function NewPayment() {
         idempotencyKey,
       };
 
-      if (paymentMethod === 'card' && cardNumber) {
-        payload.cardDetails = {
-          number: cardNumber,
-          expMonth,
-          expYear,
-          cvc,
-        };
+      if (paymentMethod === 'card') {
+        if (cardEntryMode === 'vgs' && vgsToken) {
+          payload.vgsToken = vgsToken;
+        } else if (cardNumber) {
+          payload.cardDetails = {
+            number: cardNumber,
+            expMonth,
+            expYear,
+            cvc,
+          };
+        }
       }
 
       const { data, error } = await supabase.functions.invoke('process-payment', {
@@ -147,54 +155,68 @@ export default function NewPayment() {
           </div>
 
           {paymentMethod === 'card' && (
-            <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
-              <div className="space-y-2">
-                <Label>Card Number</Label>
-                <Input
-                  type="text"
-                  placeholder="4242 4242 4242 4242"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
-                  className="bg-background border-border font-mono"
-                  maxLength={19}
+            <Tabs value={cardEntryMode} onValueChange={(v: any) => setCardEntryMode(v)} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="standard">Standard Entry</TabsTrigger>
+                <TabsTrigger value="vgs">VGS Vault</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="standard" className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+                <div className="space-y-2">
+                  <Label>Card Number</Label>
+                  <Input
+                    type="text"
+                    placeholder="4242 4242 4242 4242"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    className="bg-background border-border font-mono"
+                    maxLength={19}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2">
+                    <Label>Exp Month</Label>
+                    <Input
+                      type="text"
+                      placeholder="12"
+                      value={expMonth}
+                      onChange={(e) => setExpMonth(e.target.value)}
+                      className="bg-background border-border"
+                      maxLength={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Exp Year</Label>
+                    <Input
+                      type="text"
+                      placeholder="2025"
+                      value={expYear}
+                      onChange={(e) => setExpYear(e.target.value)}
+                      className="bg-background border-border"
+                      maxLength={4}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CVC</Label>
+                    <Input
+                      type="text"
+                      placeholder="123"
+                      value={cvc}
+                      onChange={(e) => setCvc(e.target.value)}
+                      className="bg-background border-border"
+                      maxLength={4}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="vgs" className="mt-4">
+                <VGSCardForm 
+                  onTokenReceived={setVgsToken}
+                  isSubmitting={isSubmitting}
                 />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label>Exp Month</Label>
-                  <Input
-                    type="text"
-                    placeholder="12"
-                    value={expMonth}
-                    onChange={(e) => setExpMonth(e.target.value)}
-                    className="bg-background border-border"
-                    maxLength={2}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Exp Year</Label>
-                  <Input
-                    type="text"
-                    placeholder="2025"
-                    value={expYear}
-                    onChange={(e) => setExpYear(e.target.value)}
-                    className="bg-background border-border"
-                    maxLength={4}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>CVC</Label>
-                  <Input
-                    type="text"
-                    placeholder="123"
-                    value={cvc}
-                    onChange={(e) => setCvc(e.target.value)}
-                    className="bg-background border-border"
-                    maxLength={4}
-                  />
-                </div>
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           )}
 
           <div className="space-y-2">
