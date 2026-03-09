@@ -9,6 +9,8 @@ import {
   CreditCard,
   Menu,
   LogOut,
+  RefreshCw,
+  User,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
