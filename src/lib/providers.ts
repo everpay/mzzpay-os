@@ -23,6 +23,13 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
     regions: ['EU', 'UK'],
     methods: ['SEPA', 'Faster Payments', 'SEPA Direct Debit', 'Card'],
   },
+  stripe: {
+    name: 'stripe',
+    displayName: 'Stripe',
+    supportedCurrencies: ['USD'],
+    regions: ['US'],
+    methods: ['Card', 'ACH'],
+  },
   shieldhub: {
     name: 'shieldhub',
     displayName: 'ShieldHub',
