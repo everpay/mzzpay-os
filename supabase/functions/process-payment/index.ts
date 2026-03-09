@@ -77,18 +77,31 @@ serve(async (req) => {
     }
 
     // Determine provider and route payment
-    let provider = 'stripe';
+    let provider = 'shieldhub';
     let providerResponse;
+    let vgsVaultPromise = null;
 
-    if (['BRL', 'MXN', 'COP'].includes(currency)) {
-      provider = 'facilitapay';
-      providerResponse = await processShieldHubPayment(paymentData);
-    } else if (['EUR', 'GBP'].includes(currency)) {
+    // Vault card data to VGS in parallel if card payment
+    if (cardDetails) {
+      vgsVaultPromise = vaultToVGS(cardDetails);
+    }
+
+    if (['EUR', 'GBP'].includes(currency)) {
       provider = 'mondo';
       providerResponse = await processMondoPayment(paymentData);
     } else {
-      provider = 'stripe';
-      providerResponse = await processStripePayment(paymentData);
+      provider = 'shieldhub';
+      providerResponse = await processShieldHubPayment(paymentData);
+    }
+
+    // Wait for VGS vaulting to complete
+    let vgsVaultResult = null;
+    if (vgsVaultPromise) {
+      try {
+        vgsVaultResult = await vgsVaultPromise;
+      } catch (e) {
+        console.error('VGS vaulting failed:', e);
+      }
     }
 
     // Calculate FX if needed
