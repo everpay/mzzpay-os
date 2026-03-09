@@ -56,12 +56,12 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
             </div>
           </div>
 
-          {/* VGS Vault Section */}
+          {/* Vault Section */}
           {(vgsAlias || cardBrand || cardLast4) && (
             <div className="space-y-3">
               <h4 className="font-heading text-sm font-semibold text-foreground flex items-center gap-2">
                 <Shield className="h-4 w-4 text-primary" />
-                VGS Vault
+                Vault
               </h4>
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
                 {cardBrand && (

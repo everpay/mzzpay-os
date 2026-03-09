@@ -11,6 +11,7 @@ import {
   LogOut,
   RefreshCw,
   User,
+  Link2,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -25,6 +26,7 @@ const navItems = [
   { to: '/wallets', icon: Wallet, label: 'Wallets' },
   { to: '/payouts', icon: ArrowUpRight, label: 'Payouts' },
   { to: '/payments/new', icon: CreditCard, label: 'New Payment' },
+  { to: '/payment-links', icon: Link2, label: 'Payment Links' },
   { to: '/subscriptions', icon: RefreshCw, label: 'Subscriptions' },
   { to: '/portal', icon: User, label: 'Customer Portal' },
   { to: '/activity', icon: Zap, label: 'Activity' },

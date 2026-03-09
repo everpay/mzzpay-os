@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Currency } from '@/lib/types';
 import { resolveProvider } from '@/lib/providers';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, ArrowRight, Shield, Loader2, Globe, MapPin } from 'lucide-react';
+import { CreditCard, ArrowRight, Loader2, Globe, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -185,43 +185,125 @@ export default function NewPayment() {
             </Select>
           </div>
 
-          {paymentMethod === 'card' && (
-            <Tabs value={cardEntryMode} onValueChange={(v: any) => setCardEntryMode(v)} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="standard">One Time Payment</TabsTrigger>
-                <TabsTrigger value="vgs">Recurring Payment</TabsTrigger>
-              </TabsList>
+          {/* Payment Method Tabs */}
+          <Tabs value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="card">💳 Card</TabsTrigger>
+              <TabsTrigger value="open_banking">🏦 Open Banking</TabsTrigger>
+              <TabsTrigger value="apple_pay">🍎 Apple Pay</TabsTrigger>
+              <TabsTrigger value="pix">🇧🇷 PIX</TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="standard" className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
-                <div className="space-y-2">
-                  <Label>Card Number</Label>
-                  <Input
-                    type="text" placeholder="4242 4242 4242 4242" value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    className="bg-background border-border font-mono" maxLength={19}
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-2">
-                    <Label>Exp Month</Label>
-                    <Input type="text" placeholder="12" value={expMonth} onChange={(e) => setExpMonth(e.target.value)} className="bg-background border-border" maxLength={2} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Exp Year</Label>
-                    <Input type="text" placeholder="2025" value={expYear} onChange={(e) => setExpYear(e.target.value)} className="bg-background border-border" maxLength={4} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>CVC</Label>
-                    <Input type="text" placeholder="123" value={cvc} onChange={(e) => setCvc(e.target.value)} className="bg-background border-border" maxLength={4} />
-                  </div>
-                </div>
-              </TabsContent>
+            <TabsContent value="card" className="mt-4">
+              <Tabs value={cardEntryMode} onValueChange={(v: any) => setCardEntryMode(v)} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="standard">One Time Payment</TabsTrigger>
+                  <TabsTrigger value="vgs">Recurring Payment</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="vgs" className="mt-4">
-                <VGSCardForm onTokenReceived={setVgsToken} isSubmitting={isSubmitting} />
-              </TabsContent>
-            </Tabs>
-          )}
+                <TabsContent value="standard" className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="space-y-2">
+                    <Label>Card Number</Label>
+                    <Input
+                      type="text" placeholder="4242 4242 4242 4242" value={cardNumber}
+                      onChange={(e) => setCardNumber(e.target.value)}
+                      className="bg-background border-border font-mono" maxLength={19}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <Label>Exp Month</Label>
+                      <Input type="text" placeholder="12" value={expMonth} onChange={(e) => setExpMonth(e.target.value)} className="bg-background border-border" maxLength={2} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Exp Year</Label>
+                      <Input type="text" placeholder="2025" value={expYear} onChange={(e) => setExpYear(e.target.value)} className="bg-background border-border" maxLength={4} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>CVC</Label>
+                      <Input type="text" placeholder="123" value={cvc} onChange={(e) => setCvc(e.target.value)} className="bg-background border-border" maxLength={4} />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="vgs" className="mt-4">
+                  <VGSCardForm onTokenReceived={setVgsToken} isSubmitting={isSubmitting} />
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
+            <TabsContent value="open_banking" className="mt-4 space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Globe className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-foreground">Open Banking Payment</h4>
+                  <p className="text-xs text-muted-foreground">Pay directly from your bank account</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Select your bank to initiate a secure bank transfer. You'll be redirected to your bank's authentication page.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Badge variant="outline" className="justify-center py-2">🇬🇧 UK Banks</Badge>
+                  <Badge variant="outline" className="justify-center py-2">🇪🇺 EU Banks</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Supported via Mondo Open Banking API. Instant settlement for EUR/GBP.
+                </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="apple_pay" className="mt-4 space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-foreground flex items-center justify-center">
+                  <span className="text-background text-lg">🍎</span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-foreground">Apple Pay</h4>
+                  <p className="text-xs text-muted-foreground">Fast checkout with Face ID or Touch ID</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Use Apple Pay for a quick and secure checkout. Your card details are never shared.
+                </p>
+                <div className="bg-foreground text-background rounded-lg py-3 text-center font-medium cursor-pointer hover:opacity-90 transition-opacity">
+                   Pay with Apple Pay
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Available on Safari and iOS devices
+                </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="pix" className="mt-4 space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-[#32BCAD]/10 flex items-center justify-center">
+                  <span className="text-lg">🇧🇷</span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-foreground">PIX Instant Payment</h4>
+                  <p className="text-xs text-muted-foreground">Brazil's instant payment system</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Scan the QR code with your banking app to complete the payment instantly.
+                </p>
+                <div className="flex justify-center py-4">
+                  <div className="h-32 w-32 bg-muted rounded-lg flex items-center justify-center border border-border">
+                    <span className="text-xs text-muted-foreground">QR Code</span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Available for BRL transactions only
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <div className="space-y-2">
             <Label>Customer Email</Label>
@@ -288,19 +370,10 @@ export default function NewPayment() {
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">VGS Vault</span>
+                <span className="text-sm text-muted-foreground">Vault</span>
                 <Badge variant="outline" className="text-xs">Parallel</Badge>
               </div>
             </div>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-            <div className="flex items-center gap-2 mb-3">
-              <Shield className="h-4 w-4 text-primary" />
-              <h3 className="font-heading text-sm font-semibold text-foreground">Idempotency</h3>
-            </div>
-            <p className="font-mono text-[10px] text-muted-foreground break-all">{idempotencyKey}</p>
-            <p className="mt-2 text-xs text-muted-foreground">Prevents duplicate charges on retry</p>
           </div>
         </div>
       </div>
