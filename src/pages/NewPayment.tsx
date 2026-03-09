@@ -12,6 +12,8 @@ import { CreditCard, ArrowRight, Shield, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { VGSCardForm } from '@/components/VGSCardForm';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function NewPayment() {
   const [amount, setAmount] = useState('');
