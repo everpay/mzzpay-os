@@ -53,13 +53,17 @@ export default function NewPayment() {
         idempotencyKey,
       };
 
-      if (paymentMethod === 'card' && cardNumber) {
-        payload.cardDetails = {
-          number: cardNumber,
-          expMonth,
-          expYear,
-          cvc,
-        };
+      if (paymentMethod === 'card') {
+        if (cardEntryMode === 'vgs' && vgsToken) {
+          payload.vgsToken = vgsToken;
+        } else if (cardNumber) {
+          payload.cardDetails = {
+            number: cardNumber,
+            expMonth,
+            expYear,
+            cvc,
+          };
+        }
       }
 
       const { data, error } = await supabase.functions.invoke('process-payment', {
