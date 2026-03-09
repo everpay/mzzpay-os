@@ -4,8 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CreditCard, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+import everpayIcon from '@/assets/everpay-icon.png';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -68,9 +69,7 @@ export default function Auth() {
       <div className="gradient-glow pointer-events-none fixed inset-0" />
       <div className="relative w-full max-w-md">
         <div className="flex items-center justify-center gap-2.5 mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
-            <CreditCard className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src={everpayIcon} alt="Everpay" className="h-10 w-10 rounded-xl" />
           <span className="font-heading text-2xl font-bold text-foreground tracking-tight">Everpay</span>
         </div>
 

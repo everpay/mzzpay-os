@@ -66,6 +66,63 @@
     --font-body: 'Inter', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   }
+
+
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 220 25% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 10%;
+
+    --primary: 172 72% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 94%;
+    --secondary-foreground: 220 20% 30%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 15% 45%;
+
+    --accent: 38 92% 55%;
+    --accent-foreground: 220 25% 10%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 172 72% 40%;
+
+    --success: 152 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 220 25% 10%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 15% 45%;
+    --sidebar-primary: 172 72% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 94%;
+    --sidebar-accent-foreground: 220 25% 10%;
+    --sidebar-border: 220 13% 90%;
+    --sidebar-ring: 172 72% 40%;
+
+    --chart-1: 172 72% 40%;
+    --chart-2: 38 92% 55%;
+    --chart-3: 262 60% 50%;
+    --chart-4: 152 60% 40%;
+    --chart-5: 0 72% 50%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(172 72% 40%), hsl(172 72% 32%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(220 14% 98%));
+    --gradient-glow: radial-gradient(ellipse at top, hsl(172 72% 40% / 0.06), transparent 60%);
+    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.08), 0 1px 2px hsl(0 0% 0% / 0.04);
+    --shadow-elevated: 0 4px 20px hsl(0 0% 0% / 0.1);
+  }
 }
 
 @layer base {
