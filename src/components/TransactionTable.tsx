@@ -40,7 +40,10 @@ export function TransactionTable({ transactions, compact = false }: TransactionT
                 onClick={() => setSelectedTx(tx)}
               >
                 <td className="px-4 py-3">
-                  <span className="font-mono text-xs text-muted-foreground">{tx.id}</span>
+                  <span className="font-mono text-xs text-muted-foreground">{tx.id.slice(0, 8)}…</span>
+                </td>
+                <td className="px-4 py-3 text-sm text-foreground">
+                  {tx.customer_email || <span className="text-muted-foreground">—</span>}
                 </td>
                 <td className="px-4 py-3 font-medium text-foreground">
                   {formatCurrency(tx.amount, tx.currency)}
