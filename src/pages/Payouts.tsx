@@ -128,6 +128,39 @@ export default function Payouts() {
         },
       });
 
+      // Save bank account if requested and not using a saved account
+      if (saveAccount && !selectedSavedAccount && accountNumber.length >= 4) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: merchant } = await supabase
+            .from('merchants')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+
+          if (merchant) {
+            // Check if account already exists
+            const existingAccount = savedBankAccounts.find(
+              a => a.institution_number === institutionNumber && 
+                   a.transit_number === transitNumber && 
+                   a.account_last4 === accountNumber.slice(-4)
+            );
+
+            if (!existingAccount) {
+              await supabase.from('saved_bank_accounts').insert({
+                merchant_id: merchant.id,
+                institution_number: institutionNumber,
+                transit_number: transitNumber,
+                account_last4: accountNumber.slice(-4),
+                account_holder_name: accountHolderName,
+                currency: currency,
+              });
+              queryClient.invalidateQueries({ queryKey: ['saved-bank-accounts'] });
+            }
+          }
+        }
+      }
+
       // Add to local payouts list
       setPayouts(prev => [{
         id: result.payout_id,
