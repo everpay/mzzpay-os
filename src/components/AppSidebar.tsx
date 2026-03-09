@@ -20,6 +20,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import everpayIcon from '@/assets/everpay-icon.png';
+import { useState, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
