@@ -172,6 +172,27 @@ export default function Payouts() {
         created_at: new Date().toISOString(),
       }, ...prev]);
 
+      // Send payout confirmation email
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          await supabase.functions.invoke('send-transactional-email', {
+            body: {
+              type: 'payout_confirmation',
+              to: user.email,
+              data: {
+                amount: parseFloat(amount),
+                currency,
+                account_last4: accountNumber.slice(-4),
+                date: new Date().toISOString(),
+              },
+            },
+          });
+        }
+      } catch (emailErr) {
+        console.error('Failed to send payout confirmation email:', emailErr);
+      }
+
       toast.success('Payout initiated successfully');
       setIsOpen(false);
       resetForm();
