@@ -157,8 +157,8 @@ export default function NewPayment() {
           {paymentMethod === 'card' && (
             <Tabs value={cardEntryMode} onValueChange={(v: any) => setCardEntryMode(v)} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="standard">Standard Entry</TabsTrigger>
-                <TabsTrigger value="vgs">VGS Vault</TabsTrigger>
+                <TabsTrigger value="standard">One Time Payment</TabsTrigger>
+                <TabsTrigger value="vgs">Recurring Payment</TabsTrigger>
               </TabsList>
               
               <TabsContent value="standard" className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
