@@ -8,24 +8,85 @@ import { Textarea } from '@/components/ui/textarea';
 import { Currency } from '@/lib/types';
 import { resolveProvider } from '@/lib/providers';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, ArrowRight, Shield } from 'lucide-react';
+import { CreditCard, ArrowRight, Shield, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function NewPayment() {
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<Currency>('USD');
   const [email, setEmail] = useState('');
   const [description, setDescription] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | 'boleto' | 'apple_pay' | 'open_banking'>('card');
+  const [cardNumber, setCardNumber] = useState('');
+  const [expMonth, setExpMonth] = useState('');
+  const [expYear, setExpYear] = useState('');
+  const [cvc, setCvc] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const queryClient = useQueryClient();
   const selectedProvider = resolveProvider(currency);
   const idempotencyKey = `idk_${Date.now()}`;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Payment created', {
-      description: `${amount} ${currency} via ${selectedProvider} — Key: ${idempotencyKey.slice(0, 16)}…`,
-    });
+    setIsSubmitting(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in to create a payment');
+        return;
+      }
+
+      const payload: any = {
+        amount: parseFloat(amount),
+        currency,
+        paymentMethod,
+        customerEmail: email,
+        description,
+        idempotencyKey,
+      };
+
+      if (paymentMethod === 'card' && cardNumber) {
+        payload.cardDetails = {
+          number: cardNumber,
+          expMonth,
+          expYear,
+          cvc,
+        };
+      }
+
+      const { data, error } = await supabase.functions.invoke('process-payment', {
+        body: payload,
+      });
+
+      if (error) throw error;
+
+      toast.success('Payment created successfully!', {
+        description: `${amount} ${currency} via ${selectedProvider} — ${data.transaction.id.slice(0, 8)}`,
+      });
+
+      // Refresh transactions list
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+
+      // Reset form
+      setAmount('');
+      setEmail('');
+      setDescription('');
+      setCardNumber('');
+      setExpMonth('');
+      setExpYear('');
+      setCvc('');
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error('Payment failed', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
