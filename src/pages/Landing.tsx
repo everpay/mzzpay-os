@@ -472,8 +472,18 @@ function FeaturesSection() {
                 </ul>
               </div>
               <div className="flex items-center justify-center">
-                <div className="w-full max-w-sm bg-gray-50 rounded-3xl p-10 flex items-center justify-center">
-                  <active.icon className="w-32 h-32 text-[#1aa478]/20" strokeWidth={1} />
+                <div className="w-full max-w-sm rounded-3xl overflow-hidden shadow-lg">
+                  <img
+                    src={[
+                      '/images/feature-global.jpg',
+                      '/images/feature-analytics.jpg',
+                      '/images/feature-security.jpg',
+                      '/images/feature-dashboard.jpg',
+                    ][activeIndex]}
+                    alt={active.title}
+                    className="w-full h-64 object-cover"
+                    loading="lazy"
+                  />
                 </div>
               </div>
             </motion.div>
