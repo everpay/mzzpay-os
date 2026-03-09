@@ -24,7 +24,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import everpayIcon from '@/assets/everpay-icon.png';
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/transactions', icon: ArrowLeftRight, label: 'Transactions' },
   { to: '/wallets', icon: Wallet, label: 'Wallets' },
   { to: '/payouts', icon: ArrowUpRight, label: 'Payouts' },
