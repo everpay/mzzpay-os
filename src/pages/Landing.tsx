@@ -202,21 +202,29 @@ function SiteHeader() {
 
 // ============= HERO SECTION =============
 function HeroSection() {
+  const [videoLoaded, setVideoLoaded] = useState(false);
+
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+      {/* Poster fallback (always visible behind video) */}
+      <div
+        className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
+        style={{ backgroundImage: "url('/images/hero-payments.jpg')" }}
+      />
       {/* Video Background */}
       <video
         autoPlay
         muted
         loop
         playsInline
-        className="absolute inset-0 w-full h-full object-cover"
+        onLoadedData={() => setVideoLoaded(true)}
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
         poster="/images/hero-payments.jpg"
       >
         <source src="/video/everpay-intro.mp4" type="video/mp4" />
       </video>
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/60" />
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-[800px] mx-auto text-center">
