@@ -95,11 +95,24 @@ const Index = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
-        <div className="lg:col-span-2">
-          <VolumeChart />
-        </div>
-        <ActivityFeed />
+      <div className="mb-6">
+        <Tabs defaultValue="volume">
+          <TabsList>
+            <TabsTrigger value="volume">Volume Chart</TabsTrigger>
+            <TabsTrigger value="providers">Provider Analytics</TabsTrigger>
+          </TabsList>
+          <TabsContent value="volume" className="mt-4">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <VolumeChart />
+              </div>
+              <ActivityFeed />
+            </div>
+          </TabsContent>
+          <TabsContent value="providers" className="mt-4">
+            <ProviderAnalytics />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <div>

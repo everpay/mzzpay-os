@@ -239,6 +239,8 @@ export default function Payouts() {
                   <SelectContent>
                     <SelectItem value="CAD">🇨🇦 CAD - Canadian Dollar</SelectItem>
                     <SelectItem value="USD">🇺🇸 USD - US Dollar</SelectItem>
+                    <SelectItem value="EUR">🇪🇺 EUR - Euro</SelectItem>
+                    <SelectItem value="GBP">🇬🇧 GBP - British Pound</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
