@@ -442,12 +442,12 @@ export default function Payouts() {
           <div className="flex-1">
             <h3 className="font-heading font-semibold text-foreground mb-1">Bank Payouts via Moneto</h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Fast, secure payouts to Canadian and US bank accounts. Funds typically arrive within 1-2 business days.
+              Fast, secure payouts to bank accounts worldwide. Funds typically arrive within 1-2 business days.
             </p>
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline">No Payout Fees</Badge>
               <Badge variant="outline">1-2 Day Settlement</Badge>
-              <Badge variant="outline">CAD &amp; USD</Badge>
+              <Badge variant="outline">CAD, USD, EUR & GBP</Badge>
             </div>
           </div>
         </div>
