@@ -3,7 +3,7 @@ import { useProviderEvents } from '@/hooks/useProviderEvents';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw } from 'lucide-react';
+import { ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield, Wifi } from 'lucide-react';
 
 interface TransactionDetailDrawerProps {
   transaction: Transaction | null;
@@ -13,10 +13,18 @@ interface TransactionDetailDrawerProps {
 
 export function TransactionDetailDrawer({ transaction, open, onOpenChange }: TransactionDetailDrawerProps) {
   const { data: allEvents = [] } = useProviderEvents();
-  
+
   if (!transaction) return null;
 
   const relatedEvents = allEvents.filter((e) => e.transaction_id === transaction.id);
+
+  // Extract VGS alias and card brand from enrichment events
+  const tapixEvent = relatedEvents.find((e) => e.event_type === 'enrichment.completed');
+  const vaultEvent = relatedEvents.find((e) => e.event_type === 'vault.completed');
+
+  const vgsAlias = (vaultEvent?.payload as any)?.vgs_alias || (tapixEvent?.payload as any)?.vgs_alias || null;
+  const cardBrand = (tapixEvent?.payload as any)?.card_brand || (vaultEvent?.payload as any)?.card_brand || null;
+  const cardLast4 = (tapixEvent?.payload as any)?.card_last4 || (vaultEvent?.payload as any)?.card_last4 || null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -48,10 +56,37 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
             </div>
           </div>
 
+          {/* VGS Vault Section */}
+          {(vgsAlias || cardBrand || cardLast4) && (
+            <div className="space-y-3">
+              <h4 className="font-heading text-sm font-semibold text-foreground flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary" />
+                VGS Vault
+              </h4>
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+                {cardBrand && (
+                  <DetailRow icon={CreditCard} label="Card Brand" value={
+                    <Badge variant="outline" className="capitalize text-xs">{cardBrand}</Badge>
+                  } />
+                )}
+                {cardLast4 && (
+                  <DetailRow icon={CreditCard} label="Card" value={
+                    <span className="font-mono text-sm">•••• {cardLast4}</span>
+                  } />
+                )}
+                {vgsAlias && (
+                  <DetailRow icon={Shield} label="VGS Alias" value={
+                    <span className="font-mono text-[10px] text-primary break-all">{vgsAlias}</span>
+                  } />
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Details Grid */}
           <div className="space-y-3">
             <h4 className="font-heading text-sm font-semibold text-foreground">Details</h4>
-            <div className="grid gap-3">
+            <div className="grid gap-2">
               <DetailRow icon={Hash} label="Provider" value={
                 <Badge variant="provider">{transaction.provider}</Badge>
               } />
@@ -62,7 +97,7 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
                 <DetailRow icon={FileText} label="Description" value={transaction.description} />
               )}
               {transaction.provider_ref && (
-                <DetailRow icon={Hash} label="Provider Ref" value={
+                <DetailRow icon={Wifi} label="Provider Ref" value={
                   <span className="font-mono text-xs">{transaction.provider_ref}</span>
                 } />
               )}
@@ -88,9 +123,7 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
                   </div>
                   <div className="flex flex-col items-center">
                     <ArrowRight className="h-4 w-4 text-primary" />
-                    <span className="text-[10px] text-muted-foreground mt-1">
-                      Rate: {transaction.fx_rate}
-                    </span>
+                    <span className="text-[10px] text-muted-foreground mt-1">Rate: {transaction.fx_rate}</span>
                   </div>
                   <div className="text-center">
                     <p className="text-xs text-muted-foreground">{transaction.settlement_currency}</p>
@@ -103,32 +136,16 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
             </div>
           )}
 
-          {/* Ledger Entries (simulated) */}
+          {/* Ledger Entries */}
           <div className="space-y-3">
             <h4 className="font-heading text-sm font-semibold text-foreground">Ledger Entries</h4>
             <div className="rounded-lg border border-border bg-background divide-y divide-border">
-              <LedgerRow
-                type="debit"
-                account={`${transaction.currency} Receivable`}
-                amount={formatCurrency(transaction.amount, transaction.currency)}
-              />
-              <LedgerRow
-                type="credit"
-                account={`${transaction.currency} Revenue`}
-                amount={formatCurrency(transaction.amount, transaction.currency)}
-              />
+              <LedgerRow type="debit" account={`${transaction.currency} Receivable`} amount={formatCurrency(transaction.amount, transaction.currency)} />
+              <LedgerRow type="credit" account={`${transaction.currency} Revenue`} amount={formatCurrency(transaction.amount, transaction.currency)} />
               {transaction.fx_rate && transaction.settlement_amount && (
                 <>
-                  <LedgerRow
-                    type="debit"
-                    account={`${transaction.settlement_currency} Settlement`}
-                    amount={formatCurrency(transaction.settlement_amount, transaction.settlement_currency || 'USD')}
-                  />
-                  <LedgerRow
-                    type="credit"
-                    account="FX Conversion"
-                    amount={formatCurrency(transaction.settlement_amount, transaction.settlement_currency || 'USD')}
-                  />
+                  <LedgerRow type="debit" account={`${transaction.settlement_currency} Settlement`} amount={formatCurrency(transaction.settlement_amount, transaction.settlement_currency || 'USD')} />
+                  <LedgerRow type="credit" account="FX Conversion" amount={formatCurrency(transaction.settlement_amount, transaction.settlement_currency || 'USD')} />
                 </>
               )}
             </div>
