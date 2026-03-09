@@ -41,6 +41,8 @@ const AppRoutes = () => (
     <Route path="/wallets" element={<ProtectedRoute><Wallets /></ProtectedRoute>} />
     <Route path="/payouts" element={<ProtectedRoute><Payouts /></ProtectedRoute>} />
     <Route path="/payments/new" element={<ProtectedRoute><NewPayment /></ProtectedRoute>} />
+    <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
+    <Route path="/portal" element={<ProtectedRoute><CustomerPortal /></ProtectedRoute>} />
     <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
