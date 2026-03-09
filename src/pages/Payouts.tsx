@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Banknote, Building2, ArrowRight, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Banknote, Building2, ArrowRight, CheckCircle2, Clock, AlertCircle, Save } from 'lucide-react';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCreateMonetoPayout } from '@/hooks/useMoneto';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +41,7 @@ interface PayoutRecord {
 const mockPayouts: PayoutRecord[] = [];
 
 export default function Payouts() {
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('CAD');
@@ -46,10 +49,52 @@ export default function Payouts() {
   const [transitNumber, setTransitNumber] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolderName, setAccountHolderName] = useState('');
+  const [saveAccount, setSaveAccount] = useState(true);
+  const [selectedSavedAccount, setSelectedSavedAccount] = useState<string>('');
   const [payouts, setPayouts] = useState<PayoutRecord[]>(mockPayouts);
 
   const { data: accounts = [] } = useAccounts();
   const createPayout = useCreateMonetoPayout();
+
+  // Fetch saved bank accounts
+  const { data: savedBankAccounts = [] } = useQuery({
+    queryKey: ['saved-bank-accounts'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: merchant } = await supabase
+        .from('merchants')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!merchant) throw new Error('Merchant not found');
+
+      const { data, error } = await supabase
+        .from('saved_bank_accounts')
+        .select('*')
+        .eq('merchant_id', merchant.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // When a saved account is selected, populate the form
+  useEffect(() => {
+    if (selectedSavedAccount) {
+      const account = savedBankAccounts.find(a => a.id === selectedSavedAccount);
+      if (account) {
+        setInstitutionNumber(account.institution_number);
+        setTransitNumber(account.transit_number);
+        setAccountNumber(''); // Don't populate full account number for security
+        setAccountHolderName(account.account_holder_name);
+        setCurrency(account.currency);
+      }
+    }
+  }, [selectedSavedAccount, savedBankAccounts]);
 
   const selectedAccount = accounts.find(a => a.currency === currency);
   const availableBalance = selectedAccount?.available_balance || 0;
@@ -83,6 +128,39 @@ export default function Payouts() {
         },
       });
 
+      // Save bank account if requested and not using a saved account
+      if (saveAccount && !selectedSavedAccount && accountNumber.length >= 4) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: merchant } = await supabase
+            .from('merchants')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+
+          if (merchant) {
+            // Check if account already exists
+            const existingAccount = savedBankAccounts.find(
+              a => a.institution_number === institutionNumber && 
+                   a.transit_number === transitNumber && 
+                   a.account_last4 === accountNumber.slice(-4)
+            );
+
+            if (!existingAccount) {
+              await supabase.from('saved_bank_accounts').insert({
+                merchant_id: merchant.id,
+                institution_number: institutionNumber,
+                transit_number: transitNumber,
+                account_last4: accountNumber.slice(-4),
+                account_holder_name: accountHolderName,
+                currency: currency,
+              });
+              queryClient.invalidateQueries({ queryKey: ['saved-bank-accounts'] });
+            }
+          }
+        }
+      }
+
       // Add to local payouts list
       setPayouts(prev => [{
         id: result.payout_id,
@@ -108,6 +186,8 @@ export default function Payouts() {
     setTransitNumber('');
     setAccountNumber('');
     setAccountHolderName('');
+    setSelectedSavedAccount('');
+    setSaveAccount(true);
   };
 
   const getStatusIcon = (status: PayoutRecord['status']) => {
@@ -184,6 +264,26 @@ export default function Payouts() {
                 </div>
               </div>
 
+              {/* Saved Bank Accounts */}
+              {savedBankAccounts.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Saved Bank Accounts</Label>
+                  <Select value={selectedSavedAccount} onValueChange={setSelectedSavedAccount}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a saved account or enter new details" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Enter new account details</SelectItem>
+                      {savedBankAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.nickname || account.account_holder_name} •••• {account.account_last4} ({account.currency})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Bank Details */}
               <div className="space-y-3 pt-2">
                 <div className="flex items-center gap-2 text-sm font-medium">
@@ -229,6 +329,22 @@ export default function Payouts() {
                     onChange={(e) => setAccountHolderName(e.target.value)}
                   />
                 </div>
+
+                {/* Save account checkbox */}
+                {!selectedSavedAccount && (
+                  <div className="flex items-center gap-2 pt-2">
+                    <input
+                      type="checkbox"
+                      id="save-account"
+                      checked={saveAccount}
+                      onChange={(e) => setSaveAccount(e.target.checked)}
+                      className="h-4 w-4 rounded border-input"
+                    />
+                    <Label htmlFor="save-account" className="text-xs cursor-pointer">
+                      Save this account for future payouts
+                    </Label>
+                  </div>
+                )}
               </div>
 
               {/* Summary */}

@@ -14,6 +14,7 @@ import Checkout from "./pages/Checkout";
 import Activity from "./pages/Activity";
 import Subscriptions from "./pages/Subscriptions";
 import CustomerPortal from "./pages/CustomerPortal";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -47,6 +48,7 @@ const AppRoutes = () => (
     <Route path="/checkout" element={<Checkout />} />
     <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
     <Route path="/portal" element={<ProtectedRoute><CustomerPortal /></ProtectedRoute>} />
+    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
