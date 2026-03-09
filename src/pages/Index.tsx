@@ -17,7 +17,7 @@ const Index = () => {
   const { data: profile } = useProfile();
 
   // Calculate total balance across all currencies (simplified conversion)
-  const rates: Record<string, number> = { USD: 1, EUR: 1.08, GBP: 1.27, BRL: 0.195, MXN: 0.057, COP: 0.00024 };
+  const rates: Record<string, number> = { USD: 1, EUR: 1.08, GBP: 1.27, BRL: 0.195, MXN: 0.057, COP: 0.00024, CAD: 0.74 };
   const totalBalance = accounts.reduce((sum, a) => {
     return sum + a.balance * (rates[a.currency] || 1);
   }, 0);
