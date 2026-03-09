@@ -4,8 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CreditCard, Lock, ArrowRight } from 'lucide-react';
+import { Lock, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+import everpayIcon from '@/assets/everpay-icon.png';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
