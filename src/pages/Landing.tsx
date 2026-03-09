@@ -315,11 +315,17 @@ function StatsSection() {
 function PaymentPartnersSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const paymentMethods = [
-    'Visa', 'Mastercard', 'American Express', 'Discover', 'PayPal', 'Apple Pay',
-    'Google Pay', 'JCB', 'UnionPay', 'Stripe', 'Square', 'Alipay', 'WeChat Pay',
-    'PIX', 'Mercado Pago', 'PagSeguro', 'PayU', 'Boleto', 'OXXO', 'Klarna',
-    'Affirm', 'Afterpay', 'Venmo', 'Cash App', 'Zelle', 'Samsung Pay',
+  const paymentLogos = [
+    { name: 'Visa', src: '/logos/visa.svg' },
+    { name: 'Mastercard', src: '/logos/mastercard.svg' },
+    { name: 'American Express', src: '/logos/amex.svg' },
+    { name: 'PayPal', src: '/logos/paypal.svg' },
+    { name: 'Apple Pay', src: '/logos/apple-pay.svg' },
+    { name: 'Google Pay', src: '/logos/google-pay.svg' },
+    { name: 'Klarna', src: '/logos/klarna.svg' },
+    { name: 'Alipay', src: '/logos/alipay.svg' },
+    { name: 'Bancontact', src: '/logos/bancontact.svg' },
+    { name: 'iDEAL', src: '/logos/ideal.svg' },
   ];
 
   useEffect(() => {
@@ -349,12 +355,15 @@ function PaymentPartnersSection() {
             Trusted Payment Methods Worldwide
           </p>
         </div>
-        <div ref={scrollRef} className="flex gap-12 overflow-x-hidden" style={{ scrollBehavior: 'auto' }}>
-          {[...paymentMethods, ...paymentMethods].map((method, index) => (
-            <div key={`${method}-${index}`} className="flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform duration-300">
-              <div className="relative w-32 h-12 transition-all duration-300 bg-gray-100 rounded-lg flex items-center justify-center px-3">
-                <span className="text-xs font-medium text-gray-600 truncate">{method}</span>
-              </div>
+        <div ref={scrollRef} className="flex gap-12 overflow-x-hidden items-center" style={{ scrollBehavior: 'auto' }}>
+          {[...paymentLogos, ...paymentLogos, ...paymentLogos].map((logo, index) => (
+            <div key={`${logo.name}-${index}`} className="flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform duration-300">
+              <img
+                src={logo.src}
+                alt={logo.name}
+                className="h-10 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity"
+                loading="lazy"
+              />
             </div>
           ))}
         </div>
