@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,16 +8,54 @@ import { Textarea } from '@/components/ui/textarea';
 import { Currency } from '@/lib/types';
 import { resolveProvider } from '@/lib/providers';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, ArrowRight, Shield, Loader2 } from 'lucide-react';
+import { CreditCard, ArrowRight, Shield, Loader2, Globe, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { VGSCardForm } from '@/components/VGSCardForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+// Detect region from browser locale / timezone
+function detectRegion(): { region: string; label: string; flag: string } {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const locale = navigator.language || 'en-US';
+
+    if (tz.startsWith('Europe/') || locale.startsWith('en-GB') || locale.startsWith('de') || locale.startsWith('fr') || locale.startsWith('es-ES')) {
+      return { region: 'EU', label: 'EU Region', flag: '🇪🇺' };
+    }
+    if (tz.startsWith('America/Sao_Paulo') || tz.startsWith('Brazil') || locale.startsWith('pt-BR')) {
+      return { region: 'BR', label: 'Brazil', flag: '🇧🇷' };
+    }
+    if (tz.startsWith('America/Mexico') || locale.startsWith('es-MX')) {
+      return { region: 'MX', label: 'Mexico', flag: '🇲🇽' };
+    }
+    if (tz.startsWith('America/Bogota') || locale.startsWith('es-CO')) {
+      return { region: 'CO', label: 'Colombia', flag: '🇨🇴' };
+    }
+    return { region: 'US', label: 'US/Global', flag: '🌐' };
+  } catch {
+    return { region: 'US', label: 'US/Global', flag: '🌐' };
+  }
+}
+
+// Map region to preferred currency
+function regionToCurrency(region: string): Currency {
+  switch (region) {
+    case 'EU': return 'EUR';
+    case 'BR': return 'BRL';
+    case 'MX': return 'MXN';
+    case 'CO': return 'COP';
+    default: return 'USD';
+  }
+}
+
 export default function NewPayment() {
+  const detectedRegion = detectRegion();
+  const defaultCurrency = regionToCurrency(detectedRegion.region);
+
   const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState<Currency>('USD');
+  const [currency, setCurrency] = useState<Currency>(defaultCurrency);
   const [email, setEmail] = useState('');
   const [description, setDescription] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | 'boleto' | 'apple_pay' | 'open_banking'>('card');
@@ -57,12 +95,7 @@ export default function NewPayment() {
         if (cardEntryMode === 'vgs' && vgsToken) {
           payload.vgsToken = vgsToken;
         } else if (cardNumber) {
-          payload.cardDetails = {
-            number: cardNumber,
-            expMonth,
-            expYear,
-            cvc,
-          };
+          payload.cardDetails = { number: cardNumber, expMonth, expYear, cvc };
         }
       }
 
@@ -76,17 +109,10 @@ export default function NewPayment() {
         description: `${amount} ${currency} via ${selectedProvider} — ${data.transaction.id.slice(0, 8)}`,
       });
 
-      // Refresh transactions list
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
 
-      // Reset form
-      setAmount('');
-      setEmail('');
-      setDescription('');
-      setCardNumber('');
-      setExpMonth('');
-      setExpYear('');
-      setCvc('');
+      setAmount(''); setEmail(''); setDescription('');
+      setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc('');
     } catch (error) {
       console.error('Payment error:', error);
       toast.error('Payment failed', {
@@ -96,6 +122,15 @@ export default function NewPayment() {
       setIsSubmitting(false);
     }
   };
+
+  const providerRegionLabel: Record<string, { label: string; badge: string }> = {
+    mondo: { label: 'EU / UK payments', badge: '🇪🇺 Mondo' },
+    shieldhub: { label: 'US & Global payments', badge: '🌐 ShieldHub' },
+    facilitapay: { label: 'LATAM payments', badge: '🌎 FacilitaPay' },
+    stripe: { label: 'Global fallback', badge: '⚡ Stripe' },
+  };
+
+  const providerInfo = providerRegionLabel[selectedProvider] || { label: '', badge: selectedProvider };
 
   return (
     <AppLayout>
@@ -110,14 +145,10 @@ export default function NewPayment() {
             <div className="space-y-2">
               <Label>Amount</Label>
               <Input
-                type="number"
-                placeholder="0.00"
-                value={amount}
+                type="number" placeholder="0.00" value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="bg-background border-border font-mono text-lg"
-                required
-                min="0.01"
-                step="0.01"
+                required min="0.01" step="0.01"
               />
             </div>
             <div className="space-y-2">
@@ -160,61 +191,34 @@ export default function NewPayment() {
                 <TabsTrigger value="standard">One Time Payment</TabsTrigger>
                 <TabsTrigger value="vgs">Recurring Payment</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="standard" className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
                 <div className="space-y-2">
                   <Label>Card Number</Label>
                   <Input
-                    type="text"
-                    placeholder="4242 4242 4242 4242"
-                    value={cardNumber}
+                    type="text" placeholder="4242 4242 4242 4242" value={cardNumber}
                     onChange={(e) => setCardNumber(e.target.value)}
-                    className="bg-background border-border font-mono"
-                    maxLength={19}
+                    className="bg-background border-border font-mono" maxLength={19}
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
                     <Label>Exp Month</Label>
-                    <Input
-                      type="text"
-                      placeholder="12"
-                      value={expMonth}
-                      onChange={(e) => setExpMonth(e.target.value)}
-                      className="bg-background border-border"
-                      maxLength={2}
-                    />
+                    <Input type="text" placeholder="12" value={expMonth} onChange={(e) => setExpMonth(e.target.value)} className="bg-background border-border" maxLength={2} />
                   </div>
                   <div className="space-y-2">
                     <Label>Exp Year</Label>
-                    <Input
-                      type="text"
-                      placeholder="2025"
-                      value={expYear}
-                      onChange={(e) => setExpYear(e.target.value)}
-                      className="bg-background border-border"
-                      maxLength={4}
-                    />
+                    <Input type="text" placeholder="2025" value={expYear} onChange={(e) => setExpYear(e.target.value)} className="bg-background border-border" maxLength={4} />
                   </div>
                   <div className="space-y-2">
                     <Label>CVC</Label>
-                    <Input
-                      type="text"
-                      placeholder="123"
-                      value={cvc}
-                      onChange={(e) => setCvc(e.target.value)}
-                      className="bg-background border-border"
-                      maxLength={4}
-                    />
+                    <Input type="text" placeholder="123" value={cvc} onChange={(e) => setCvc(e.target.value)} className="bg-background border-border" maxLength={4} />
                   </div>
                 </div>
               </TabsContent>
 
               <TabsContent value="vgs" className="mt-4">
-                <VGSCardForm 
-                  onTokenReceived={setVgsToken}
-                  isSubmitting={isSubmitting}
-                />
+                <VGSCardForm onTokenReceived={setVgsToken} isSubmitting={isSubmitting} />
               </TabsContent>
             </Tabs>
           )}
@@ -222,48 +226,56 @@ export default function NewPayment() {
           <div className="space-y-2">
             <Label>Customer Email</Label>
             <Input
-              type="email"
-              placeholder="customer@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-background border-border"
+              type="email" placeholder="customer@example.com" value={email}
+              onChange={(e) => setEmail(e.target.value)} className="bg-background border-border"
             />
           </div>
 
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
-              placeholder="Payment description..."
-              value={description}
+              placeholder="Payment description..." value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="bg-background border-border resize-none"
-              rows={3}
+              className="bg-background border-border resize-none" rows={3}
             />
           </div>
 
           <Button type="submit" className="w-full gap-2" size="lg" disabled={isSubmitting}>
             {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Processing...
-              </>
+              <><Loader2 className="h-4 w-4 animate-spin" />Processing...</>
             ) : (
-              <>
-                <CreditCard className="h-4 w-4" />
-                Create Payment
-                <ArrowRight className="h-4 w-4" />
-              </>
+              <><CreditCard className="h-4 w-4" />Create Payment<ArrowRight className="h-4 w-4" /></>
             )}
           </Button>
         </form>
 
         <div className="space-y-4">
+          {/* Region Detection */}
+          <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+            <div className="flex items-center gap-2 mb-3">
+              <MapPin className="h-4 w-4 text-primary" />
+              <h3 className="font-heading text-sm font-semibold text-foreground">Region Detected</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{detectedRegion.flag}</span>
+              <div>
+                <p className="text-sm font-medium text-foreground">{detectedRegion.label}</p>
+                <p className="text-xs text-muted-foreground">Default currency: {defaultCurrency}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Routing Preview */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-card">
             <h3 className="font-heading text-sm font-semibold text-foreground mb-3">Routing Preview</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Provider</span>
                 <Badge variant="provider">{selectedProvider}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Route</span>
+                <span className="text-xs text-muted-foreground">{providerInfo.label}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Currency</span>

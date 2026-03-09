@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { TransactionTable } from '@/components/TransactionTable';
 import { useTransactions } from '@/hooks/useTransactions';
-import { Provider, TransactionStatus, Currency } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Search, Globe } from 'lucide-react';
 
 export default function Transactions() {
   const { data: transactions = [], isLoading } = useTransactions();
@@ -22,12 +22,32 @@ export default function Transactions() {
     return true;
   });
 
+  // Provider breakdown stats
+  const providerCounts = transactions.reduce((acc, tx) => {
+    acc[tx.provider] = (acc[tx.provider] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   return (
     <AppLayout>
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Transactions</h1>
         <p className="mt-1 text-sm text-muted-foreground">All payment transactions across providers</p>
       </div>
+
+      {/* Provider routing summary */}
+      {transactions.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2 items-center">
+          <Globe className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">Routing:</span>
+          {Object.entries(providerCounts).map(([provider, count]) => (
+            <Badge key={provider} variant="outline" className="text-xs gap-1">
+              <span className="capitalize">{provider}</span>
+              <span className="text-muted-foreground">×{count}</span>
+            </Badge>
+          ))}
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="relative w-full sm:w-auto">
@@ -45,8 +65,9 @@ export default function Transactions() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Providers</SelectItem>
-            <SelectItem value="facilitapay">FacilitaPay</SelectItem>
+            <SelectItem value="shieldhub">ShieldHub</SelectItem>
             <SelectItem value="mondo">Mondo</SelectItem>
+            <SelectItem value="facilitapay">FacilitaPay</SelectItem>
             <SelectItem value="stripe">Stripe</SelectItem>
           </SelectContent>
         </Select>
