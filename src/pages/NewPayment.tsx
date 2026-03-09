@@ -26,6 +26,8 @@ export default function NewPayment() {
   const [expYear, setExpYear] = useState('');
   const [cvc, setCvc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vgsToken, setVgsToken] = useState('');
+  const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
 
   const queryClient = useQueryClient();
   const selectedProvider = resolveProvider(currency);
