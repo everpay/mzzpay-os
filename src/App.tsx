@@ -14,6 +14,7 @@ import Checkout from "./pages/Checkout";
 import Activity from "./pages/Activity";
 import Subscriptions from "./pages/Subscriptions";
 import CustomerPortal from "./pages/CustomerPortal";
+import Chargebacks from "./pages/Chargebacks";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
