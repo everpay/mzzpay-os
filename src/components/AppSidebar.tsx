@@ -25,6 +25,8 @@ const navItems = [
   { to: '/wallets', icon: Wallet, label: 'Wallets' },
   { to: '/payouts', icon: ArrowUpRight, label: 'Payouts' },
   { to: '/payments/new', icon: CreditCard, label: 'New Payment' },
+  { to: '/subscriptions', icon: RefreshCw, label: 'Subscriptions' },
+  { to: '/portal', icon: User, label: 'Customer Portal' },
   { to: '/activity', icon: Zap, label: 'Activity' },
 ];
 

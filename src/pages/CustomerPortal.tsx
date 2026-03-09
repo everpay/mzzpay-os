@@ -125,7 +125,7 @@ export default function CustomerPortal() {
                   <span className="text-sm">Amount</span>
                 </div>
                 <span className="text-lg font-semibold">
-                  {formatCurrency(subscription.plan?.amount, subscription.plan?.currency)} / {subscription.plan?.interval}
+                  {formatCurrency(subscription.plan?.amount, subscription.plan?.currency as any)} / {subscription.plan?.interval}
                 </span>
               </div>
 

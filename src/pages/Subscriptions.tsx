@@ -221,7 +221,7 @@ export default function Subscriptions() {
                   </TableCell>
                   <TableCell>{sub.plan?.name}</TableCell>
                   <TableCell className="font-mono">
-                    {formatCurrency(sub.plan?.amount, sub.plan?.currency)}
+                    {formatCurrency(sub.plan?.amount, sub.plan?.currency as any)}
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(sub.status)}>{sub.status}</Badge>
