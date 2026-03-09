@@ -96,6 +96,78 @@ export type Database = {
           },
         ]
       }
+      disputes: {
+        Row: {
+          amount: number
+          chargeflow_id: string | null
+          chargeflow_payload: Json | null
+          created_at: string
+          currency: string
+          customer_email: string | null
+          description: string | null
+          evidence_due_date: string | null
+          id: string
+          merchant_id: string
+          outcome: string | null
+          provider: string | null
+          reason: string | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          chargeflow_id?: string | null
+          chargeflow_payload?: Json | null
+          created_at?: string
+          currency: string
+          customer_email?: string | null
+          description?: string | null
+          evidence_due_date?: string | null
+          id?: string
+          merchant_id: string
+          outcome?: string | null
+          provider?: string | null
+          reason?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          chargeflow_id?: string | null
+          chargeflow_payload?: Json | null
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          description?: string | null
+          evidence_due_date?: string | null
+          id?: string
+          merchant_id?: string
+          outcome?: string | null
+          provider?: string | null
+          reason?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       idempotency_keys: {
         Row: {
           created_at: string
