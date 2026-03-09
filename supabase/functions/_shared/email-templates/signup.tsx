@@ -35,7 +35,8 @@ export const SignupEmail = ({
     <Preview>Welcome to Everpay — confirm your email</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>💳 Everpay</Text>
+        <Img src={LOGO_URL} width="40" height="40" alt="Everpay" style={logoImg} />
+        <Text style={logo}>Everpay</Text>
         <Heading style={h1}>Welcome aboard</Heading>
         <Text style={text}>
           Thanks for creating your merchant account with{' '}
