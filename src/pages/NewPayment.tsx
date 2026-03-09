@@ -131,6 +131,73 @@ export default function NewPayment() {
           </div>
 
           <div className="space-y-2">
+            <Label>Payment Method</Label>
+            <Select value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)}>
+              <SelectTrigger className="bg-background border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="card">💳 Card</SelectItem>
+                <SelectItem value="pix">🇧🇷 PIX</SelectItem>
+                <SelectItem value="boleto">📄 Boleto</SelectItem>
+                <SelectItem value="apple_pay">🍎 Apple Pay</SelectItem>
+                <SelectItem value="open_banking">🏦 Open Banking</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {paymentMethod === 'card' && (
+            <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+              <div className="space-y-2">
+                <Label>Card Number</Label>
+                <Input
+                  type="text"
+                  placeholder="4242 4242 4242 4242"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(e.target.value)}
+                  className="bg-background border-border font-mono"
+                  maxLength={19}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label>Exp Month</Label>
+                  <Input
+                    type="text"
+                    placeholder="12"
+                    value={expMonth}
+                    onChange={(e) => setExpMonth(e.target.value)}
+                    className="bg-background border-border"
+                    maxLength={2}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Exp Year</Label>
+                  <Input
+                    type="text"
+                    placeholder="2025"
+                    value={expYear}
+                    onChange={(e) => setExpYear(e.target.value)}
+                    className="bg-background border-border"
+                    maxLength={4}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>CVC</Label>
+                  <Input
+                    type="text"
+                    placeholder="123"
+                    value={cvc}
+                    onChange={(e) => setCvc(e.target.value)}
+                    className="bg-background border-border"
+                    maxLength={4}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
             <Label>Customer Email</Label>
             <Input
               type="email"
@@ -152,10 +219,19 @@ export default function NewPayment() {
             />
           </div>
 
-          <Button type="submit" className="w-full gap-2" size="lg">
-            <CreditCard className="h-4 w-4" />
-            Create Payment
-            <ArrowRight className="h-4 w-4" />
+          <Button type="submit" className="w-full gap-2" size="lg" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <CreditCard className="h-4 w-4" />
+                Create Payment
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
           </Button>
         </form>
 
