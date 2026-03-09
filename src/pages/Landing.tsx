@@ -579,8 +579,8 @@ function SiteFooter() {
   return (
     <footer className="border-t border-gray-200 bg-gray-50 relative">
       <div className="container mx-auto px-4 py-12 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
-          <div></div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8">
+          <div className="hidden lg:block"></div>
 
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Solutions</h3>
@@ -643,17 +643,18 @@ function SiteFooter() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-gray-200">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-xs text-gray-600">© {new Date().getFullYear()} Everpay Corporation. All rights reserved.</p>
-            <div className="flex flex-wrap justify-center gap-4 md:gap-6">
-              {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Security & Trust', 'System Status'].map((item) => (
-                <span key={item} className="text-xs text-gray-600 hover:text-[#1aa478] transition-colors cursor-pointer">{item}</span>
-              ))}
-            </div>
+          <p className="text-sm text-gray-500 text-center mb-6">© {new Date().getFullYear()} Everpay Corporation. All rights reserved.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-10">
+            {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Security & Trust', 'System Status'].map((item) => (
+              <span key={item} className="text-sm text-gray-500 hover:text-[#1aa478] transition-colors cursor-pointer text-center">{item}</span>
+            ))}
           </div>
-          <div className="mt-10 pt-2">
-            <p className="text-xs text-gray-600">
-              Everpay Corporation is a financial technology company and not a bank. Banking services are provided by Everpay's bank partners, Members FDIC.
+          <div className="pt-6">
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Everpay Aspect is a financial technology company, not a bank. Banking services are provided by licensed Banking As A Service providers, partner institutions and are FDIC-insured up to applicable limits. The Everpay Card is issued by Everpay card-issuing technology providers pursuant to licenses from Visa U.S.A. Inc. and Mastercard International.
+            </p>
+            <p className="text-xs text-gray-500 leading-relaxed mt-2">
+              Everpay is PCI DSS Level 1 certified, the highest level of security certification in the payments industry.
             </p>
           </div>
         </div>
