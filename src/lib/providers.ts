@@ -21,21 +21,27 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
     displayName: 'Mondo',
     supportedCurrencies: ['EUR', 'GBP'],
     regions: ['EU', 'UK'],
-    methods: ['SEPA', 'Faster Payments', 'SEPA Direct Debit'],
+    methods: ['SEPA', 'Faster Payments', 'SEPA Direct Debit', 'Card'],
   },
   stripe: {
     name: 'stripe',
     displayName: 'Stripe',
-    supportedCurrencies: ['USD', 'EUR', 'GBP'],
-    regions: ['US', 'EU', 'UK'],
+    supportedCurrencies: ['USD'],
+    regions: ['US'],
     methods: ['Card', 'ACH'],
+  },
+  shieldhub: {
+    name: 'shieldhub',
+    displayName: 'ShieldHub',
+    supportedCurrencies: ['USD', 'BRL', 'MXN', 'COP'],
+    regions: ['US', 'GLOBAL'],
+    methods: ['Card', 'ACH', 'PIX', 'Boleto'],
   },
 };
 
 export function resolveProvider(currency: Currency, region?: string): Provider {
-  if (['BRL', 'MXN', 'COP'].includes(currency)) return 'facilitapay';
-  if (['EUR', 'GBP'].includes(currency) && region !== 'US') return 'mondo';
-  return 'stripe';
+  if (['EUR', 'GBP'].includes(currency)) return 'mondo';
+  return 'shieldhub';
 }
 
 export function getProviderColor(provider: Provider): string {
@@ -43,5 +49,7 @@ export function getProviderColor(provider: Provider): string {
     case 'facilitapay': return 'hsl(var(--chart-4))';
     case 'mondo': return 'hsl(var(--chart-3))';
     case 'stripe': return 'hsl(var(--chart-1))';
+    case 'shieldhub': return 'hsl(var(--chart-2))';
+    default: return 'hsl(var(--chart-1))';
   }
 }

@@ -77,18 +77,31 @@ serve(async (req) => {
     }
 
     // Determine provider and route payment
-    let provider = 'stripe';
+    let provider = 'shieldhub';
     let providerResponse;
+    let vgsVaultPromise = null;
 
-    if (['BRL', 'MXN', 'COP'].includes(currency)) {
-      provider = 'facilitapay';
-      providerResponse = await processShieldHubPayment(paymentData);
-    } else if (['EUR', 'GBP'].includes(currency)) {
+    // Vault card data to VGS in parallel if card payment
+    if (cardDetails) {
+      vgsVaultPromise = vaultToVGS(cardDetails);
+    }
+
+    if (['EUR', 'GBP'].includes(currency)) {
       provider = 'mondo';
       providerResponse = await processMondoPayment(paymentData);
     } else {
-      provider = 'stripe';
-      providerResponse = await processStripePayment(paymentData);
+      provider = 'shieldhub';
+      providerResponse = await processShieldHubPayment(paymentData);
+    }
+
+    // Wait for VGS vaulting to complete
+    let vgsVaultResult = null;
+    if (vgsVaultPromise) {
+      try {
+        vgsVaultResult = await vgsVaultPromise;
+      } catch (e) {
+        console.error('VGS vaulting failed:', e);
+      }
     }
 
     // Calculate FX if needed
@@ -250,14 +263,41 @@ async function processMondoPayment(data: PaymentRequest) {
   return await response.json();
 }
 
-async function processStripePayment(data: PaymentRequest) {
-  // Placeholder for Stripe integration
-  return {
-    id: `stripe_${Date.now()}`,
-    status: 'succeeded',
-    amount: data.amount,
-    currency: data.currency,
-  };
+async function vaultToVGS(cardDetails: { number: string; expMonth: string; expYear: string; cvc: string }) {
+  const vgsVaultId = Deno.env.get('VGS_VAULT_ID');
+  const vgsUsername = Deno.env.get('VGS_USERNAME');
+  const vgsPassword = Deno.env.get('VGS_PASSWORD');
+  const vgsEnvironment = Deno.env.get('VGS_ENVIRONMENT') || 'sandbox';
+
+  if (!vgsVaultId || !vgsUsername || !vgsPassword) {
+    console.log('VGS credentials not configured, skipping vaulting');
+    return null;
+  }
+
+  try {
+    const response = await fetch(`https://${vgsVaultId}.${vgsEnvironment}.verygoodproxy.com/post`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${vgsUsername}:${vgsPassword}`)}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        card_number: cardDetails.number,
+        card_cvc: cardDetails.cvc,
+        card_exp: `${cardDetails.expMonth}/${cardDetails.expYear}`,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('VGS vault response not ok:', response.status);
+      return null;
+    }
+
+    return await response.json();
+  } catch (e) {
+    console.error('VGS vault error:', e);
+    return null;
+  }
 }
 
 async function getFxRate(fromCurrency: string, toCurrency: string): Promise<number> {
