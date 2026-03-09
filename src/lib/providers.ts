@@ -57,6 +57,7 @@ export function getProviderColor(provider: Provider): string {
     case 'mondo': return 'hsl(var(--chart-3))';
     case 'stripe': return 'hsl(var(--chart-1))';
     case 'shieldhub': return 'hsl(var(--chart-2))';
+    case 'moneto': return 'hsl(var(--chart-5))';
     default: return 'hsl(var(--chart-1))';
   }
 }
