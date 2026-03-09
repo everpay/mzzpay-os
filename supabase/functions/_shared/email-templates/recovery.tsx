@@ -30,7 +30,8 @@ export const RecoveryEmail = ({
     <Preview>Reset your Everpay password</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>💳 Everpay</Text>
+        <Img src={LOGO_URL} width="40" height="40" alt="Everpay" style={logoImg} />
+        <Text style={logo}>Everpay</Text>
         <Heading style={h1}>Reset your password</Heading>
         <Text style={text}>
           We received a request to reset your password for your Everpay merchant dashboard. Click
