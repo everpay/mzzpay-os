@@ -156,6 +156,9 @@ function SiteHeader() {
 
         {/* Desktop CTA */}
         <div className="hidden lg:flex items-center gap-3">
+          <Link to="/docs" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 px-4 py-2 transition-colors">
+            Docs
+          </Link>
           <Link to="/auth" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 px-4 py-2 transition-colors">
             Login
           </Link>
