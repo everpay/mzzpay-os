@@ -74,6 +74,29 @@ export default function Checkout() {
 
       if (error) throw error;
 
+      // Send payment receipt email to customer
+      if (customerEmail && data.transaction) {
+        try {
+          await supabase.functions.invoke('send-transactional-email', {
+            body: {
+              type: 'payment_receipt',
+              to: customerEmail,
+              data: {
+                amount: parseFloat(displayAmount),
+                currency,
+                transaction_id: data.transaction.id,
+                description: description || `Payment ${ref}`,
+                date: new Date().toISOString(),
+              },
+            },
+          });
+          console.log('Payment receipt email sent to:', customerEmail);
+        } catch (emailError) {
+          console.error('Failed to send payment receipt email:', emailError);
+          // Don't fail the payment if email fails
+        }
+      }
+
       setPaymentComplete(true);
 
       if (successUrl) {

@@ -153,7 +153,9 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Everpay <notify@everpayinc.com>',
+        from: RESEND_API_KEY.startsWith('re_') && RESEND_API_KEY.length < 50 
+          ? 'Everpay <onboarding@resend.dev>'  // Test sender for testing
+          : 'Everpay <notify@everpayinc.com>',
         to: [to],
         subject,
         html,
