@@ -10,6 +10,7 @@ import Wallets from "./pages/Wallets";
 import Payouts from "./pages/Payouts";
 import NewPayment from "./pages/NewPayment";
 import PaymentLinks from "./pages/PaymentLinks";
+import Checkout from "./pages/Checkout";
 import Activity from "./pages/Activity";
 import Subscriptions from "./pages/Subscriptions";
 import CustomerPortal from "./pages/CustomerPortal";
