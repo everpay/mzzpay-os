@@ -141,7 +141,7 @@ serve(async (req) => {
         customer_email: customerEmail,
         description,
         idempotency_key: idempotencyKey,
-        provider_ref: providerResponse.id?.toString() || providerResponse.transaction_reference,
+        provider_ref: providerResponse.id?.toString() || providerResponse.transaction_id || providerResponse.transaction_reference,
         fx_rate: fxRate,
         settlement_amount: settlementAmount,
         settlement_currency: settlementCurrency,
