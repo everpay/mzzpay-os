@@ -245,7 +245,7 @@ export default function Payouts() {
             <DialogHeader>
               <DialogTitle>Create Payout</DialogTitle>
               <DialogDescription>
-                Withdraw funds from your Moneto wallet to your bank account.
+                Withdraw funds from your MzzPay wallet to your bank account.
               </DialogDescription>
             </DialogHeader>
             
