@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,13 +8,21 @@ import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import everpayIcon from '@/assets/everpay-icon.png';
 
-export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+interface AuthProps {
+  defaultMode?: 'login' | 'signup';
+}
+
+export default function Auth({ defaultMode = 'login' }: AuthProps) {
+  const [isLogin, setIsLogin] = useState(defaultMode === 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setIsLogin(defaultMode === 'login');
+  }, [defaultMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +33,7 @@ export default function Auth() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success('Signed in successfully');
-        navigate('/');
+        navigate('/dashboard');
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -148,13 +156,13 @@ export default function Auth() {
           </form>
 
           <div className="mt-4 text-center">
-            <button
-              onClick={() => setIsLogin(!isLogin)}
+            <Link
+              to={isLogin ? '/signup' : '/login'}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {isLogin ? "Don't have an account? " : 'Already have an account? '}
               <span className="text-primary font-medium">{isLogin ? 'Sign up' : 'Sign in'}</span>
-            </button>
+            </Link>
           </div>
         </div>
       </div>

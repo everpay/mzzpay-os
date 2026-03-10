@@ -384,8 +384,8 @@ const token = session.access_token;
                   </thead>
                   <tbody className="text-gray-600">
                     <tr className="border-b border-gray-100"><td className="px-4 py-2.5 font-mono text-xs">EUR, GBP</td><td className="px-4 py-2.5">Mondo</td><td className="px-4 py-2.5">Card, Apple Pay, Open Banking</td></tr>
-                    <tr className="border-b border-gray-100"><td className="px-4 py-2.5 font-mono text-xs">CAD, USD</td><td className="px-4 py-2.5">ShieldHub</td><td className="px-4 py-2.5">Card, Apple Pay</td></tr>
-                    <tr><td className="px-4 py-2.5 font-mono text-xs">BRL, MXN, COP</td><td className="px-4 py-2.5">ShieldHub</td><td className="px-4 py-2.5">Card, PIX, Boleto</td></tr>
+                    <tr className="border-b border-gray-100"><td className="px-4 py-2.5 font-mono text-xs">CAD, USD</td><td className="px-4 py-2.5">MzzPay USD</td><td className="px-4 py-2.5">Card, Apple Pay</td></tr>
+                    <tr><td className="px-4 py-2.5 font-mono text-xs">BRL, MXN, COP</td><td className="px-4 py-2.5">MzzPay USD</td><td className="px-4 py-2.5">Card, PIX, Boleto</td></tr>
                   </tbody>
                 </table>
               </div>
