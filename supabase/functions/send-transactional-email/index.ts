@@ -28,9 +28,9 @@ const buildEmailHtml = (type: string, data: Record<string, any>): { subject: str
     <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
     <body style="background-color: #ffffff; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0;">
       <div style="max-width: 480px; margin: 0 auto; padding: 32px 28px;">
-        <p style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: bold; color: ${brandColor}; margin: 0 0 24px;">💳 Everpay</p>
+        <p style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: bold; color: ${brandColor}; margin: 0 0 24px;">💳 MZZPay</p>
         ${content}
-        <p style="${footerStyle}">This is an automated message from Everpay. Please do not reply directly to this email.</p>
+        <p style="${footerStyle}">This is an automated message from MZZPay. Please do not reply directly to this email.</p>
       </div>
     </body>
     </html>`;
