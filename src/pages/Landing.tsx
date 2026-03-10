@@ -389,7 +389,7 @@ function FeaturesSection() {
       number: '1',
       tab: 'Global Reach',
       title: 'Accept payments in 135+ currencies worldwide',
-      description: 'With Everpay, your business instantly supports cards, wallets, bank transfers, and local payment methods across every major market. No extra integrations needed.',
+      description: 'With MZZPay, your business instantly supports cards, wallets, bank transfers, and local payment methods across every major market. No extra integrations needed.',
       icon: Globe,
       highlights: ['Visa, Mastercard, Amex, Discover', 'Apple Pay, Google Pay, PayPal', 'PIX, OXXO, Boleto, Alipay'],
     },
