@@ -5,10 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Settings as SettingsIcon, Webhook, Key, Building2, Trash2, Save, Eye, EyeOff, Copy } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Settings as SettingsIcon, Webhook, Key, Building2, Trash2, Save, Eye, EyeOff, Copy,
+  ChevronRight, ArrowLeft, User, Lock, Globe, Phone, Mail, Plus, X,
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+
+type SettingsSection = 'main' | 'business' | 'account' | 'password' | 'webhooks' | 'api-keys' | 'bank-accounts';
 
 interface SavedBankAccount {
   id: string;
@@ -23,235 +30,403 @@ interface SavedBankAccount {
 
 export default function Settings() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const [section, setSection] = useState<SettingsSection>('main');
+
+  // Business details
+  const [businessName, setBusinessName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [websiteUrls, setWebsiteUrls] = useState<string[]>([]);
+  const [newUrl, setNewUrl] = useState('');
+
+  // Account details
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [businessCurrency, setBusinessCurrency] = useState('USD');
+
+  // Password
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Webhook
   const [webhookUrl, setWebhookUrl] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch merchant data
   const { data: merchant } = useQuery({
     queryKey: ['merchant-settings'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (!u) throw new Error('Not authenticated');
       const { data, error } = await supabase
         .from('merchants')
-        .select('id, name, webhook_url, api_key_hash')
-        .eq('user_id', user.id)
+        .select('*')
+        .eq('user_id', u.id)
         .single();
-
       if (error) throw error;
       return data;
     },
   });
 
-  // Fetch saved bank accounts
   const { data: savedBankAccounts = [] } = useQuery({
     queryKey: ['saved-bank-accounts'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data: merchantData } = await supabase
-        .from('merchants')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!merchantData) throw new Error('Merchant not found');
-
-      const { data, error } = await supabase
-        .from('saved_bank_accounts')
-        .select('*')
-        .eq('merchant_id', merchantData.id)
-        .order('created_at', { ascending: false });
-
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (!u) throw new Error('Not authenticated');
+      const { data: m } = await supabase.from('merchants').select('id').eq('user_id', u.id).single();
+      if (!m) throw new Error('Merchant not found');
+      const { data, error } = await supabase.from('saved_bank_accounts').select('*').eq('merchant_id', m.id).order('created_at', { ascending: false });
       if (error) throw error;
       return data as SavedBankAccount[];
     },
   });
 
-  // Update webhook URL
-  const updateWebhook = useMutation({
-    mutationFn: async (url: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+  useEffect(() => {
+    if (merchant) {
+      setBusinessName(merchant.name || '');
+      setContactEmail((merchant as any).contact_email || user?.email || '');
+      setContactName((merchant as any).contact_name || '');
+      setWebhookUrl(merchant.webhook_url || '');
+      setBusinessCurrency((merchant as any).business_currency || 'USD');
+      setPhoneNumber((merchant as any).phone_number || '');
+      setWebsiteUrls((merchant as any).website_urls || []);
+    }
+  }, [merchant, user]);
 
+  const saveBusiness = useMutation({
+    mutationFn: async () => {
       const { error } = await supabase
         .from('merchants')
-        .update({ webhook_url: url })
-        .eq('user_id', user.id);
+        .update({
+          name: businessName,
+          contact_email: contactEmail,
+          contact_name: contactName,
+          website_urls: websiteUrls,
+        } as any)
+        .eq('user_id', user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Business details saved');
+      queryClient.invalidateQueries({ queryKey: ['merchant-settings'] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to save'),
+  });
 
+  const saveAccount = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('merchants')
+        .update({
+          phone_number: phoneNumber,
+          business_currency: businessCurrency,
+        } as any)
+        .eq('user_id', user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Account details saved');
+      queryClient.invalidateQueries({ queryKey: ['merchant-settings'] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to save'),
+  });
+
+  const changePassword = useMutation({
+    mutationFn: async () => {
+      if (newPassword !== confirmPassword) throw new Error('Passwords do not match');
+      if (newPassword.length < 6) throw new Error('Password must be at least 6 characters');
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Password updated');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to update password'),
+  });
+
+  const updateWebhook = useMutation({
+    mutationFn: async (url: string) => {
+      const { error } = await supabase.from('merchants').update({ webhook_url: url }).eq('user_id', user!.id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Webhook URL updated');
       queryClient.invalidateQueries({ queryKey: ['merchant-settings'] });
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to update webhook');
-    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to update webhook'),
   });
 
-  // Delete saved bank account
   const deleteBankAccount = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('saved_bank_accounts')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('saved_bank_accounts').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Bank account removed');
       queryClient.invalidateQueries({ queryKey: ['saved-bank-accounts'] });
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete bank account');
-    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to delete'),
   });
 
-  useEffect(() => {
-    if (merchant?.webhook_url) {
-      setWebhookUrl(merchant.webhook_url);
-    }
-  }, [merchant]);
+  const addUrl = () => {
+    if (!newUrl.trim()) return;
+    setWebsiteUrls([...websiteUrls, newUrl.trim()]);
+    setNewUrl('');
+  };
 
-  const handleSaveWebhook = () => {
-    updateWebhook.mutate(webhookUrl);
+  const removeUrl = (index: number) => {
+    setWebsiteUrls(websiteUrls.filter((_, i) => i !== index));
   };
 
   const generateApiKey = () => {
-    // In production, this would call an edge function to generate a secure API key
-    const newKey = `evp_live_${crypto.randomUUID().replace(/-/g, '')}`;
+    const newKey = `mzz_live_${crypto.randomUUID().replace(/-/g, '')}`;
     navigator.clipboard.writeText(newKey);
     toast.success('New API key generated and copied to clipboard');
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard');
-  };
+  const menuItems: { key: SettingsSection; label: string; icon: React.ElementType }[] = [
+    { key: 'business', label: 'Business Details', icon: Building2 },
+    { key: 'account', label: 'Account Details', icon: User },
+    { key: 'password', label: 'Password', icon: Lock },
+    { key: 'webhooks', label: 'Webhooks', icon: Webhook },
+    { key: 'api-keys', label: 'API Keys', icon: Key },
+    { key: 'bank-accounts', label: 'Bank Accounts', icon: Building2 },
+  ];
+
+  if (section === 'main') {
+    return (
+      <AppLayout>
+        <div className="mb-6">
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Settings</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Edit your business information and adjust your settings.</p>
+        </div>
+        <Card>
+          <CardContent className="p-0">
+            {menuItems.map((item, i) => (
+              <button
+                key={item.key}
+                onClick={() => setSection(item.key)}
+                className={`flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-foreground hover:bg-muted/50 transition-colors ${
+                  i < menuItems.length - 1 ? 'border-b border-border' : ''
+                }`}
+              >
+                <span>{item.label}</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+      </AppLayout>
+    );
+  }
+
+  const currentMenu = menuItems.find((m) => m.key === section);
 
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <SettingsIcon className="h-6 w-6" />
-          Settings
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage your merchant settings and integrations</p>
+        <button onClick={() => setSection('main')} className="flex items-center gap-1 text-sm text-primary hover:underline mb-3">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
       </div>
 
-      <div className="grid gap-6">
-        {/* Webhook Settings */}
+      {section === 'business' && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Webhook className="h-5 w-5" />
-              Webhook Configuration
-            </CardTitle>
-            <CardDescription>
-              Configure your webhook URL to receive payment notifications. Events like payment.completed, payment.failed, and refund.created will be sent to this URL.
-            </CardDescription>
+            <CardTitle>Business Details</CardTitle>
+            <CardDescription>Update your business details to ensure all information remains current.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="space-y-2">
+              <Label>Business Name</Label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="pl-9" placeholder="Your business name" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Contact Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="pl-9" placeholder="contact@business.com" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input value={contactName} onChange={(e) => setContactName(e.target.value)} className="pl-9" placeholder="Your full name" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Website URLs</Label>
+              <div className="space-y-2">
+                {websiteUrls.map((url, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input value={url} readOnly className="pl-9 bg-muted" />
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => removeUrl(i)}>
+                      <X className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={newUrl}
+                      onChange={(e) => setNewUrl(e.target.value)}
+                      className="pl-9"
+                      placeholder="https://example.com"
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addUrl())}
+                    />
+                  </div>
+                  <Button variant="outline" size="icon" onClick={addUrl}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <Button onClick={() => saveBusiness.mutate()} disabled={saveBusiness.isPending}>
+              <Save className="h-4 w-4 mr-2" /> {saveBusiness.isPending ? 'Saving...' : 'Save'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {section === 'account' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Account Details</CardTitle>
+            <CardDescription>Update your account details to ensure all information remains current.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="pl-9" placeholder="+1 (555) 000-0000" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Currency</Label>
+              <Select value={businessCurrency} onValueChange={setBusinessCurrency}>
+                <SelectTrigger>
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD – United States Dollar</SelectItem>
+                  <SelectItem value="CAD">CAD – Canadian Dollar</SelectItem>
+                  <SelectItem value="EUR">EUR – Euro</SelectItem>
+                  <SelectItem value="GBP">GBP – British Pound</SelectItem>
+                  <SelectItem value="BRL">BRL – Brazilian Real</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={() => saveAccount.mutate()} disabled={saveAccount.isPending}>
+              <Save className="h-4 w-4 mr-2" /> {saveAccount.isPending ? 'Saving...' : 'Save'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {section === 'password' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Change Password</CardTitle>
+            <CardDescription>Update your account password.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="space-y-2">
+              <Label>New Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="pl-9" placeholder="New password" minLength={6} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Confirm Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-9" placeholder="Confirm password" minLength={6} />
+              </div>
+            </div>
+            <Button onClick={() => changePassword.mutate()} disabled={changePassword.isPending}>
+              <Save className="h-4 w-4 mr-2" /> {changePassword.isPending ? 'Updating...' : 'Update Password'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {section === 'webhooks' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Webhook className="h-5 w-5" /> Webhook Configuration</CardTitle>
+            <CardDescription>Configure your webhook URL to receive payment notifications.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="webhook-url">Webhook URL</Label>
+              <Label>Webhook URL</Label>
               <div className="flex gap-2">
-                <Input
-                  id="webhook-url"
-                  type="url"
-                  placeholder="https://your-domain.com/api/webhooks/payments"
-                  value={webhookUrl}
-                  onChange={(e) => setWebhookUrl(e.target.value)}
-                  className="flex-1"
-                />
-                <Button onClick={handleSaveWebhook} disabled={updateWebhook.isPending}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {updateWebhook.isPending ? 'Saving...' : 'Save'}
+                <Input type="url" placeholder="https://your-domain.com/api/webhooks" value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} className="flex-1" />
+                <Button onClick={() => updateWebhook.mutate(webhookUrl)} disabled={updateWebhook.isPending}>
+                  <Save className="h-4 w-4 mr-2" /> {updateWebhook.isPending ? 'Saving...' : 'Save'}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                We'll send POST requests with JSON payloads to this URL
-              </p>
             </div>
-
             <div className="rounded-lg border border-border bg-muted/50 p-4">
               <h4 className="font-medium text-sm mb-2">Webhook Events</h4>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">payment_link.completed</Badge>
                 <Badge variant="outline">payment_link.failed</Badge>
                 <Badge variant="outline">payment_link.expired</Badge>
-                <Badge variant="outline">payment_link.refunded</Badge>
                 <Badge variant="outline">moneto.payment.succeeded</Badge>
                 <Badge variant="outline">moneto.payout.completed</Badge>
               </div>
             </div>
           </CardContent>
         </Card>
+      )}
 
-        {/* API Keys */}
+      {section === 'api-keys' && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5" />
-              API Keys
-            </CardTitle>
-            <CardDescription>
-              Manage your API keys for programmatic access to the payment APIs.
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2"><Key className="h-5 w-5" /> API Keys</CardTitle>
+            <CardDescription>Manage your API keys for programmatic access.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Live API Key</Label>
               <div className="flex gap-2">
                 <div className="flex-1 relative">
-                  <Input
-                    type={showApiKey ? 'text' : 'password'}
-                    value={merchant?.api_key_hash ? 'evp_live_••••••••••••••••••••' : 'No API key generated'}
-                    readOnly
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
+                  <Input type={showApiKey ? 'text' : 'password'} value={merchant?.api_key_hash ? 'mzz_live_••••••••••••••••' : 'No API key generated'} readOnly className="pr-10" />
+                  <button type="button" onClick={() => setShowApiKey(!showApiKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <Button variant="outline" onClick={() => copyToClipboard(merchant?.api_key_hash || '')}>
+                <Button variant="outline" onClick={() => { navigator.clipboard.writeText(merchant?.api_key_hash || ''); toast.success('Copied'); }}>
                   <Copy className="h-4 w-4" />
                 </Button>
-                <Button variant="secondary" onClick={generateApiKey}>
-                  Generate New
-                </Button>
+                <Button variant="secondary" onClick={generateApiKey}>Generate New</Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Keep your API key secret. Never share it in client-side code.
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-warning/50 bg-warning/10 p-4">
-              <p className="text-sm text-warning-foreground">
-                <strong>Warning:</strong> Generating a new API key will invalidate your existing key. Make sure to update your integrations.
-              </p>
             </div>
           </CardContent>
         </Card>
+      )}
 
-        {/* Saved Bank Accounts */}
+      {section === 'bank-accounts' && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Saved Bank Accounts
-            </CardTitle>
-            <CardDescription>
-              Manage your saved bank accounts for quick payouts.
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5" /> Saved Bank Accounts</CardTitle>
+            <CardDescription>Manage your saved bank accounts for quick payouts.</CardDescription>
           </CardHeader>
           <CardContent>
             {savedBankAccounts.length === 0 ? (
@@ -263,32 +438,18 @@ export default function Settings() {
             ) : (
               <div className="space-y-3">
                 {savedBankAccounts.map((account) => (
-                  <div
-                    key={account.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors"
-                  >
+                  <div key={account.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="p-2 rounded-lg bg-muted">
-                        <Building2 className="h-5 w-5 text-muted-foreground" />
-                      </div>
+                      <div className="p-2 rounded-lg bg-muted"><Building2 className="h-5 w-5 text-muted-foreground" /></div>
                       <div>
                         <p className="font-medium">
                           {account.nickname || account.account_holder_name}
-                          {account.is_default && (
-                            <Badge variant="secondary" className="ml-2 text-xs">Default</Badge>
-                          )}
+                          {account.is_default && <Badge variant="secondary" className="ml-2 text-xs">Default</Badge>}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          •••• {account.account_last4} • {account.currency} • Inst: {account.institution_number} Transit: {account.transit_number}
-                        </p>
+                        <p className="text-sm text-muted-foreground">•••• {account.account_last4} • {account.currency}</p>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteBankAccount.mutate(account.id)}
-                      disabled={deleteBankAccount.isPending}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => deleteBankAccount.mutate(account.id)} disabled={deleteBankAccount.isPending}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -297,7 +458,7 @@ export default function Settings() {
             )}
           </CardContent>
         </Card>
-      </div>
+      )}
     </AppLayout>
   );
 }
