@@ -16,7 +16,7 @@ export interface LineItem {
 interface InvoiceLineItemsProps {
   items: LineItem[];
   onChange: (items: LineItem[]) => void;
-  currency: string;
+  currency: Currency;
 }
 
 export function InvoiceLineItems({ items, onChange, currency }: InvoiceLineItemsProps) {
