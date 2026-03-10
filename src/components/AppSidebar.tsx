@@ -13,6 +13,7 @@ import {
   User,
   Link2,
   Shield,
+  FileText,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
