@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Currency } from '@/lib/types';
 import { resolveProvider } from '@/lib/providers';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, ArrowRight, Loader2, Globe, MapPin, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { CreditCard, ArrowRight, Loader2, Globe, MapPin, CheckCircle2, XCircle, AlertTriangle, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { VGSCardForm } from '@/components/VGSCardForm';
@@ -172,7 +172,7 @@ export default function NewPayment() {
   };
 
   const providerRegionLabel: Record<string, { label: string; badge: string }> = {
-    mondo: { label: 'EU / UK payments', badge: '🇪🇺 Mondo' },
+    mondo: { label: 'EU / UK payments', badge: '🇪🇺 MzzPay EUR' },
     mzzpay: { label: 'US & Global payments', badge: '🌐 MzzPay USD' },
     facilitapay: { label: 'LATAM payments', badge: '🌎 FacilitaPay' },
     stripe: { label: 'Global fallback', badge: '⚡ Stripe' },
@@ -183,8 +183,26 @@ export default function NewPayment() {
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Create Payment</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Route payment through optimal provider</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Create Payment</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Route payment through optimal provider</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              setAmount(''); setEmail(''); setDescription('');
+              setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
+              setPaymentMethod('card'); setCardEntryMode('standard');
+              setValidationErrors({}); setResponseMessage(null); setVgsToken('');
+            }}
+          >
+            <RotateCcw className="h-4 w-4" />
+            Reset
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

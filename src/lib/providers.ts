@@ -18,7 +18,7 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
   },
   mondo: {
     name: 'mondo',
-    displayName: 'Mondo',
+    displayName: 'MzzPay EUR',
     supportedCurrencies: ['EUR', 'GBP'],
     regions: ['EU', 'UK'],
     methods: ['SEPA', 'Faster Payments', 'SEPA Direct Debit', 'Card'],
