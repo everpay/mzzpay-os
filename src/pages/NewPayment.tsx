@@ -388,8 +388,9 @@ export default function NewPayment() {
             <Label>Customer Email</Label>
             <Input
               type="email" placeholder="customer@example.com" value={email}
-              onChange={(e) => setEmail(e.target.value)} className="bg-background border-border"
+              onChange={(e) => setEmail(e.target.value)} className={`bg-background border-border ${validationErrors.email ? 'border-destructive' : ''}`}
             />
+            {validationErrors.email && <p className="text-xs text-destructive">{validationErrors.email}</p>}
           </div>
 
           <div className="space-y-2">
