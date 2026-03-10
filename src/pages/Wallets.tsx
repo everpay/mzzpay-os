@@ -45,7 +45,7 @@ export default function Wallets() {
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="gap-1.5 px-3 py-1">
             <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-            Moneto Connected
+            MzzPay Connected
           </Badge>
         </div>
       </div>
