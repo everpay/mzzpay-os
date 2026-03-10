@@ -202,7 +202,15 @@ export default function NewPayment() {
                   <TabsTrigger value="vgs">Recurring Payment</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="standard" className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+              <TabsContent value="standard" className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="space-y-2">
+                    <Label>Cardholder Name</Label>
+                    <Input
+                      type="text" placeholder="John Doe" value={holderName}
+                      onChange={(e) => setHolderName(e.target.value)}
+                      className="bg-background border-border"
+                    />
+                  </div>
                   <div className="space-y-2">
                     <Label>Card Number</Label>
                     <Input
