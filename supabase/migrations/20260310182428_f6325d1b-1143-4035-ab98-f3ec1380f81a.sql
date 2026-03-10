@@ -1,0 +1,2 @@
+ALTER TABLE transactions DROP CONSTRAINT transactions_provider_check;
+ALTER TABLE transactions ADD CONSTRAINT transactions_provider_check CHECK (provider = ANY (ARRAY['facilitapay'::text, 'mondo'::text, 'stripe'::text, 'mzzpay'::text, 'moneto'::text]));
