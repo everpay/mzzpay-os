@@ -46,9 +46,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <>
       <div className="flex h-16 items-center justify-between border-b border-border px-6">
         <div className="flex items-center gap-2.5">
-          <img src={everpayIcon} alt="Everpay" className="h-8 w-8 rounded-lg" />
+          <img src={everpayIcon} alt="MZZPay" className="h-8 w-8 rounded-lg" />
           <span className="font-heading text-lg font-bold text-foreground tracking-tight">
-            Everpay
+            MZZPay
           </span>
         </div>
         <ThemeToggle />

@@ -307,7 +307,7 @@ export default function PaymentLinks() {
                     <Link2 className="h-5 w-5 text-primary-foreground" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">Everpay Checkout</p>
+                    <p className="font-medium text-foreground">MZZPay Checkout</p>
                     <p className="text-xs text-muted-foreground">pay.{DOMAIN}</p>
                   </div>
                 </div>
