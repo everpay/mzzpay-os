@@ -10,8 +10,8 @@ const currencyFormats: Record<Currency, { locale: string; code: string }> = {
   CAD: { locale: 'en-CA', code: 'CAD' },
 };
 
-export function formatCurrency(amount: number, currency: Currency): string {
-  const fmt = currencyFormats[currency];
+export function formatCurrency(amount: number, currency: Currency | string): string {
+  const fmt = currencyFormats[currency as Currency] || { locale: 'en-US', code: currency || 'USD' };
   return new Intl.NumberFormat(fmt.locale, {
     style: 'currency',
     currency: fmt.code,
