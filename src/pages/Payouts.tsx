@@ -462,19 +462,18 @@ export default function Payouts() {
         </div>
       )}
 
-      {/* Moneto Payout Info */}
+      {/* MzzPay Payout Info */}
       <div className="mt-8 rounded-xl border border-border bg-card/50 p-6">
         <div className="flex items-start gap-4">
           <div className="p-3 rounded-lg bg-primary/10">
             <Building2 className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-heading font-semibold text-foreground mb-1">Bank Payouts via Moneto</h3>
+            <h3 className="font-heading font-semibold text-foreground mb-1">Bank Payouts via MzzPay</h3>
             <p className="text-sm text-muted-foreground mb-3">
               Fast, secure payouts to bank accounts worldwide. Funds typically arrive within 1-2 business days.
             </p>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">No Payout Fees</Badge>
               <Badge variant="outline">1-2 Day Settlement</Badge>
               <Badge variant="outline">CAD, USD, EUR & GBP</Badge>
             </div>

@@ -269,18 +269,18 @@ export default function PaymentLinks() {
 
                 <TabsContent value="qr" className="mt-4 space-y-4">
                   <div className="flex flex-col items-center gap-4">
-                    <div className="rounded-lg border border-border bg-white p-4">
-                      <img
-                        src={generateQRUrl()}
-                        alt="Payment QR Code"
-                        className="h-[200px] w-[200px]"
+                    <div ref={qrRef} className="rounded-lg border border-border bg-white p-4">
+                      <QRCodeSVG
+                        value={paymentLink}
+                        size={200}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                        level="M"
                       />
                     </div>
-                    <Button asChild variant="outline" className="gap-2">
-                      <a href={generateQRUrl()} download="payment-qr.png">
-                        <QrCode className="h-4 w-4" />
-                        Download QR Code
-                      </a>
+                    <Button variant="outline" className="gap-2" onClick={downloadQR}>
+                      <Download className="h-4 w-4" />
+                      Download QR Code
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground text-center">
