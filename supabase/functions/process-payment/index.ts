@@ -174,9 +174,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error processing payment:', error);
+    const message = error instanceof Error ? error.message 
+      : (typeof error === 'object' && error !== null) ? JSON.stringify(error)
+      : String(error);
+    const status = message === 'Unauthorized' ? 401 : 500;
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: error instanceof Error && error.message === 'Unauthorized' ? 401 : 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: message }),
+      { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
