@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Currency } from '@/lib/types';
-import { Link2, Copy, ExternalLink, Mail, MessageSquare, QrCode, Check, Code, Globe } from 'lucide-react';
+import { Link2, Copy, ExternalLink, Mail, MessageSquare, QrCode, Check, Code, Globe, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { QRCodeSVG } from 'qrcode.react';
 
 const DOMAIN = 'mzzpay.io';
 
