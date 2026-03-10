@@ -247,15 +247,23 @@ async function processMzzPayPayment(data: PaymentRequest) {
   const responseText = await response.text();
   console.log('MzzPay response:', responseText);
 
-  if (!response.ok) {
-    throw new Error(`MzzPay API failed: ${responseText}`);
+  let parsed: any;
+  try {
+    parsed = JSON.parse(responseText);
+  } catch {
+    throw new Error(`MzzPay USD API returned invalid JSON: ${responseText}`);
   }
 
-  try {
-    return JSON.parse(responseText);
-  } catch {
-    throw new Error(`MzzPay API returned invalid JSON: ${responseText}`);
+  if (!response.ok || parsed.status === 'Declined' || parsed.status === 'Failed') {
+    const msg = parsed.error?.message || parsed.message || `HTTP ${response.status}`;
+    return {
+      status: 'FAILED',
+      error: { message: `MzzPay USD: ${msg}` },
+      ...parsed,
+    };
   }
+
+  return parsed;
 }
 
 async function processMondoPayment(data: PaymentRequest) {

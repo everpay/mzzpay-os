@@ -183,8 +183,26 @@ export default function NewPayment() {
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Create Payment</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Route payment through optimal provider</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Create Payment</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Route payment through optimal provider</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              setAmount(''); setEmail(''); setDescription('');
+              setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
+              setPaymentMethod('card'); setCardEntryMode('standard');
+              setValidationErrors({}); setResponseMessage(null); setVgsToken('');
+            }}
+          >
+            <RotateCcw className="h-4 w-4" />
+            Reset
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
