@@ -6,7 +6,7 @@ interface InvoiceData {
   customer_name?: string | null;
   customer_email: string;
   amount: number;
-  currency: string;
+  currency: Currency;
   status: string;
   description?: string | null;
   due_date?: string | null;
