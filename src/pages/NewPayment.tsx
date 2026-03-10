@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { VGSCardForm } from '@/components/VGSCardForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 
 // Detect region from browser locale / timezone
 function detectRegion(): { region: string; label: string; flag: string } {
