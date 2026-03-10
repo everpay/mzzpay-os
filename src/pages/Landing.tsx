@@ -600,7 +600,7 @@ function CTASection() {
           Ready to grow your business?
         </h2>
         <p className="text-lg text-white/60 mb-10 max-w-lg mx-auto leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>
-          Get a free demo and see how Everpay can help you accept payments globally, prevent fraud, and increase revenue.
+          Get a free demo and see how MZZPay can help you accept payments globally, prevent fraud, and increase revenue.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button size="lg" className="bg-[#1aa478] hover:bg-[#158f68] text-white rounded-full px-8 h-12 text-base font-semibold shadow-none min-w-[200px]">
