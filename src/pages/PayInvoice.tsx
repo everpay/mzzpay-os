@@ -298,6 +298,12 @@ export default function PayInvoice() {
           </div>
         )}
 
+        <div className="flex justify-center">
+          <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => generateInvoicePDF(invoice)}>
+            <Download className="h-3 w-3" /> Download Invoice PDF
+          </Button>
+        </div>
+
         <p className="text-center text-xs text-muted-foreground">
           Secured by <span className="font-medium text-foreground">MZZPay</span>
         </p>
