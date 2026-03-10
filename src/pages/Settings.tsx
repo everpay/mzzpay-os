@@ -8,14 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Settings as SettingsIcon, Webhook, Key, Building2, Trash2, Save, Eye, EyeOff, Copy,
-  ChevronRight, ArrowLeft, User, Lock, Globe, Phone, Mail, Plus, X,
+  ChevronRight, ArrowLeft, User, Lock, Globe, Phone, Mail, Plus, X, AlertTriangle,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { useNavigate } from 'react-router-dom';
 
-type SettingsSection = 'main' | 'business' | 'account' | 'password' | 'webhooks' | 'api-keys' | 'bank-accounts';
+type SettingsSection = 'main' | 'business' | 'account' | 'password' | 'webhooks' | 'api-keys' | 'bank-accounts' | 'deactivation';
 
 interface SavedBankAccount {
   id: string;
@@ -30,7 +32,8 @@ interface SavedBankAccount {
 
 export default function Settings() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [section, setSection] = useState<SettingsSection>('main');
 
   // Business details
@@ -45,13 +48,17 @@ export default function Settings() {
   const [businessCurrency, setBusinessCurrency] = useState('USD');
 
   // Password
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Webhook
   const [webhookUrl, setWebhookUrl] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
+
+  // Deactivation
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data: merchant } = useQuery({
     queryKey: ['merchant-settings'],
@@ -140,7 +147,6 @@ export default function Settings() {
     },
     onSuccess: () => {
       toast.success('Password updated');
-      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     },
@@ -171,6 +177,25 @@ export default function Settings() {
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to delete'),
   });
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') return;
+    setIsDeleting(true);
+    try {
+      // Delete profile and merchant data (payment data like transactions stays via RLS)
+      // The edge function handles the actual auth user deletion
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) throw error;
+      toast.success('Your account has been deactivated. Payment records are preserved for compliance.');
+      await signOut();
+      navigate('/login');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete account');
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   const addUrl = () => {
     if (!newUrl.trim()) return;
     setWebsiteUrls([...websiteUrls, newUrl.trim()]);
@@ -187,13 +212,14 @@ export default function Settings() {
     toast.success('New API key generated and copied to clipboard');
   };
 
-  const menuItems: { key: SettingsSection; label: string; icon: React.ElementType }[] = [
+  const menuItems: { key: SettingsSection; label: string; icon: React.ElementType; destructive?: boolean }[] = [
     { key: 'business', label: 'Business Details', icon: Building2 },
     { key: 'account', label: 'Account Details', icon: User },
     { key: 'password', label: 'Password', icon: Lock },
     { key: 'webhooks', label: 'Webhooks', icon: Webhook },
     { key: 'api-keys', label: 'API Keys', icon: Key },
     { key: 'bank-accounts', label: 'Bank Accounts', icon: Building2 },
+    { key: 'deactivation', label: 'Account Deactivation', icon: AlertTriangle, destructive: true },
   ];
 
   if (section === 'main') {
@@ -209,11 +235,14 @@ export default function Settings() {
               <button
                 key={item.key}
                 onClick={() => setSection(item.key)}
-                className={`flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-foreground hover:bg-muted/50 transition-colors ${
-                  i < menuItems.length - 1 ? 'border-b border-border' : ''
-                }`}
+                className={`flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium hover:bg-muted/50 transition-colors ${
+                  item.destructive ? 'text-destructive' : 'text-foreground'
+                } ${i < menuItems.length - 1 ? 'border-b border-border' : ''}`}
               >
-                <span>{item.label}</span>
+                <span className="flex items-center gap-3">
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
             ))}
@@ -222,8 +251,6 @@ export default function Settings() {
       </AppLayout>
     );
   }
-
-  const currentMenu = menuItems.find((m) => m.key === section);
 
   return (
     <AppLayout>
@@ -456,6 +483,68 @@ export default function Settings() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {section === 'deactivation' && (
+        <Card className="border-destructive/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" /> Account Deactivation
+            </CardTitle>
+            <CardDescription>
+              Permanently delete your account. This action cannot be undone.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-3">
+              <h4 className="font-medium text-sm">What happens when you delete your account:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-4">
+                <li>Your login credentials and profile will be permanently removed</li>
+                <li>Your merchant profile and business settings will be deleted</li>
+                <li>You will lose access to the dashboard immediately</li>
+              </ul>
+              <h4 className="font-medium text-sm mt-3">What is preserved for compliance:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-4">
+                <li>Transaction records and payment history</li>
+                <li>Invoice records</li>
+                <li>Dispute and chargeback records</li>
+                <li>Ledger entries</li>
+              </ul>
+            </div>
+
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" className="gap-2">
+                  <Trash2 className="h-4 w-4" /> Delete My Account
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="text-destructive">Confirm Account Deletion</DialogTitle>
+                  <DialogDescription>
+                    This will permanently delete your account. Your payment data will be preserved for regulatory compliance. Type <strong>DELETE</strong> to confirm.
+                  </DialogDescription>
+                </DialogHeader>
+                <Input
+                  placeholder="Type DELETE to confirm"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="mt-2"
+                />
+                <DialogFooter className="mt-4">
+                  <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteAccount}
+                    disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+                  >
+                    {isDeleting ? 'Deleting...' : 'Permanently Delete'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       )}
