@@ -77,8 +77,8 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
       <div className="gradient-glow pointer-events-none fixed inset-0" />
       <div className="relative w-full max-w-md">
         <div className="flex items-center justify-center gap-2.5 mb-8">
-          <img src={everpayIcon} alt="Everpay" className="h-10 w-10 rounded-xl" />
-          <span className="font-heading text-2xl font-bold text-foreground tracking-tight">Everpay</span>
+          <img src={everpayIcon} alt="MZZPay" className="h-10 w-10 rounded-xl" />
+          <span className="font-heading text-2xl font-bold text-foreground tracking-tight">MZZPay</span>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-card">
