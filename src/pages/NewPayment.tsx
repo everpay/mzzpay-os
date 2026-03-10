@@ -113,7 +113,7 @@ export default function NewPayment() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
 
       setAmount(''); setEmail(''); setDescription('');
-      setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc('');
+      setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
     } catch (error) {
       console.error('Payment error:', error);
       toast.error('Payment failed', {
