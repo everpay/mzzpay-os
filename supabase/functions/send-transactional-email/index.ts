@@ -130,10 +130,10 @@ const buildEmailHtml = (type: string, data: Record<string, any>): { subject: str
         : '';
 
       return {
-        subject: `Invoice ${data.invoice_number} from Everpay — ${formatCurrency(data.amount, data.currency)}`,
+        subject: `Invoice ${data.invoice_number} from MZZPay — ${formatCurrency(data.amount, data.currency)}`,
         html: wrapper(`
           <h1 style="${headerStyle}">You've received an invoice</h1>
-          <p style="${textStyle}">${data.customer_name ? `Hi ${data.customer_name},` : 'Hi,'} you have a new invoice from Everpay.</p>
+          <p style="${textStyle}">${data.customer_name ? `Hi ${data.customer_name},` : 'Hi,'} you have a new invoice from MZZPay.</p>
           <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 0 0 24px;">
             <table style="width: 100%; font-family: 'Inter', sans-serif; font-size: 14px;">
               <tr><td style="color: #64748b; padding: 4px 0;">Invoice</td><td style="text-align: right; font-weight: 600; color: #0f172a;">${data.invoice_number}</td></tr>
