@@ -30,9 +30,9 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
     regions: ['US'],
     methods: ['Card', 'ACH'],
   },
-  shieldhub: {
-    name: 'shieldhub',
-    displayName: 'ShieldHub',
+  mzzpay: {
+    name: 'mzzpay',
+    displayName: 'MzzPay USD',
     supportedCurrencies: ['USD', 'BRL', 'MXN', 'COP'],
     regions: ['US', 'GLOBAL'],
     methods: ['Card', 'ACH', 'PIX', 'Boleto'],
@@ -48,7 +48,7 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
 
 export function resolveProvider(currency: Currency, region?: string): Provider {
   if (['EUR', 'GBP'].includes(currency)) return 'mondo';
-  return 'shieldhub';
+  return 'mzzpay';
 }
 
 export function getProviderColor(provider: Provider): string {
@@ -56,7 +56,7 @@ export function getProviderColor(provider: Provider): string {
     case 'facilitapay': return 'hsl(var(--chart-4))';
     case 'mondo': return 'hsl(var(--chart-3))';
     case 'stripe': return 'hsl(var(--chart-1))';
-    case 'shieldhub': return 'hsl(var(--chart-2))';
+    case 'mzzpay': return 'hsl(var(--chart-2))';
     case 'moneto': return 'hsl(var(--chart-5))';
     default: return 'hsl(var(--chart-1))';
   }

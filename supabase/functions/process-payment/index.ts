@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 interface PaymentRequest {
@@ -18,6 +18,20 @@ interface PaymentRequest {
     expMonth: string;
     expYear: string;
     cvc: string;
+    holderName?: string;
+  };
+  customer?: {
+    first?: string;
+    last?: string;
+    phone?: string;
+    ip?: string;
+  };
+  billing?: {
+    address?: string;
+    postal_code?: string;
+    city?: string;
+    state?: string;
+    country?: string;
   };
 }
 
@@ -27,12 +41,10 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Verify authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Missing authorization header');
@@ -45,7 +57,6 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Get merchant
     const { data: merchant, error: merchantError } = await supabase
       .from('merchants')
       .select('id')
@@ -76,12 +87,10 @@ serve(async (req) => {
       }
     }
 
-    // Determine provider and route payment
-    let provider = 'shieldhub';
+    let provider = 'mzzpay';
     let providerResponse;
     let vgsVaultPromise = null;
 
-    // Vault card data to VGS in parallel if card payment
     if (cardDetails) {
       vgsVaultPromise = vaultToVGS(cardDetails);
     }
@@ -90,11 +99,10 @@ serve(async (req) => {
       provider = 'mondo';
       providerResponse = await processMondoPayment(paymentData);
     } else {
-      provider = 'shieldhub';
-      providerResponse = await processShieldHubPayment(paymentData);
+      provider = 'mzzpay';
+      providerResponse = await processMzzPayPayment(paymentData);
     }
 
-    // Wait for VGS vaulting to complete
     let vgsVaultResult = null;
     if (vgsVaultPromise) {
       try {
@@ -115,7 +123,12 @@ serve(async (req) => {
       settlementCurrency = 'USD';
     }
 
-    // Create transaction
+    // Map MzzPay status to our status
+    let txStatus = 'pending';
+    if (providerResponse.status === 'Approved') txStatus = 'completed';
+    else if (providerResponse.status === 'Declined' || providerResponse.status === 'Failed') txStatus = 'failed';
+    else if (providerResponse.status === 'Redirect') txStatus = 'processing';
+
     const { data: transaction, error: txError } = await supabase
       .from('transactions')
       .insert({
@@ -123,11 +136,11 @@ serve(async (req) => {
         amount,
         currency,
         provider,
-        status: providerResponse.status,
+        status: txStatus,
         customer_email: customerEmail,
         description,
         idempotency_key: idempotencyKey,
-        provider_ref: providerResponse.id,
+        provider_ref: providerResponse.id?.toString() || providerResponse.transaction_reference,
         fx_rate: fxRate,
         settlement_amount: settlementAmount,
         settlement_currency: settlementCurrency,
@@ -137,7 +150,6 @@ serve(async (req) => {
 
     if (txError) throw txError;
 
-    // Log provider event
     await supabase.from('provider_events').insert({
       merchant_id: merchant.id,
       transaction_id: transaction.id,
@@ -145,24 +157,6 @@ serve(async (req) => {
       event_type: 'payment.created',
       payload: providerResponse,
     });
-
-    // Enrich with Tapix if card payment
-    if (cardDetails) {
-      try {
-        const tapixData = await enrichWithTapix(cardDetails.number, amount);
-        if (tapixData) {
-          await supabase.from('provider_events').insert({
-            merchant_id: merchant.id,
-            transaction_id: transaction.id,
-            provider: 'tapix',
-            event_type: 'enrichment.completed',
-            payload: tapixData,
-          });
-        }
-      } catch (e) {
-        console.error('Tapix enrichment failed:', e);
-      }
-    }
 
     // Store idempotency response
     if (idempotencyKey) {
@@ -174,7 +168,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, transaction }),
+      JSON.stringify({ success: true, transaction, providerResponse }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
@@ -187,31 +181,76 @@ serve(async (req) => {
   }
 });
 
-async function processShieldHubPayment(data: PaymentRequest) {
-  const clientId = Deno.env.get('SHIELDHUB_CLIENT_ID');
-  const apiSecret = Deno.env.get('SHIELDHUB_API_SECRET');
+async function processMzzPayPayment(data: PaymentRequest) {
+  const clientId = Deno.env.get('SHIELDHUB_CLIENT_ID')!;
+  const apiSecret = Deno.env.get('SHIELDHUB_API_SECRET')!;
 
-  const response = await fetch('https://api.shieldhubpay.com/v1/payments', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${btoa(`${clientId}:${apiSecret}`)}`,
-      'Content-Type': 'application/json',
+  const transactionReference = crypto.randomUUID();
+  const amountStr = data.amount.toString();
+
+  // Hash = SHA256(clientId + amount + transaction_reference + apiSecret)
+  const hashInput = clientId + amountStr + transactionReference + apiSecret;
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(hashInput));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const clientHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+  const body: any = {
+    amount: amountStr,
+    currency: data.currency,
+    transaction_reference: transactionReference,
+    redirectback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
+    notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
+    customer: {
+      first: data.customer?.first || data.customerEmail?.split('@')[0] || 'Customer',
+      last: data.customer?.last || 'N/A',
+      email: data.customerEmail || 'noreply@everpay.io',
+      phone: data.customer?.phone || '0000000000',
+      ip: data.customer?.ip || '0.0.0.0',
     },
-    body: JSON.stringify({
-      amount: data.amount,
-      currency: data.currency,
-      payment_method: data.paymentMethod,
-      customer_email: data.customerEmail,
-      description: data.description,
-    }),
-  });
+    billing: {
+      address: data.billing?.address || '123 Main St',
+      postal_code: data.billing?.postal_code || '10001',
+      city: data.billing?.city || 'New York',
+      state: data.billing?.state || 'NY',
+      country: data.billing?.country || 'US',
+    },
+  };
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`ShieldHub API failed: ${error}`);
+  if (data.cardDetails) {
+    body.card = {
+      holder: data.cardDetails.holderName || `${body.customer.first} ${body.customer.last}`,
+      number: data.cardDetails.number.replace(/\s/g, ''),
+      cvv: data.cardDetails.cvc,
+      expiry_month: data.cardDetails.expMonth.padStart(2, '0'),
+      expiry_year: data.cardDetails.expYear.length === 4 ? data.cardDetails.expYear.slice(-2) : data.cardDetails.expYear,
+    };
   }
 
-  return await response.json();
+  console.log('MzzPay request:', { endpoint: 'https://pgw.shieldhubpay.com/api/transaction', clientId, transactionReference });
+
+  const response = await fetch('https://pgw.shieldhubpay.com/api/transaction', {
+    method: 'POST',
+    headers: {
+      'client-id': clientId,
+      'client-hash': clientHash,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  const responseText = await response.text();
+  console.log('MzzPay response:', responseText);
+
+  if (!response.ok) {
+    throw new Error(`MzzPay API failed: ${responseText}`);
+  }
+
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    throw new Error(`MzzPay API returned invalid JSON: ${responseText}`);
+  }
 }
 
 async function processMondoPayment(data: PaymentRequest) {
@@ -229,14 +268,11 @@ async function processMondoPayment(data: PaymentRequest) {
 
   if (data.paymentMethod === 'card' && data.cardDetails) {
     endpoint = 'https://api.getmondo.co/v1/cards/charge';
-    body = {
-      ...body,
-      card: {
-        number: data.cardDetails.number,
-        exp_month: data.cardDetails.expMonth,
-        exp_year: data.cardDetails.expYear,
-        cvc: data.cardDetails.cvc,
-      },
+    body.card = {
+      number: data.cardDetails.number,
+      exp_month: data.cardDetails.expMonth,
+      exp_year: data.cardDetails.expYear,
+      cvc: data.cardDetails.cvc,
     };
   } else if (data.paymentMethod === 'apple_pay') {
     endpoint = 'https://api.getmondo.co/v1/apple-pay/charge';
@@ -300,37 +336,11 @@ async function vaultToVGS(cardDetails: { number: string; expMonth: string; expYe
   }
 }
 
-async function getFxRate(fromCurrency: string, toCurrency: string): Promise<number> {
-  // Simplified FX rates
+async function getFxRate(fromCurrency: string, _toCurrency: string): Promise<number> {
   const rates: Record<string, number> = {
     'BRL': 0.20,
     'MXN': 0.058,
     'COP': 0.00026,
   };
   return rates[fromCurrency] || 1;
-}
-
-async function enrichWithTapix(cardNumber: string, amount: number) {
-  const tapixToken = Deno.env.get('TAPIX_TOKEN');
-  if (!tapixToken) return null;
-
-  try {
-    const response = await fetch('https://api.tapix.io/v1/enrich', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${tapixToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        card_number: cardNumber,
-        amount: amount || 0,
-      }),
-    });
-
-    if (!response.ok) return null;
-    return await response.json();
-  } catch (e) {
-    console.error('Tapix enrichment error:', e);
-    return null;
-  }
 }

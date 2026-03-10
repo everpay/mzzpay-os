@@ -65,7 +65,7 @@ export default function Transactions() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Providers</SelectItem>
-            <SelectItem value="shieldhub">ShieldHub</SelectItem>
+            <SelectItem value="mzzpay">MzzPay USD</SelectItem>
             <SelectItem value="mondo">Mondo</SelectItem>
             <SelectItem value="facilitapay">FacilitaPay</SelectItem>
             <SelectItem value="stripe">Stripe</SelectItem>
