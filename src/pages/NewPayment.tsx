@@ -495,6 +495,23 @@ export default function NewPayment() {
           </div>
         </div>
       </div>
+
+      <ThreeDSecureModal
+        open={show3DS}
+        onClose={() => setShow3DS(false)}
+        redirectUrl={threeDSUrl}
+        transactionId={threeDSTxId}
+        onComplete={() => {
+          setResponseMessage({
+            type: 'success',
+            title: '3DS Authentication Complete',
+            detail: 'Payment has been verified and is being processed.',
+          });
+          queryClient.invalidateQueries({ queryKey: ['transactions'] });
+          setAmount(''); setEmail(''); setDescription('');
+          setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
+        }}
+      />
     </AppLayout>
   );
 }

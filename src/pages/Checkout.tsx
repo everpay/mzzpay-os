@@ -80,6 +80,20 @@ export default function Checkout() {
 
       if (error) throw error;
 
+      // Handle 3DS redirect
+      if (data?.providerResponse?.transaction_status === 'INITIATED' && data?.providerResponse?.['3d_secure_redirect_url']) {
+        setThreeDSUrl(data.providerResponse['3d_secure_redirect_url']);
+        setThreeDSTxId(data.transaction?.id || '');
+        setShow3DS(true);
+        return;
+      }
+
+      // Handle decline
+      if (data?.providerResponse?.status === 'Failed' || data?.providerResponse?.transaction_status === 'FAILED') {
+        const msg = data.providerResponse?.error?.message || data.providerResponse?.gateway_message || 'Payment declined';
+        toast.error(msg);
+        return;
+      }
       // Send payment receipt email to customer
       if (customerEmail && data.transaction) {
         try {
