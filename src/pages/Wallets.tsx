@@ -40,7 +40,7 @@ export default function Wallets() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Wallets</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Multi-currency balances powered by Moneto</p>
+          <p className="mt-1 text-sm text-muted-foreground">Multi-currency balances powered by MzzPay</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="gap-1.5 px-3 py-1">
