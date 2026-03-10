@@ -314,15 +314,27 @@ async function processMondoPayment(data: PaymentRequest) {
   const responseText = await response.text();
   console.log('Mondo response:', responseText);
 
-  if (!response.ok) {
-    throw new Error(`Mondo API failed (${response.status}): ${responseText}`);
-  }
-
+  let parsed: any;
   try {
-    return JSON.parse(responseText);
+    parsed = JSON.parse(responseText);
   } catch {
     throw new Error(`Mondo API returned invalid JSON: ${responseText}`);
   }
+
+  // Mondo returns 200 even on declines; also handle HTTP errors gracefully
+  if (!response.ok || parsed.transaction_status === 'FAILED') {
+    const msg = parsed.gateway_message || parsed.error || `HTTP ${response.status}`;
+    // Return a structured decline instead of throwing
+    return {
+      status: 'FAILED',
+      transaction_status: 'FAILED',
+      error: { message: `MzzPay EUR: ${msg}` },
+      gateway_message: msg,
+      ...parsed,
+    };
+  }
+
+  return parsed;
 }
 
 async function vaultToVGS(cardDetails: { number: string; expMonth: string; expYear: string; cvc: string }) {
