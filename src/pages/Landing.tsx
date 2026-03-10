@@ -426,7 +426,7 @@ function FeaturesSection() {
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-[40px] font-extrabold text-gray-900 leading-tight mb-4" style={{ fontFamily: 'Manrope, sans-serif' }}>
-            With Everpay, you get more sales,{' '}
+            With MZZPay, you get more sales,{' '}
             <br className="hidden md:block" />
             more reach, more repeat customers
           </h2>
