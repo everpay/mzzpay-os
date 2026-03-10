@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/format';
 import { Currency } from '@/lib/types';
 import { InvoiceLineItems, LineItem } from '@/components/InvoiceLineItems';
+import { generateInvoicePDF } from '@/lib/invoice-pdf';
 
 export default function Invoices() {
   const queryClient = useQueryClient();
