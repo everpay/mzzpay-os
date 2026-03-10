@@ -316,7 +316,7 @@ const token = session.access_token;
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>Create a Payment</h3>
               <p className="text-gray-600 text-sm mb-4">
-                Processes a payment through the optimal provider based on currency. EUR/GBP routes through Mondo, other currencies through ShieldHub. Card data is automatically vaulted to VGS for PCI compliance.
+                Processes a payment through the optimal provider based on currency. EUR/GBP routes through Mondo, other currencies through MzzPay USD. Card data is automatically vaulted to VGS for PCI compliance.
               </p>
 
               <ParamTable params={[
