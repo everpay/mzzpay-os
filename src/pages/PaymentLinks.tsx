@@ -12,7 +12,7 @@ import { Currency } from '@/lib/types';
 import { Link2, Copy, ExternalLink, Mail, MessageSquare, QrCode, Check, Code, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 
-const DOMAIN = 'everpayinc.com';
+const DOMAIN = 'mzzpay.io';
 
 export default function PaymentLinks() {
   const [amount, setAmount] = useState('');

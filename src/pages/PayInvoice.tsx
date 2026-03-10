@@ -298,7 +298,7 @@ export default function PayInvoice() {
         )}
 
         <p className="text-center text-xs text-muted-foreground">
-          Secured by <span className="font-medium text-foreground">Everpay</span>
+          Secured by <span className="font-medium text-foreground">MZZPay</span>
         </p>
       </div>
 
