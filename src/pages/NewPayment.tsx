@@ -66,19 +66,46 @@ export default function NewPayment() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [vgsToken, setVgsToken] = useState('');
   const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [responseMessage, setResponseMessage] = useState<{ type: 'success' | 'error' | 'warning'; title: string; detail: string } | null>(null);
 
   const queryClient = useQueryClient();
   const selectedProvider = resolveProvider(currency);
   const idempotencyKey = `idk_${Date.now()}`;
 
+  const validate = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!amount || parseFloat(amount) <= 0) errors.amount = 'Amount must be greater than 0';
+    if (parseFloat(amount) > 50000) errors.amount = 'Amount cannot exceed 50,000';
+
+    if (paymentMethod === 'card' && cardEntryMode === 'standard') {
+      if (!holderName.trim()) errors.holderName = 'Cardholder name is required';
+      else if (!/^[a-zA-Z\s]+$/.test(holderName.trim())) errors.holderName = 'Name must contain only letters and spaces';
+      if (!cardNumber.replace(/\s/g, '') || cardNumber.replace(/\s/g, '').length < 13) errors.cardNumber = 'Valid card number is required';
+      if (!expMonth || !/^(0[1-9]|1[0-2]|[1-9])$/.test(expMonth)) errors.expMonth = 'Valid month (1-12)';
+      if (!expYear || expYear.length < 2) errors.expYear = 'Valid year required';
+      if (!cvc || cvc.length < 3) errors.cvc = 'Valid CVC required';
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Invalid email format';
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setResponseMessage(null);
+
+    if (!validate()) return;
+
     setIsSubmitting(true);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error('Please sign in to create a payment');
+        setResponseMessage({ type: 'error', title: 'Authentication required', detail: 'Please sign in to create a payment' });
         return;
       }
 
@@ -95,7 +122,7 @@ export default function NewPayment() {
         if (cardEntryMode === 'vgs' && vgsToken) {
           payload.vgsToken = vgsToken;
         } else if (cardNumber) {
-          payload.cardDetails = { number: cardNumber, expMonth, expYear, cvc, holderName: holderName || 'Test User' };
+          payload.cardDetails = { number: cardNumber, expMonth, expYear, cvc, holderName: holderName.trim() };
         }
       }
 
@@ -104,7 +131,6 @@ export default function NewPayment() {
       });
 
       if (error) {
-        // Try to extract detailed error from response
         let detail = 'Edge Function returned a non-2xx status code';
         try {
           const ctx = (error as any).context;
@@ -120,22 +146,25 @@ export default function NewPayment() {
 
       if (data?.providerResponse?.status === 'Failed') {
         const apiError = data.providerResponse?.error?.message || 'Provider declined the transaction';
-        toast.error('Payment declined by provider', { description: apiError });
+        setResponseMessage({ type: 'warning', title: 'Payment declined by provider', detail: apiError });
         return;
       }
 
-      toast.success('Payment created successfully!', {
-        description: `${amount} ${currency} via ${selectedProvider} — ${data.transaction.id.slice(0, 8)}`,
+      setResponseMessage({
+        type: 'success',
+        title: 'Payment created successfully',
+        detail: `${amount} ${currency} via ${selectedProvider} — ID: ${data.transaction.id.slice(0, 8)}`,
       });
 
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-
       setAmount(''); setEmail(''); setDescription('');
       setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error('Payment failed', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      setResponseMessage({
+        type: 'error',
+        title: 'Payment failed',
+        detail: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     } finally {
       setIsSubmitting(false);
