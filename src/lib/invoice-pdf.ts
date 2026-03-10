@@ -1,4 +1,5 @@
 import { formatCurrency } from '@/lib/format';
+import { Currency } from '@/lib/types';
 
 interface InvoiceData {
   invoice_number: string;
