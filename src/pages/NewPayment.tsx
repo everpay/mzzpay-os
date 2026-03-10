@@ -63,6 +63,7 @@ export default function NewPayment() {
   const [expMonth, setExpMonth] = useState('');
   const [expYear, setExpYear] = useState('');
   const [cvc, setCvc] = useState('');
+  const [holderName, setHolderName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [vgsToken, setVgsToken] = useState('');
   const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
@@ -95,7 +96,7 @@ export default function NewPayment() {
         if (cardEntryMode === 'vgs' && vgsToken) {
           payload.vgsToken = vgsToken;
         } else if (cardNumber) {
-          payload.cardDetails = { number: cardNumber, expMonth, expYear, cvc };
+          payload.cardDetails = { number: cardNumber, expMonth, expYear, cvc, holderName: holderName || 'Test User' };
         }
       }
 
@@ -112,7 +113,7 @@ export default function NewPayment() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
 
       setAmount(''); setEmail(''); setDescription('');
-      setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc('');
+      setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
     } catch (error) {
       console.error('Payment error:', error);
       toast.error('Payment failed', {
@@ -201,7 +202,15 @@ export default function NewPayment() {
                   <TabsTrigger value="vgs">Recurring Payment</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="standard" className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+              <TabsContent value="standard" className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="space-y-2">
+                    <Label>Cardholder Name</Label>
+                    <Input
+                      type="text" placeholder="John Doe" value={holderName}
+                      onChange={(e) => setHolderName(e.target.value)}
+                      className="bg-background border-border"
+                    />
+                  </div>
                   <div className="space-y-2">
                     <Label>Card Number</Label>
                     <Input
