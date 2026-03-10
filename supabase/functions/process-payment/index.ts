@@ -128,7 +128,7 @@ serve(async (req) => {
     const ps = (providerResponse.status || providerResponse.transaction_status || '').toUpperCase();
     if (['APPROVED', 'COMPLETED', 'SUCCESS'].includes(ps)) txStatus = 'completed';
     else if (['DECLINED', 'FAILED', 'REJECTED', 'ERROR'].includes(ps)) txStatus = 'failed';
-    else if (['REDIRECT', 'PENDING', '3DS', 'PROCESSING'].includes(ps)) txStatus = 'processing';
+    else if (['REDIRECT', 'PENDING', '3DS', 'PROCESSING', 'INITIATED'].includes(ps)) txStatus = 'processing';
 
     const { data: transaction, error: txError } = await supabase
       .from('transactions')
@@ -141,7 +141,7 @@ serve(async (req) => {
         customer_email: customerEmail,
         description,
         idempotency_key: idempotencyKey,
-        provider_ref: providerResponse.id?.toString() || providerResponse.transaction_reference,
+        provider_ref: providerResponse.id?.toString() || providerResponse.transaction_id || providerResponse.transaction_reference,
         fx_rate: fxRate,
         settlement_amount: settlementAmount,
         settlement_currency: settlementCurrency,
