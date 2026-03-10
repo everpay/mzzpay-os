@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 
-const DOMAIN = 'everpayinc.com';
+const DOMAIN = 'mzzpay.io';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
