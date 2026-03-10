@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Send, Copy, ExternalLink, FileText, Loader2, Download } from 'lucide-react';
+import { Plus, Send, Copy, ExternalLink, FileText, Loader2, Download, Search } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -17,10 +17,15 @@ import { Currency } from '@/lib/types';
 import { InvoiceLineItems, LineItem } from '@/components/InvoiceLineItems';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 
+const STATUS_FILTERS = ['all', 'draft', 'sent', 'paid', 'overdue'] as const;
+type StatusFilter = typeof STATUS_FILTERS[number];
+
 export default function Invoices() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form state
   const [customerEmail, setCustomerEmail] = useState('');
@@ -57,8 +62,23 @@ export default function Invoices() {
     },
   });
 
-  // Auto-calculate amount from line items
-  const itemsTotal = lineItems.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+  // Filtered invoices
+  const filteredInvoices = invoices?.filter((inv: any) => {
+    const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !q ||
+      inv.invoice_number?.toLowerCase().includes(q) ||
+      inv.customer_email?.toLowerCase().includes(q) ||
+      inv.customer_name?.toLowerCase().includes(q) ||
+      inv.description?.toLowerCase().includes(q);
+    return matchesStatus && matchesSearch;
+  });
+
+  const statusCounts = invoices?.reduce((acc: Record<string, number>, inv: any) => {
+    acc[inv.status] = (acc[inv.status] || 0) + 1;
+    acc.all = (acc.all || 0) + 1;
+    return acc;
+  }, { all: 0 } as Record<string, number>) || { all: 0 };
 
   const handleLineItemsChange = (items: LineItem[]) => {
     setLineItems(items);
@@ -119,7 +139,6 @@ export default function Invoices() {
 
   const handleSend = async (invoiceId: string) => {
     try {
-      // Get the invoice data for the email
       const inv = invoices?.find((i: any) => i.id === invoiceId);
       if (!inv) throw new Error('Invoice not found');
 
@@ -130,7 +149,6 @@ export default function Invoices() {
 
       if (error) throw error;
 
-      // Send email notification with payment link
       const paymentUrl = `${window.location.origin}/pay/${invoiceId}`;
       await supabase.functions.invoke('send-transactional-email', {
         body: {
@@ -260,19 +278,54 @@ export default function Invoices() {
         </Dialog>
       </div>
 
+      {/* Filters and Search */}
+      <div className="mb-4 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search invoices by number, email, name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {STATUS_FILTERS.map((status) => (
+            <Button
+              key={status}
+              variant={statusFilter === status ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter(status)}
+              className="gap-1.5 capitalize"
+            >
+              {status}
+              {(statusCounts[status] ?? 0) > 0 && (
+                <Badge variant="secondary" className="h-5 min-w-[20px] px-1 text-[10px]">
+                  {statusCounts[status]}
+                </Badge>
+              )}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-      ) : !invoices?.length ? (
+      ) : !filteredInvoices?.length ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium text-foreground mb-2">No Invoices Yet</p>
-            <p className="text-sm text-muted-foreground">Create your first invoice to get started.</p>
+            <p className="text-lg font-medium text-foreground mb-2">
+              {invoices?.length ? 'No matching invoices' : 'No Invoices Yet'}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {invoices?.length ? 'Try adjusting your filters or search query.' : 'Create your first invoice to get started.'}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
-          {invoices.map((inv: any) => (
+          {filteredInvoices.map((inv: any) => (
             <Card key={inv.id} className="hover:border-primary/20 transition-colors">
               <CardContent className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-4">
