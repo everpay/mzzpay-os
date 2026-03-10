@@ -175,7 +175,7 @@ export default function Checkout() {
             <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
               <CreditCard className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-heading text-lg font-bold text-foreground">Everpay</span>
+            <span className="font-heading text-lg font-bold text-foreground">MZZPay</span>
           </div>
           {displayAmount && (
             <p className="text-4xl font-bold text-foreground">
