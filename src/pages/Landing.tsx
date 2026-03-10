@@ -69,9 +69,9 @@ function SiteHeader() {
     >
       <div className="container mx-auto flex h-[72px] items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src={everpayIcon} alt="Everpay Logo" className="h-8 w-8 rounded-lg" />
+          <img src={everpayIcon} alt="MZZPay Logo" className="h-8 w-8 rounded-lg" />
           <span className="text-[22px] font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>
-            everpay
+            MZZPay
           </span>
         </Link>
 
@@ -265,7 +265,7 @@ function HeroSection() {
             className="text-lg md:text-xl text-white/70 max-w-[580px] mx-auto mb-10 leading-relaxed"
             style={{ fontFamily: 'Inter, sans-serif' }}
           >
-            Everpay gives your business the same payment infrastructure as the biggest brands. One platform for cards, wallets, and local payment methods worldwide.
+            MZZPay gives your business the same payment infrastructure as the biggest brands. One platform for cards, wallets, and local payment methods worldwide.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -389,7 +389,7 @@ function FeaturesSection() {
       number: '1',
       tab: 'Global Reach',
       title: 'Accept payments in 135+ currencies worldwide',
-      description: 'With Everpay, your business instantly supports cards, wallets, bank transfers, and local payment methods across every major market. No extra integrations needed.',
+      description: 'With MZZPay, your business instantly supports cards, wallets, bank transfers, and local payment methods across every major market. No extra integrations needed.',
       icon: Globe,
       highlights: ['Visa, Mastercard, Amex, Discover', 'Apple Pay, Google Pay, PayPal', 'PIX, OXXO, Boleto, Alipay'],
     },
@@ -426,7 +426,7 @@ function FeaturesSection() {
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-[40px] font-extrabold text-gray-900 leading-tight mb-4" style={{ fontFamily: 'Manrope, sans-serif' }}>
-            With Everpay, you get more sales,{' '}
+            With MZZPay, you get more sales,{' '}
             <br className="hidden md:block" />
             more reach, more repeat customers
           </h2>
@@ -505,11 +505,11 @@ function FeaturesSection() {
 // ============= TESTIMONIALS SECTION =============
 function TestimonialsSection() {
   const testimonials = [
-    { quote: "Everpay transformed our payment operations. We've seen a 40% increase in successful transactions since switching.", name: 'Sarah Chen', title: 'CTO, UrbanMarket' },
+    { quote: "MZZPay transformed our payment operations. We've seen a 40% increase in successful transactions since switching.", name: 'Sarah Chen', title: 'CTO, UrbanMarket' },
     { quote: 'The fraud protection alone has saved us over $200K. And the integration was incredibly smooth.', name: 'Marcus Rivera', title: 'Head of Payments, FlowCommerce' },
-    { quote: 'We went from 3 payment providers to just Everpay. Simpler, cheaper, and our conversion rate is up 18%.', name: 'Aisha Patel', title: 'VP Operations, ShopWave' },
+    { quote: 'We went from 3 payment providers to just MZZPay. Simpler, cheaper, and our conversion rate is up 18%.', name: 'Aisha Patel', title: 'VP Operations, ShopWave' },
     { quote: 'Their support team is incredible. Available 24/7 and deeply knowledgeable about global payment regulations.', name: "James O'Brien", title: 'CEO, QuickShip Logistics' },
-    { quote: 'Expanding into Latin America was seamless with Everpay. PIX, Boleto, OXXO - all just worked from day one.', name: 'Lucia Fernandez', title: 'Growth Lead, Tienda Digital' },
+    { quote: 'Expanding into Latin America was seamless with MZZPay. PIX, Boleto, OXXO - all just worked from day one.', name: 'Lucia Fernandez', title: 'Growth Lead, Tienda Digital' },
     { quote: 'The dashboard gives us real-time visibility into every transaction across 12 countries. Game changer.', name: 'David Kim', title: 'CFO, NexGen Retail' },
   ];
 
@@ -518,10 +518,10 @@ function TestimonialsSection() {
       <div className="container mx-auto px-6">
         <div className="text-center mb-14">
           <h2 className="text-3xl md:text-[40px] font-extrabold text-gray-900 leading-tight mb-4" style={{ fontFamily: 'Manrope, sans-serif' }}>
-            See why businesses trust Everpay
+            See why businesses trust MZZPay
           </h2>
           <p className="text-gray-500 text-lg max-w-xl mx-auto" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Over 500 businesses have switched to Everpay for faster, more reliable payment processing.
+            Over 500 businesses have switched to MZZPay for faster, more reliable payment processing.
           </p>
         </div>
 
@@ -600,7 +600,7 @@ function CTASection() {
           Ready to grow your business?
         </h2>
         <p className="text-lg text-white/60 mb-10 max-w-lg mx-auto leading-relaxed" style={{ fontFamily: 'Inter, sans-serif' }}>
-          Get a free demo and see how Everpay can help you accept payments globally, prevent fraud, and increase revenue.
+          Get a free demo and see how MZZPay can help you accept payments globally, prevent fraud, and increase revenue.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button size="lg" className="bg-[#1aa478] hover:bg-[#158f68] text-white rounded-full px-8 h-12 text-base font-semibold shadow-none min-w-[200px]">
@@ -684,7 +684,7 @@ function SiteFooter() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-gray-200">
-          <p className="text-sm text-gray-500 text-center mb-6">© {new Date().getFullYear()} Everpay Corporation. All rights reserved.</p>
+          <p className="text-sm text-gray-500 text-center mb-6">© {new Date().getFullYear()} MZZPay Corporation. All rights reserved.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-10">
             {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Security & Trust', 'System Status'].map((item) => (
               <span key={item} className="text-sm text-gray-500 hover:text-[#1aa478] transition-colors cursor-pointer text-center">{item}</span>
@@ -692,10 +692,10 @@ function SiteFooter() {
           </div>
           <div className="pt-6">
             <p className="text-xs text-gray-500 leading-relaxed">
-              Everpay Aspect is a financial technology company, not a bank. Banking services are provided by licensed Banking As A Service providers, partner institutions and are FDIC-insured up to applicable limits. The Everpay Card is issued by Everpay card-issuing technology providers pursuant to licenses from Visa U.S.A. Inc. and Mastercard International.
+              MZZPay is a financial technology company, not a bank. Banking services are provided by licensed Banking As A Service providers, partner institutions and are FDIC-insured up to applicable limits.
             </p>
             <p className="text-xs text-gray-500 leading-relaxed mt-2">
-              Everpay is PCI DSS Level 1 certified, the highest level of security certification in the payments industry.
+              MZZPay is PCI DSS Level 1 certified, the highest level of security certification in the payments industry.
             </p>
           </div>
         </div>

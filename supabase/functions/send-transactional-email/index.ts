@@ -28,9 +28,9 @@ const buildEmailHtml = (type: string, data: Record<string, any>): { subject: str
     <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
     <body style="background-color: #ffffff; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0;">
       <div style="max-width: 480px; margin: 0 auto; padding: 32px 28px;">
-        <p style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: bold; color: ${brandColor}; margin: 0 0 24px;">💳 Everpay</p>
+        <p style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: bold; color: ${brandColor}; margin: 0 0 24px;">💳 MZZPay</p>
         ${content}
-        <p style="${footerStyle}">This is an automated message from Everpay. Please do not reply directly to this email.</p>
+        <p style="${footerStyle}">This is an automated message from MZZPay. Please do not reply directly to this email.</p>
       </div>
     </body>
     </html>`;
@@ -130,10 +130,10 @@ const buildEmailHtml = (type: string, data: Record<string, any>): { subject: str
         : '';
 
       return {
-        subject: `Invoice ${data.invoice_number} from Everpay — ${formatCurrency(data.amount, data.currency)}`,
+        subject: `Invoice ${data.invoice_number} from MZZPay — ${formatCurrency(data.amount, data.currency)}`,
         html: wrapper(`
           <h1 style="${headerStyle}">You've received an invoice</h1>
-          <p style="${textStyle}">${data.customer_name ? `Hi ${data.customer_name},` : 'Hi,'} you have a new invoice from Everpay.</p>
+          <p style="${textStyle}">${data.customer_name ? `Hi ${data.customer_name},` : 'Hi,'} you have a new invoice from MZZPay.</p>
           <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 0 0 24px;">
             <table style="width: 100%; font-family: 'Inter', sans-serif; font-size: 14px;">
               <tr><td style="color: #64748b; padding: 4px 0;">Invoice</td><td style="text-align: right; font-weight: 600; color: #0f172a;">${data.invoice_number}</td></tr>
@@ -156,7 +156,7 @@ const buildEmailHtml = (type: string, data: Record<string, any>): { subject: str
     }
 
     default:
-      return { subject: 'Notification from Everpay', html: wrapper(`<p style="${textStyle}">${JSON.stringify(data)}</p>`) };
+      return { subject: 'Notification from MZZPay', html: wrapper(`<p style="${textStyle}">${JSON.stringify(data)}</p>`) };
   }
 };
 
@@ -190,8 +190,8 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: RESEND_API_KEY.startsWith('re_') && RESEND_API_KEY.length < 50 
-          ? 'Everpay <onboarding@resend.dev>'  // Test sender for testing
-          : 'Everpay <notify@everpayinc.com>',
+          ? 'MZZPay <onboarding@resend.dev>'
+          : 'MZZPay <notify@mzzpay.io>',
         to: [to],
         subject,
         html,

@@ -8,13 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Send, Copy, ExternalLink, FileText, Loader2 } from 'lucide-react';
+import { Plus, Send, Copy, ExternalLink, FileText, Loader2, Download } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/format';
 import { Currency } from '@/lib/types';
 import { InvoiceLineItems, LineItem } from '@/components/InvoiceLineItems';
+import { generateInvoicePDF } from '@/lib/invoice-pdf';
 
 export default function Invoices() {
   const queryClient = useQueryClient();
@@ -290,6 +291,9 @@ export default function Invoices() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" className="gap-1" onClick={() => generateInvoicePDF(inv)}>
+                    <Download className="h-3 w-3" /> PDF
+                  </Button>
                   {inv.status === 'draft' && (
                     <Button variant="outline" size="sm" className="gap-1" onClick={() => handleSend(inv.id)}>
                       <Send className="h-3 w-3" /> Send

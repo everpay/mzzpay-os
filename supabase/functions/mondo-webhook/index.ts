@@ -104,7 +104,7 @@ serve(async (req) => {
     if (req.method === 'GET' && status) {
       const redirectBase = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.supabase.co') || '';
       // Redirect to the frontend
-      const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://everpayinc.com';
+      const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://mzzpay.io';
       const redirectTo = `${frontendUrl}/checkout?status=${status === 'completed' ? 'success' : 'failed'}`;
       return new Response(null, {
         status: 302,

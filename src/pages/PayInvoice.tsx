@@ -5,11 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText } from 'lucide-react';
+import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { formatCurrency } from '@/lib/format';
+import { generateInvoicePDF } from '@/lib/invoice-pdf';
 
 export default function PayInvoice() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
@@ -177,7 +178,7 @@ export default function PayInvoice() {
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <CreditCard className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-heading text-lg font-bold text-foreground">Everpay</span>
+            <span className="font-heading text-lg font-bold text-foreground">MZZPay</span>
           </div>
           <Badge variant="outline" className="mb-2">{invoice.invoice_number}</Badge>
           <p className="text-4xl font-bold text-foreground">
@@ -297,8 +298,14 @@ export default function PayInvoice() {
           </div>
         )}
 
+        <div className="flex justify-center">
+          <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => generateInvoicePDF(invoice)}>
+            <Download className="h-3 w-3" /> Download Invoice PDF
+          </Button>
+        </div>
+
         <p className="text-center text-xs text-muted-foreground">
-          Secured by <span className="font-medium text-foreground">Everpay</span>
+          Secured by <span className="font-medium text-foreground">MZZPay</span>
         </p>
       </div>
 

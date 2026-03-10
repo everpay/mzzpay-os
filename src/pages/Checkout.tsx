@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 
-const DOMAIN = 'everpayinc.com';
+const DOMAIN = 'mzzpay.io';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
@@ -175,7 +175,7 @@ export default function Checkout() {
             <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
               <CreditCard className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-heading text-lg font-bold text-foreground">Everpay</span>
+            <span className="font-heading text-lg font-bold text-foreground">MZZPay</span>
           </div>
           {displayAmount && (
             <p className="text-4xl font-bold text-foreground">
@@ -295,7 +295,7 @@ export default function Checkout() {
         {/* Footer */}
         <div className="text-center space-y-1">
           <p className="text-xs text-muted-foreground">
-            Secured by <span className="font-medium text-foreground">Everpay</span> · {DOMAIN}
+            Secured by <span className="font-medium text-foreground">MZZPay</span> · {DOMAIN}
           </p>
           {ref && (
             <p className="text-[10px] font-mono text-muted-foreground">Ref: {ref}</p>
