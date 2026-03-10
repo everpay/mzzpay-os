@@ -265,7 +265,7 @@ function HeroSection() {
             className="text-lg md:text-xl text-white/70 max-w-[580px] mx-auto mb-10 leading-relaxed"
             style={{ fontFamily: 'Inter, sans-serif' }}
           >
-            Everpay gives your business the same payment infrastructure as the biggest brands. One platform for cards, wallets, and local payment methods worldwide.
+            MZZPay gives your business the same payment infrastructure as the biggest brands. One platform for cards, wallets, and local payment methods worldwide.
           </motion.p>
 
           {/* CTA Buttons */}
