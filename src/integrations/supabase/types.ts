@@ -422,6 +422,42 @@ export type Database = {
           },
         ]
       }
+      platform_markup: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          markup_flat: number
+          markup_flat_currency: string
+          markup_percent: number
+          rail: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          markup_flat?: number
+          markup_flat_currency?: string
+          markup_percent?: number
+          rail: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          markup_flat?: number
+          markup_flat_currency?: string
+          markup_percent?: number
+          rail?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -496,6 +532,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      provider_fees: {
+        Row: {
+          created_at: string
+          description: string | null
+          fee_type: string
+          flat_fee: number | null
+          flat_fee_currency: string | null
+          id: string
+          is_active: boolean
+          provider: string
+          rail: string | null
+          rate_percent: number | null
+          region: string
+          updated_at: string
+          volume_tier: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fee_type: string
+          flat_fee?: number | null
+          flat_fee_currency?: string | null
+          id?: string
+          is_active?: boolean
+          provider: string
+          rail?: string | null
+          rate_percent?: number | null
+          region?: string
+          updated_at?: string
+          volume_tier?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fee_type?: string
+          flat_fee?: number | null
+          flat_fee_currency?: string | null
+          id?: string
+          is_active?: boolean
+          provider?: string
+          rail?: string | null
+          rate_percent?: number | null
+          region?: string
+          updated_at?: string
+          volume_tier?: string | null
+        }
+        Relationships: []
       }
       saved_bank_accounts: {
         Row: {
@@ -723,15 +807,46 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "super_admin" | "admin" | "reseller"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -858,6 +973,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["super_admin", "admin", "reseller"],
+    },
   },
 } as const
