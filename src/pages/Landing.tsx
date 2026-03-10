@@ -518,10 +518,10 @@ function TestimonialsSection() {
       <div className="container mx-auto px-6">
         <div className="text-center mb-14">
           <h2 className="text-3xl md:text-[40px] font-extrabold text-gray-900 leading-tight mb-4" style={{ fontFamily: 'Manrope, sans-serif' }}>
-            See why businesses trust Everpay
+            See why businesses trust MZZPay
           </h2>
           <p className="text-gray-500 text-lg max-w-xl mx-auto" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Over 500 businesses have switched to Everpay for faster, more reliable payment processing.
+            Over 500 businesses have switched to MZZPay for faster, more reliable payment processing.
           </p>
         </div>
 
