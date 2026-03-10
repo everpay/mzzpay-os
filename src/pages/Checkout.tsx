@@ -307,6 +307,22 @@ export default function Checkout() {
           )}
         </div>
       </div>
+
+      <ThreeDSecureModal
+        open={show3DS}
+        onClose={() => setShow3DS(false)}
+        redirectUrl={threeDSUrl}
+        transactionId={threeDSTxId}
+        onComplete={() => {
+          setPaymentComplete(true);
+          if (successUrl) {
+            const redirectUrl = new URL(successUrl);
+            redirectUrl.searchParams.set('TRANSACTION_ID', threeDSTxId);
+            redirectUrl.searchParams.set('PARTNER_SESSION_ID', ref);
+            setTimeout(() => { window.location.href = redirectUrl.toString(); }, 2000);
+          }
+        }}
+      />
     </div>
   );
 }

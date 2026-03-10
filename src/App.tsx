@@ -56,9 +56,11 @@ const AppRoutes = () => (
     <Route path="/payments/new" element={<ProtectedRoute><NewPayment /></ProtectedRoute>} />
     <Route path="/payment-links" element={<ProtectedRoute><PaymentLinks /></ProtectedRoute>} />
     <Route path="/checkout" element={<Checkout />} />
+    <Route path="/pay/:invoiceId" element={<PayInvoice />} />
     <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
     <Route path="/portal" element={<ProtectedRoute><CustomerPortal /></ProtectedRoute>} />
     <Route path="/chargebacks" element={<ProtectedRoute><Chargebacks /></ProtectedRoute>} />
+    <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
