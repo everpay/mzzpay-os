@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { formatCurrency } from '@/lib/format';
+import { generateInvoicePDF } from '@/lib/invoice-pdf';
 
 export default function PayInvoice() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
