@@ -69,9 +69,9 @@ function SiteHeader() {
     >
       <div className="container mx-auto flex h-[72px] items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src={everpayIcon} alt="Everpay Logo" className="h-8 w-8 rounded-lg" />
+          <img src={everpayIcon} alt="MZZPay Logo" className="h-8 w-8 rounded-lg" />
           <span className="text-[22px] font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>
-            everpay
+            MZZPay
           </span>
         </Link>
 
