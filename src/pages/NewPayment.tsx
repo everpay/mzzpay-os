@@ -70,6 +70,11 @@ export default function NewPayment() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [responseMessage, setResponseMessage] = useState<{ type: 'success' | 'error' | 'warning'; title: string; detail: string } | null>(null);
 
+  // 3DS state
+  const [show3DS, setShow3DS] = useState(false);
+  const [threeDSUrl, setThreeDSUrl] = useState('');
+  const [threeDSTxId, setThreeDSTxId] = useState('');
+
   const queryClient = useQueryClient();
   const selectedProvider = resolveProvider(currency);
   const idempotencyKey = `idk_${Date.now()}`;
