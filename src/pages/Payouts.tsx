@@ -232,7 +232,7 @@ export default function Payouts() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Payouts</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Withdraw funds to your bank accounts via Moneto</p>
+          <p className="mt-1 text-sm text-muted-foreground">Withdraw funds to your bank accounts</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
