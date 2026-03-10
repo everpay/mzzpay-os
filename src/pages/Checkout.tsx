@@ -38,6 +38,11 @@ export default function Checkout() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
 
+  // 3DS state
+  const [show3DS, setShow3DS] = useState(false);
+  const [threeDSUrl, setThreeDSUrl] = useState('');
+  const [threeDSTxId, setThreeDSTxId] = useState('');
+
   const displayAmount = amount || customAmount;
 
   const formatCardNumber = (value: string) => {
