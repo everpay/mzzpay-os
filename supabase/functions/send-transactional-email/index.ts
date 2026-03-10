@@ -156,7 +156,7 @@ const buildEmailHtml = (type: string, data: Record<string, any>): { subject: str
     }
 
     default:
-      return { subject: 'Notification from Everpay', html: wrapper(`<p style="${textStyle}">${JSON.stringify(data)}</p>`) };
+      return { subject: 'Notification from MZZPay', html: wrapper(`<p style="${textStyle}">${JSON.stringify(data)}</p>`) };
   }
 };
 
