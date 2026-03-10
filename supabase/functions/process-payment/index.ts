@@ -276,24 +276,34 @@ async function processMondoPayment(data: PaymentRequest) {
 
   const endpoint = 'https://server-to-server.getmondo.co/payment/';
 
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+
   const body: any = {
     company_account_id: accountId,
     gateway_secret_key: gatewaySecret,
+    live_or_sandbox: 'sandbox',
     transaction_amount: data.amount.toString(),
     transaction_currency_iso3: data.currency,
     cardholder_email_address: data.customerEmail || 'noreply@everpay.io',
     order_description: data.description || 'Payment',
-    url_redirect: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
-    url_callback: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
+    partner_return_url_completed: `${supabaseUrl}/functions/v1/payment-link-webhook?status=completed`,
+    partner_return_url_rejected: `${supabaseUrl}/functions/v1/payment-link-webhook?status=rejected`,
+    partner_return_url_canceled: `${supabaseUrl}/functions/v1/payment-link-webhook?status=canceled`,
   };
 
   if (data.paymentMethod === 'card' && data.cardDetails) {
     body.payment_method = 'CARD';
     body.card_number = data.cardDetails.number.replace(/\s/g, '');
-    body.card_exp_month = data.cardDetails.expMonth.padStart(2, '0');
-    body.card_exp_year = data.cardDetails.expYear.length === 4 ? data.cardDetails.expYear : `20${data.cardDetails.expYear}`;
-    body.card_cvv2 = data.cardDetails.cvc;
-    body.cardholder_name = data.cardDetails.holderName || 'Test User';
+    body.card_expiration_month = data.cardDetails.expMonth.padStart(2, '0');
+    body.card_expiration_year = data.cardDetails.expYear.length === 4 ? data.cardDetails.expYear : `20${data.cardDetails.expYear}`;
+    body.card_security_code = data.cardDetails.cvc;
+    body.cardholder_full_name = data.cardDetails.holderName || `${data.customer?.first || 'Test'} ${data.customer?.last || 'User'}`;
+    body.cardholder_telephone_country_iso3 = data.billing?.country || 'USA';
+    body.cardholder_telephone_number = data.customer?.phone || '0000000000';
+    body.cardholder_birth_year = '1990';
+    body.cardholder_birth_month = '01';
+    body.cardholder_birth_day = '01';
+    body.cardholder_citizenship_country_iso3 = data.billing?.country || 'USA';
   } else if (data.paymentMethod === 'apple_pay') {
     body.payment_method = 'APPLEPAY';
   } else if (data.paymentMethod === 'open_banking') {
@@ -303,10 +313,10 @@ async function processMondoPayment(data: PaymentRequest) {
   }
 
   if (data.billing) {
-    body.billing_address = data.billing.address || '';
-    body.billing_postal_code = data.billing.postal_code || '';
-    body.billing_city = data.billing.city || '';
-    body.billing_country_iso2 = data.billing.country || '';
+    body.billing_address = data.billing.address || '123 Main St';
+    body.billing_postal_code = data.billing.postal_code || '10001';
+    body.billing_city = data.billing.city || 'New York';
+    body.billing_country_iso2 = data.billing.country || 'US';
   }
 
   console.log('Mondo request:', { endpoint, accountId, payment_method: body.payment_method, currency: body.transaction_currency_iso3 });
