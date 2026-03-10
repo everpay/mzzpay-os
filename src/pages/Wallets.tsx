@@ -118,7 +118,7 @@ export default function Wallets() {
                   </div>
                 </div>
                 <Badge variant="secondary" className="text-xs">
-                  Moneto
+                  MzzPay
                 </Badge>
               </div>
 
