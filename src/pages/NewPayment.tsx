@@ -96,7 +96,7 @@ export default function NewPayment() {
         if (cardEntryMode === 'vgs' && vgsToken) {
           payload.vgsToken = vgsToken;
         } else if (cardNumber) {
-          payload.cardDetails = { number: cardNumber, expMonth, expYear, cvc };
+          payload.cardDetails = { number: cardNumber, expMonth, expYear, cvc, holderName: holderName || 'Test User' };
         }
       }
 
