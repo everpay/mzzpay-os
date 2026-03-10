@@ -273,29 +273,34 @@ export default function NewPayment() {
                     <Input
                       type="text" placeholder="John Doe" value={holderName}
                       onChange={(e) => setHolderName(e.target.value)}
-                      className="bg-background border-border"
+                      className={`bg-background border-border ${validationErrors.holderName ? 'border-destructive' : ''}`}
                     />
+                    {validationErrors.holderName && <p className="text-xs text-destructive">{validationErrors.holderName}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label>Card Number</Label>
                     <Input
                       type="text" placeholder="4242 4242 4242 4242" value={cardNumber}
                       onChange={(e) => setCardNumber(e.target.value)}
-                      className="bg-background border-border font-mono" maxLength={19}
+                      className={`bg-background border-border font-mono ${validationErrors.cardNumber ? 'border-destructive' : ''}`} maxLength={19}
                     />
+                    {validationErrors.cardNumber && <p className="text-xs text-destructive">{validationErrors.cardNumber}</p>}
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-2">
                       <Label>Exp Month</Label>
-                      <Input type="text" placeholder="12" value={expMonth} onChange={(e) => setExpMonth(e.target.value)} className="bg-background border-border" maxLength={2} />
+                      <Input type="text" placeholder="12" value={expMonth} onChange={(e) => setExpMonth(e.target.value)} className={`bg-background border-border ${validationErrors.expMonth ? 'border-destructive' : ''}`} maxLength={2} />
+                      {validationErrors.expMonth && <p className="text-xs text-destructive">{validationErrors.expMonth}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label>Exp Year</Label>
-                      <Input type="text" placeholder="2025" value={expYear} onChange={(e) => setExpYear(e.target.value)} className="bg-background border-border" maxLength={4} />
+                      <Input type="text" placeholder="2025" value={expYear} onChange={(e) => setExpYear(e.target.value)} className={`bg-background border-border ${validationErrors.expYear ? 'border-destructive' : ''}`} maxLength={4} />
+                      {validationErrors.expYear && <p className="text-xs text-destructive">{validationErrors.expYear}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label>CVC</Label>
-                      <Input type="text" placeholder="123" value={cvc} onChange={(e) => setCvc(e.target.value)} className="bg-background border-border" maxLength={4} />
+                      <Input type="text" placeholder="123" value={cvc} onChange={(e) => setCvc(e.target.value)} className={`bg-background border-border ${validationErrors.cvc ? 'border-destructive' : ''}`} maxLength={4} />
+                      {validationErrors.cvc && <p className="text-xs text-destructive">{validationErrors.cvc}</p>}
                     </div>
                   </div>
                 </TabsContent>
