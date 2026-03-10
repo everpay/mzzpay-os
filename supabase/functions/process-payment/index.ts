@@ -123,11 +123,12 @@ serve(async (req) => {
       settlementCurrency = 'USD';
     }
 
-    // Map MzzPay status to our status
+    // Map provider status to our status
     let txStatus = 'pending';
-    if (providerResponse.status === 'Approved') txStatus = 'completed';
-    else if (providerResponse.status === 'Declined' || providerResponse.status === 'Failed') txStatus = 'failed';
-    else if (providerResponse.status === 'Redirect') txStatus = 'processing';
+    const ps = (providerResponse.status || providerResponse.transaction_status || '').toUpperCase();
+    if (['APPROVED', 'COMPLETED', 'SUCCESS'].includes(ps)) txStatus = 'completed';
+    else if (['DECLINED', 'FAILED', 'REJECTED', 'ERROR'].includes(ps)) txStatus = 'failed';
+    else if (['REDIRECT', 'PENDING', '3DS', 'PROCESSING'].includes(ps)) txStatus = 'processing';
 
     const { data: transaction, error: txError } = await supabase
       .from('transactions')
@@ -261,46 +262,67 @@ async function processMondoPayment(data: PaymentRequest) {
   const gatewaySecret = Deno.env.get('MONDO_GATEWAY_SECRET_KEY');
   const accountId = Deno.env.get('MONDO_ACCOUNT_ID');
 
-  let endpoint = 'https://api.getmondo.co/v1/payments';
-  let body: any = {
-    amount: data.amount,
-    currency: data.currency,
-    account_id: accountId,
-    customer_email: data.customerEmail,
-    description: data.description,
+  if (!gatewaySecret || !accountId) {
+    throw new Error('Mondo credentials not configured (MONDO_GATEWAY_SECRET_KEY, MONDO_ACCOUNT_ID)');
+  }
+
+  const endpoint = 'https://server-to-server.getmondo.co/payment/';
+
+  const body: any = {
+    company_account_id: accountId,
+    gateway_secret_key: gatewaySecret,
+    transaction_amount: data.amount.toString(),
+    transaction_currency_iso3: data.currency,
+    cardholder_email_address: data.customerEmail || 'noreply@everpay.io',
+    order_description: data.description || 'Payment',
+    url_redirect: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
+    url_callback: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
   };
 
   if (data.paymentMethod === 'card' && data.cardDetails) {
-    endpoint = 'https://api.getmondo.co/v1/cards/charge';
-    body.card = {
-      number: data.cardDetails.number,
-      exp_month: data.cardDetails.expMonth,
-      exp_year: data.cardDetails.expYear,
-      cvc: data.cardDetails.cvc,
-    };
+    body.payment_method = 'CARD';
+    body.card_number = data.cardDetails.number.replace(/\s/g, '');
+    body.card_exp_month = data.cardDetails.expMonth.padStart(2, '0');
+    body.card_exp_year = data.cardDetails.expYear.length === 4 ? data.cardDetails.expYear : `20${data.cardDetails.expYear}`;
+    body.card_cvv2 = data.cardDetails.cvc;
+    body.cardholder_name = data.cardDetails.holderName || 'Test User';
   } else if (data.paymentMethod === 'apple_pay') {
-    endpoint = 'https://api.getmondo.co/v1/apple-pay/charge';
+    body.payment_method = 'APPLEPAY';
   } else if (data.paymentMethod === 'open_banking') {
+    body.payment_method = 'OPENBANKING';
     const openbankingKey = Deno.env.get('MONDO_OPENBANKING_API_KEY');
-    endpoint = 'https://api.getmondo.co/v1/open-banking/payments';
-    body.openbanking_key = openbankingKey;
+    if (openbankingKey) body.openbanking_key = openbankingKey;
   }
+
+  if (data.billing) {
+    body.billing_address = data.billing.address || '';
+    body.billing_postal_code = data.billing.postal_code || '';
+    body.billing_city = data.billing.city || '';
+    body.billing_country_iso2 = data.billing.country || '';
+  }
+
+  console.log('Mondo request:', { endpoint, accountId, payment_method: body.payment_method, currency: body.transaction_currency_iso3 });
 
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${gatewaySecret}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
   });
 
+  const responseText = await response.text();
+  console.log('Mondo response:', responseText);
+
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Mondo API failed: ${error}`);
+    throw new Error(`Mondo API failed (${response.status}): ${responseText}`);
   }
 
-  return await response.json();
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    throw new Error(`Mondo API returned invalid JSON: ${responseText}`);
+  }
 }
 
 async function vaultToVGS(cardDetails: { number: string; expMonth: string; expYear: string; cvc: string }) {
