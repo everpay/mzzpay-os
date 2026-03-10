@@ -123,11 +123,12 @@ serve(async (req) => {
       settlementCurrency = 'USD';
     }
 
-    // Map MzzPay status to our status
+    // Map provider status to our status
     let txStatus = 'pending';
-    if (providerResponse.status === 'Approved') txStatus = 'completed';
-    else if (providerResponse.status === 'Declined' || providerResponse.status === 'Failed') txStatus = 'failed';
-    else if (providerResponse.status === 'Redirect') txStatus = 'processing';
+    const ps = (providerResponse.status || providerResponse.transaction_status || '').toUpperCase();
+    if (['APPROVED', 'COMPLETED', 'SUCCESS'].includes(ps)) txStatus = 'completed';
+    else if (['DECLINED', 'FAILED', 'REJECTED', 'ERROR'].includes(ps)) txStatus = 'failed';
+    else if (['REDIRECT', 'PENDING', '3DS', 'PROCESSING'].includes(ps)) txStatus = 'processing';
 
     const { data: transaction, error: txError } = await supabase
       .from('transactions')
