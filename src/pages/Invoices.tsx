@@ -291,6 +291,9 @@ export default function Invoices() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" className="gap-1" onClick={() => generateInvoicePDF(inv)}>
+                    <Download className="h-3 w-3" /> PDF
+                  </Button>
                   {inv.status === 'draft' && (
                     <Button variant="outline" size="sm" className="gap-1" onClick={() => handleSend(inv.id)}>
                       <Send className="h-3 w-3" /> Send
