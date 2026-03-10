@@ -21,6 +21,8 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Landing from "./pages/Landing";
 import Docs from "./pages/Docs";
+import Invoices from "./pages/Invoices";
+import PayInvoice from "./pages/PayInvoice";
 
 const queryClient = new QueryClient();
 
