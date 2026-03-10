@@ -189,15 +189,33 @@ export default function NewPayment() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-5 rounded-xl border border-border bg-card p-6 shadow-card">
+          {/* Response Banner */}
+          {responseMessage && (
+            <div className={`flex items-start gap-3 rounded-lg border p-4 ${
+              responseMessage.type === 'success' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' :
+              responseMessage.type === 'warning' ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400' :
+              'border-destructive/30 bg-destructive/10 text-destructive'
+            }`}>
+              {responseMessage.type === 'success' ? <CheckCircle2 className="h-5 w-5 mt-0.5 shrink-0" /> :
+               responseMessage.type === 'warning' ? <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0" /> :
+               <XCircle className="h-5 w-5 mt-0.5 shrink-0" />}
+              <div>
+                <p className="font-medium text-sm">{responseMessage.title}</p>
+                <p className="text-xs mt-0.5 opacity-90">{responseMessage.detail}</p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Amount</Label>
               <Input
                 type="number" placeholder="0.00" value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="bg-background border-border font-mono text-lg"
+                className={`bg-background border-border font-mono text-lg ${validationErrors.amount ? 'border-destructive' : ''}`}
                 required min="0.01" step="0.01"
               />
+              {validationErrors.amount && <p className="text-xs text-destructive">{validationErrors.amount}</p>}
             </div>
             <div className="space-y-2">
               <Label>Currency</Label>
