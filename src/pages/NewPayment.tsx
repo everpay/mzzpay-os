@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,8 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Currency } from '@/lib/types';
 import { resolveProvider } from '@/lib/providers';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, ArrowRight, Loader2, Globe, MapPin } from 'lucide-react';
-import { toast } from 'sonner';
+import { CreditCard, ArrowRight, Loader2, Globe, MapPin, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { VGSCardForm } from '@/components/VGSCardForm';
