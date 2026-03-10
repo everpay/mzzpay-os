@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Currency } from '@/lib/types';
-import { Link2, Copy, ExternalLink, Mail, MessageSquare, QrCode, Check, Code, Globe } from 'lucide-react';
+import { Link2, Copy, ExternalLink, Mail, MessageSquare, QrCode, Check, Code, Globe, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { QRCodeSVG } from 'qrcode.react';
 
 const DOMAIN = 'mzzpay.io';
 
@@ -61,9 +62,26 @@ export default function PaymentLinks() {
 ></iframe>`;
   };
 
-  const generateQRUrl = () => {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentLink)}`;
-  };
+  const qrRef = useRef<HTMLDivElement>(null);
+
+  const downloadQR = useCallback(() => {
+    const svg = qrRef.current?.querySelector('svg');
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      ctx?.drawImage(img, 0, 0, 400, 400);
+      const a = document.createElement('a');
+      a.download = 'payment-qr.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+  }, []);
 
   return (
     <AppLayout>
@@ -251,18 +269,18 @@ export default function PaymentLinks() {
 
                 <TabsContent value="qr" className="mt-4 space-y-4">
                   <div className="flex flex-col items-center gap-4">
-                    <div className="rounded-lg border border-border bg-white p-4">
-                      <img
-                        src={generateQRUrl()}
-                        alt="Payment QR Code"
-                        className="h-[200px] w-[200px]"
+                    <div ref={qrRef} className="rounded-lg border border-border bg-white p-4">
+                      <QRCodeSVG
+                        value={paymentLink}
+                        size={200}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                        level="M"
                       />
                     </div>
-                    <Button asChild variant="outline" className="gap-2">
-                      <a href={generateQRUrl()} download="payment-qr.png">
-                        <QrCode className="h-4 w-4" />
-                        Download QR Code
-                      </a>
+                    <Button variant="outline" className="gap-2" onClick={downloadQR}>
+                      <Download className="h-4 w-4" />
+                      Download QR Code
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground text-center">

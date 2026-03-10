@@ -40,12 +40,12 @@ export default function Wallets() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Wallets</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Multi-currency balances powered by Moneto</p>
+          <p className="mt-1 text-sm text-muted-foreground">Multi-currency balances powered by MzzPay</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="gap-1.5 px-3 py-1">
             <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-            Moneto Connected
+            MzzPay Connected
           </Badge>
         </div>
       </div>
@@ -118,7 +118,7 @@ export default function Wallets() {
                   </div>
                 </div>
                 <Badge variant="secondary" className="text-xs">
-                  Moneto
+                  MzzPay
                 </Badge>
               </div>
 
@@ -186,19 +186,19 @@ export default function Wallets() {
         </div>
       )}
 
-      {/* Moneto Info */}
+      {/* MzzPay Info */}
       <div className="mt-8 rounded-xl border border-border bg-card/50 p-6">
         <div className="flex items-start gap-4">
           <div className="p-3 rounded-lg bg-primary/10">
-            <img src="https://moneto.ca/favicon.ico" alt="Moneto" className="h-6 w-6" />
+            <Wallet className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-heading font-semibold text-foreground mb-1">Powered by Moneto Wallet</h3>
+            <h3 className="font-heading font-semibold text-foreground mb-1">Powered by MzzPay Wallet</h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Secure multi-currency wallets with instant settlements and low-cost payouts to Canadian and US banks.
+              Secure multi-currency wallets with instant settlements and low-cost payouts worldwide.
             </p>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">CAD Supported</Badge>
+              <Badge variant="outline">Multi-Currency</Badge>
               <Badge variant="outline">Instant Transfers</Badge>
               <Badge variant="outline">PCI DSS Compliant</Badge>
             </div>

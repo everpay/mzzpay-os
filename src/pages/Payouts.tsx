@@ -232,7 +232,7 @@ export default function Payouts() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Payouts</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Withdraw funds to your bank accounts via Moneto</p>
+          <p className="mt-1 text-sm text-muted-foreground">Withdraw funds to your bank accounts</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
@@ -245,7 +245,7 @@ export default function Payouts() {
             <DialogHeader>
               <DialogTitle>Create Payout</DialogTitle>
               <DialogDescription>
-                Withdraw funds from your Moneto wallet to your bank account.
+                Withdraw funds from your MzzPay wallet to your bank account.
               </DialogDescription>
             </DialogHeader>
             
@@ -370,21 +370,29 @@ export default function Payouts() {
                 )}
               </div>
 
-              {/* Summary */}
+              {/* Summary with fees */}
               {amount && parseFloat(amount) > 0 && (
-                <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Payout Amount</span>
-                    <span className="font-medium">{formatCurrency(parseFloat(amount), currency as any)}</span>
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+                  <p className="text-sm font-medium text-primary mb-2">Delivers in 1-2 business days</p>
+                  <div className="rounded-lg bg-card p-3 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Payout Amount</span>
+                      <span className="font-medium">{formatCurrency(parseFloat(amount), currency as any)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Flat fee</span>
+                      <span className="font-medium">—</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Fee discount</span>
+                      <span className="text-success font-medium">—</span>
+                    </div>
+                    <div className="border-t border-border pt-2 flex items-center justify-between">
+                      <span className="font-semibold">Total</span>
+                      <span className="font-heading font-bold text-lg underline">{formatCurrency(parseFloat(amount), currency as any)}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Processing Fee</span>
-                    <span className="text-success">$0.00</span>
-                  </div>
-                  <div className="border-t border-border pt-2 flex items-center justify-between">
-                    <span className="font-medium">You'll receive</span>
-                    <span className="font-heading font-bold text-lg">{formatCurrency(parseFloat(amount), currency as any)}</span>
-                  </div>
+                  <p className="text-[11px] text-muted-foreground italic">Fees will be loaded from your plan configuration.</p>
                 </div>
               )}
 
@@ -454,19 +462,18 @@ export default function Payouts() {
         </div>
       )}
 
-      {/* Moneto Payout Info */}
+      {/* MzzPay Payout Info */}
       <div className="mt-8 rounded-xl border border-border bg-card/50 p-6">
         <div className="flex items-start gap-4">
           <div className="p-3 rounded-lg bg-primary/10">
             <Building2 className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-heading font-semibold text-foreground mb-1">Bank Payouts via Moneto</h3>
+            <h3 className="font-heading font-semibold text-foreground mb-1">Bank Payouts via MzzPay</h3>
             <p className="text-sm text-muted-foreground mb-3">
               Fast, secure payouts to bank accounts worldwide. Funds typically arrive within 1-2 business days.
             </p>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">No Payout Fees</Badge>
               <Badge variant="outline">1-2 Day Settlement</Badge>
               <Badge variant="outline">CAD, USD, EUR & GBP</Badge>
             </div>
