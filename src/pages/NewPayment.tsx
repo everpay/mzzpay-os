@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { VGSCardForm } from '@/components/VGSCardForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 
 // Detect region from browser locale / timezone
 function detectRegion(): { region: string; label: string; flag: string } {
@@ -68,6 +69,11 @@ export default function NewPayment() {
   const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [responseMessage, setResponseMessage] = useState<{ type: 'success' | 'error' | 'warning'; title: string; detail: string } | null>(null);
+
+  // 3DS state
+  const [show3DS, setShow3DS] = useState(false);
+  const [threeDSUrl, setThreeDSUrl] = useState('');
+  const [threeDSTxId, setThreeDSTxId] = useState('');
 
   const queryClient = useQueryClient();
   const selectedProvider = resolveProvider(currency);
@@ -152,14 +158,15 @@ export default function NewPayment() {
 
       // Handle 3DS redirect (Mondo INITIATED status)
       if (data?.providerResponse?.transaction_status === 'INITIATED' && data?.providerResponse?.['3d_secure_redirect_url']) {
+        setThreeDSUrl(data.providerResponse['3d_secure_redirect_url']);
+        setThreeDSTxId(data.transaction.id);
+        setShow3DS(true);
         setResponseMessage({
           type: 'success',
           title: 'Payment initiated — 3D Secure required',
-          detail: `${amount} ${currency} via ${selectedProvider} — TX: ${data.transaction.id.slice(0, 8)}. 3DS redirect available.`,
+          detail: `${amount} ${currency} via ${selectedProvider} — TX: ${data.transaction.id.slice(0, 8)}. Complete 3DS authentication.`,
         });
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        setAmount(''); setEmail(''); setDescription('');
-        setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
         return;
       }
 
@@ -488,6 +495,23 @@ export default function NewPayment() {
           </div>
         </div>
       </div>
+
+      <ThreeDSecureModal
+        open={show3DS}
+        onClose={() => setShow3DS(false)}
+        redirectUrl={threeDSUrl}
+        transactionId={threeDSTxId}
+        onComplete={() => {
+          setResponseMessage({
+            type: 'success',
+            title: '3DS Authentication Complete',
+            detail: 'Payment has been verified and is being processed.',
+          });
+          queryClient.invalidateQueries({ queryKey: ['transactions'] });
+          setAmount(''); setEmail(''); setDescription('');
+          setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
+        }}
+      />
     </AppLayout>
   );
 }

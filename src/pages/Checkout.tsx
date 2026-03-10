@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 
 const DOMAIN = 'everpayinc.com';
 
@@ -36,6 +37,11 @@ export default function Checkout() {
   const [cvc, setCvc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
+
+  // 3DS state
+  const [show3DS, setShow3DS] = useState(false);
+  const [threeDSUrl, setThreeDSUrl] = useState('');
+  const [threeDSTxId, setThreeDSTxId] = useState('');
 
   const displayAmount = amount || customAmount;
 
@@ -74,6 +80,20 @@ export default function Checkout() {
 
       if (error) throw error;
 
+      // Handle 3DS redirect
+      if (data?.providerResponse?.transaction_status === 'INITIATED' && data?.providerResponse?.['3d_secure_redirect_url']) {
+        setThreeDSUrl(data.providerResponse['3d_secure_redirect_url']);
+        setThreeDSTxId(data.transaction?.id || '');
+        setShow3DS(true);
+        return;
+      }
+
+      // Handle decline
+      if (data?.providerResponse?.status === 'Failed' || data?.providerResponse?.transaction_status === 'FAILED') {
+        const msg = data.providerResponse?.error?.message || data.providerResponse?.gateway_message || 'Payment declined';
+        toast.error(msg);
+        return;
+      }
       // Send payment receipt email to customer
       if (customerEmail && data.transaction) {
         try {
@@ -287,6 +307,22 @@ export default function Checkout() {
           )}
         </div>
       </div>
+
+      <ThreeDSecureModal
+        open={show3DS}
+        onClose={() => setShow3DS(false)}
+        redirectUrl={threeDSUrl}
+        transactionId={threeDSTxId}
+        onComplete={() => {
+          setPaymentComplete(true);
+          if (successUrl) {
+            const redirectUrl = new URL(successUrl);
+            redirectUrl.searchParams.set('TRANSACTION_ID', threeDSTxId);
+            redirectUrl.searchParams.set('PARTNER_SESSION_ID', ref);
+            setTimeout(() => { window.location.href = redirectUrl.toString(); }, 2000);
+          }
+        }}
+      />
     </div>
   );
 }

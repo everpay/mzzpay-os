@@ -286,9 +286,9 @@ async function processMondoPayment(data: PaymentRequest) {
     transaction_currency_iso3: data.currency,
     cardholder_email_address: data.customerEmail || 'noreply@everpay.io',
     order_description: data.description || 'Payment',
-    partner_return_url_completed: `${supabaseUrl}/functions/v1/payment-link-webhook?status=completed`,
-    partner_return_url_rejected: `${supabaseUrl}/functions/v1/payment-link-webhook?status=rejected`,
-    partner_return_url_canceled: `${supabaseUrl}/functions/v1/payment-link-webhook?status=canceled`,
+    partner_return_url_completed: `${supabaseUrl}/functions/v1/mondo-webhook?status=completed`,
+    partner_return_url_rejected: `${supabaseUrl}/functions/v1/mondo-webhook?status=rejected`,
+    partner_return_url_canceled: `${supabaseUrl}/functions/v1/mondo-webhook?status=canceled`,
   };
 
   if (data.paymentMethod === 'card' && data.cardDetails) {
