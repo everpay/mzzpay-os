@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface EmailPayload {
-  type: 'payment_receipt' | 'payout_confirmation' | 'subscription_invoice' | 'payment_failed' | 'refund_confirmation';
+  type: 'payment_receipt' | 'payout_confirmation' | 'subscription_invoice' | 'payment_failed' | 'refund_confirmation' | 'invoice_sent';
   to: string;
   data: Record<string, any>;
 }
@@ -118,6 +118,42 @@ const buildEmailHtml = (type: string, data: Record<string, any>): { subject: str
           </div>
         `),
       };
+
+    case 'invoice_sent': {
+      const lineItemsHtml = Array.isArray(data.items) && data.items.length > 0
+        ? data.items.map((item: any) => `
+          <tr>
+            <td style="color: #0f172a; padding: 6px 0; border-bottom: 1px solid #e2e8f0;">${item.description || 'Item'}</td>
+            <td style="text-align: center; color: #64748b; padding: 6px 0; border-bottom: 1px solid #e2e8f0;">${item.quantity || 1}</td>
+            <td style="text-align: right; color: #0f172a; padding: 6px 0; border-bottom: 1px solid #e2e8f0;">${formatCurrency((item.quantity || 1) * (item.unit_price || 0), data.currency)}</td>
+          </tr>`).join('')
+        : '';
+
+      return {
+        subject: `Invoice ${data.invoice_number} from Everpay — ${formatCurrency(data.amount, data.currency)}`,
+        html: wrapper(`
+          <h1 style="${headerStyle}">You've received an invoice</h1>
+          <p style="${textStyle}">${data.customer_name ? `Hi ${data.customer_name},` : 'Hi,'} you have a new invoice from Everpay.</p>
+          <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 0 0 24px;">
+            <table style="width: 100%; font-family: 'Inter', sans-serif; font-size: 14px;">
+              <tr><td style="color: #64748b; padding: 4px 0;">Invoice</td><td style="text-align: right; font-weight: 600; color: #0f172a;">${data.invoice_number}</td></tr>
+              <tr><td style="color: #64748b; padding: 4px 0;">Amount Due</td><td style="text-align: right; font-weight: 600; color: #0f172a;">${formatCurrency(data.amount, data.currency)}</td></tr>
+              ${data.due_date ? `<tr><td style="color: #64748b; padding: 4px 0;">Due Date</td><td style="text-align: right; color: #0f172a;">${new Date(data.due_date).toLocaleDateString()}</td></tr>` : ''}
+              ${data.description ? `<tr><td style="color: #64748b; padding: 4px 0;">Description</td><td style="text-align: right; color: #0f172a;">${data.description}</td></tr>` : ''}
+            </table>
+            ${lineItemsHtml ? `
+              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0;">
+              <table style="width: 100%; font-family: 'Inter', sans-serif; font-size: 13px;">
+                <tr><th style="text-align: left; color: #64748b; padding: 4px 0; font-weight: 500;">Item</th><th style="text-align: center; color: #64748b; padding: 4px 0; font-weight: 500;">Qty</th><th style="text-align: right; color: #64748b; padding: 4px 0; font-weight: 500;">Total</th></tr>
+                ${lineItemsHtml}
+              </table>
+            ` : ''}
+          </div>
+          <a href="${data.payment_url}" style="${buttonStyle}">Pay Invoice →</a>
+          <p style="${textStyle}; margin-top: 20px;">If the button doesn't work, copy this link: <span style="font-size: 12px; word-break: break-all;">${data.payment_url}</span></p>
+        `),
+      };
+    }
 
     default:
       return { subject: 'Notification from Everpay', html: wrapper(`<p style="${textStyle}">${JSON.stringify(data)}</p>`) };

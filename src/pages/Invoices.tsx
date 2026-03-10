@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Send, Copy, ExternalLink, FileText, Loader2 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/format';
 import { Currency } from '@/lib/types';
+import { InvoiceLineItems, LineItem } from '@/components/InvoiceLineItems';
 
 export default function Invoices() {
   const queryClient = useQueryClient();
@@ -28,6 +29,7 @@ export default function Invoices() {
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [lineItems, setLineItems] = useState<LineItem[]>([]);
 
   const { data: invoices, isLoading } = useQuery({
     queryKey: ['invoices'],
@@ -53,6 +55,17 @@ export default function Invoices() {
       return data;
     },
   });
+
+  // Auto-calculate amount from line items
+  const itemsTotal = lineItems.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+
+  const handleLineItemsChange = (items: LineItem[]) => {
+    setLineItems(items);
+    if (items.length > 0) {
+      const total = items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+      setAmount(total.toFixed(2));
+    }
+  };
 
   const handleCreate = async () => {
     if (!amount || !customerEmail) {
@@ -86,6 +99,7 @@ export default function Invoices() {
         notes,
         invoice_number: invoiceNumber,
         status: 'draft',
+        items: lineItems.length > 0 ? lineItems as any : null,
       });
 
       if (error) throw error;
@@ -104,6 +118,10 @@ export default function Invoices() {
 
   const handleSend = async (invoiceId: string) => {
     try {
+      // Get the invoice data for the email
+      const inv = invoices?.find((i: any) => i.id === invoiceId);
+      if (!inv) throw new Error('Invoice not found');
+
       const { error } = await supabase
         .from('invoices')
         .update({ status: 'sent' })
@@ -111,16 +129,34 @@ export default function Invoices() {
 
       if (error) throw error;
 
-      toast.success('Invoice sent');
+      // Send email notification with payment link
+      const paymentUrl = `${window.location.origin}/pay/${invoiceId}`;
+      await supabase.functions.invoke('send-transactional-email', {
+        body: {
+          type: 'invoice_sent',
+          to: inv.customer_email,
+          data: {
+            invoice_number: inv.invoice_number,
+            amount: inv.amount,
+            currency: inv.currency,
+            customer_name: inv.customer_name,
+            description: inv.description,
+            due_date: inv.due_date,
+            payment_url: paymentUrl,
+            items: inv.items,
+          },
+        },
+      });
+
+      toast.success('Invoice sent with payment link emailed to customer');
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error('Failed to send invoice');
     }
   };
 
-  const getPaymentUrl = (invoiceId: string) => {
-    return `${window.location.origin}/pay/${invoiceId}`;
-  };
+  const getPaymentUrl = (invoiceId: string) => `${window.location.origin}/pay/${invoiceId}`;
 
   const copyPaymentLink = (invoiceId: string) => {
     navigator.clipboard.writeText(getPaymentUrl(invoiceId));
@@ -135,6 +171,7 @@ export default function Invoices() {
     setDescription('');
     setDueDate('');
     setNotes('');
+    setLineItems([]);
   };
 
   const statusColor = (status: string) => {
@@ -158,7 +195,7 @@ export default function Invoices() {
           <DialogTrigger asChild>
             <Button className="gap-2"><Plus className="h-4 w-4" /> Create Invoice</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>New Invoice</DialogTitle>
             </DialogHeader>
@@ -173,10 +210,19 @@ export default function Invoices() {
                   <Input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="john@example.com" required />
                 </div>
               </div>
+
+              <InvoiceLineItems items={lineItems} onChange={handleLineItemsChange} currency={currency} />
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label className="text-xs">Amount *</Label>
-                  <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" min="0.01" step="0.01" required />
+                  <Label className="text-xs">Total Amount *</Label>
+                  <Input
+                    type="number" value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00" min="0.01" step="0.01" required
+                    className={lineItems.length > 0 ? 'bg-muted' : ''}
+                    readOnly={lineItems.length > 0}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Currency</Label>
@@ -239,6 +285,7 @@ export default function Invoices() {
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {inv.customer_name || inv.customer_email} · {formatCurrency(inv.amount, inv.currency)}
+                      {Array.isArray(inv.items) && inv.items.length > 0 && ` · ${inv.items.length} item${inv.items.length > 1 ? 's' : ''}`}
                     </p>
                   </div>
                 </div>
