@@ -144,9 +144,22 @@ export default function NewPayment() {
         throw new Error(detail);
       }
 
-      if (data?.providerResponse?.status === 'Failed') {
-        const apiError = data.providerResponse?.error?.message || 'Provider declined the transaction';
+      if (data?.providerResponse?.status === 'Failed' || data?.providerResponse?.transaction_status === 'FAILED') {
+        const apiError = data.providerResponse?.error?.message || data.providerResponse?.gateway_message || 'Provider declined the transaction';
         setResponseMessage({ type: 'warning', title: 'Payment declined by provider', detail: apiError });
+        return;
+      }
+
+      // Handle 3DS redirect (Mondo INITIATED status)
+      if (data?.providerResponse?.transaction_status === 'INITIATED' && data?.providerResponse?.['3d_secure_redirect_url']) {
+        setResponseMessage({
+          type: 'success',
+          title: 'Payment initiated — 3D Secure required',
+          detail: `${amount} ${currency} via ${selectedProvider} — TX: ${data.transaction.id.slice(0, 8)}. 3DS redirect available.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        setAmount(''); setEmail(''); setDescription('');
+        setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
         return;
       }
 
