@@ -370,21 +370,29 @@ export default function Payouts() {
                 )}
               </div>
 
-              {/* Summary */}
+              {/* Summary with fees */}
               {amount && parseFloat(amount) > 0 && (
-                <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Payout Amount</span>
-                    <span className="font-medium">{formatCurrency(parseFloat(amount), currency as any)}</span>
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+                  <p className="text-sm font-medium text-primary mb-2">Delivers in 1-2 business days</p>
+                  <div className="rounded-lg bg-card p-3 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Payout Amount</span>
+                      <span className="font-medium">{formatCurrency(parseFloat(amount), currency as any)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Flat fee</span>
+                      <span className="font-medium">—</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Fee discount</span>
+                      <span className="text-success font-medium">—</span>
+                    </div>
+                    <div className="border-t border-border pt-2 flex items-center justify-between">
+                      <span className="font-semibold">Total</span>
+                      <span className="font-heading font-bold text-lg underline">{formatCurrency(parseFloat(amount), currency as any)}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Processing Fee</span>
-                    <span className="text-success">$0.00</span>
-                  </div>
-                  <div className="border-t border-border pt-2 flex items-center justify-between">
-                    <span className="font-medium">You'll receive</span>
-                    <span className="font-heading font-bold text-lg">{formatCurrency(parseFloat(amount), currency as any)}</span>
-                  </div>
+                  <p className="text-[11px] text-muted-foreground italic">Fees will be loaded from your plan configuration.</p>
                 </div>
               )}
 
