@@ -186,6 +186,16 @@ export default function PayInvoice() {
           {invoice.description && (
             <p className="text-sm text-muted-foreground">{invoice.description}</p>
           )}
+          {Array.isArray(invoice.items) && invoice.items.length > 0 && (
+            <div className="w-full max-w-xs mx-auto text-left space-y-1 rounded-lg border border-border bg-muted/30 p-3">
+              {invoice.items.map((item: any, i: number) => (
+                <div key={i} className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">{item.description || 'Item'} × {item.quantity || 1}</span>
+                  <span className="text-foreground font-medium">{formatCurrency((item.quantity || 1) * (item.unit_price || 0), invoice.currency)}</span>
+                </div>
+              ))}
+            </div>
+          )}
           {invoice.due_date && (
             <p className="text-xs text-muted-foreground">
               Due by {new Date(invoice.due_date).toLocaleDateString()}
