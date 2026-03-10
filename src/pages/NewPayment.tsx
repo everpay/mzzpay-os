@@ -158,14 +158,15 @@ export default function NewPayment() {
 
       // Handle 3DS redirect (Mondo INITIATED status)
       if (data?.providerResponse?.transaction_status === 'INITIATED' && data?.providerResponse?.['3d_secure_redirect_url']) {
+        setThreeDSUrl(data.providerResponse['3d_secure_redirect_url']);
+        setThreeDSTxId(data.transaction.id);
+        setShow3DS(true);
         setResponseMessage({
           type: 'success',
           title: 'Payment initiated — 3D Secure required',
-          detail: `${amount} ${currency} via ${selectedProvider} — TX: ${data.transaction.id.slice(0, 8)}. 3DS redirect available.`,
+          detail: `${amount} ${currency} via ${selectedProvider} — TX: ${data.transaction.id.slice(0, 8)}. Complete 3DS authentication.`,
         });
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        setAmount(''); setEmail(''); setDescription('');
-        setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
         return;
       }
 
