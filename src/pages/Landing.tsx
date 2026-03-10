@@ -684,7 +684,7 @@ function SiteFooter() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-gray-200">
-          <p className="text-sm text-gray-500 text-center mb-6">© {new Date().getFullYear()} Everpay Corporation. All rights reserved.</p>
+          <p className="text-sm text-gray-500 text-center mb-6">© {new Date().getFullYear()} MZZPay Corporation. All rights reserved.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-10">
             {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Security & Trust', 'System Status'].map((item) => (
               <span key={item} className="text-sm text-gray-500 hover:text-[#1aa478] transition-colors cursor-pointer text-center">{item}</span>
@@ -692,10 +692,10 @@ function SiteFooter() {
           </div>
           <div className="pt-6">
             <p className="text-xs text-gray-500 leading-relaxed">
-              Everpay Aspect is a financial technology company, not a bank. Banking services are provided by licensed Banking As A Service providers, partner institutions and are FDIC-insured up to applicable limits. The Everpay Card is issued by Everpay card-issuing technology providers pursuant to licenses from Visa U.S.A. Inc. and Mastercard International.
+              MZZPay is a financial technology company, not a bank. Banking services are provided by licensed Banking As A Service providers, partner institutions and are FDIC-insured up to applicable limits.
             </p>
             <p className="text-xs text-gray-500 leading-relaxed mt-2">
-              Everpay is PCI DSS Level 1 certified, the highest level of security certification in the payments industry.
+              MZZPay is PCI DSS Level 1 certified, the highest level of security certification in the payments industry.
             </p>
           </div>
         </div>
