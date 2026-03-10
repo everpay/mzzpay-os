@@ -505,11 +505,11 @@ function FeaturesSection() {
 // ============= TESTIMONIALS SECTION =============
 function TestimonialsSection() {
   const testimonials = [
-    { quote: "Everpay transformed our payment operations. We've seen a 40% increase in successful transactions since switching.", name: 'Sarah Chen', title: 'CTO, UrbanMarket' },
+    { quote: "MZZPay transformed our payment operations. We've seen a 40% increase in successful transactions since switching.", name: 'Sarah Chen', title: 'CTO, UrbanMarket' },
     { quote: 'The fraud protection alone has saved us over $200K. And the integration was incredibly smooth.', name: 'Marcus Rivera', title: 'Head of Payments, FlowCommerce' },
-    { quote: 'We went from 3 payment providers to just Everpay. Simpler, cheaper, and our conversion rate is up 18%.', name: 'Aisha Patel', title: 'VP Operations, ShopWave' },
+    { quote: 'We went from 3 payment providers to just MZZPay. Simpler, cheaper, and our conversion rate is up 18%.', name: 'Aisha Patel', title: 'VP Operations, ShopWave' },
     { quote: 'Their support team is incredible. Available 24/7 and deeply knowledgeable about global payment regulations.', name: "James O'Brien", title: 'CEO, QuickShip Logistics' },
-    { quote: 'Expanding into Latin America was seamless with Everpay. PIX, Boleto, OXXO - all just worked from day one.', name: 'Lucia Fernandez', title: 'Growth Lead, Tienda Digital' },
+    { quote: 'Expanding into Latin America was seamless with MZZPay. PIX, Boleto, OXXO - all just worked from day one.', name: 'Lucia Fernandez', title: 'Growth Lead, Tienda Digital' },
     { quote: 'The dashboard gives us real-time visibility into every transaction across 12 countries. Game changer.', name: 'David Kim', title: 'CFO, NexGen Retail' },
   ];
 
