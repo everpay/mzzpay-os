@@ -104,7 +104,26 @@ export default function NewPayment() {
         body: payload,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Try to extract detailed error from response
+        let detail = 'Edge Function returned a non-2xx status code';
+        try {
+          const ctx = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            detail = body?.error || detail;
+          } else if (data?.error) {
+            detail = data.error;
+          }
+        } catch {}
+        throw new Error(detail);
+      }
+
+      if (data?.providerResponse?.status === 'Failed') {
+        const apiError = data.providerResponse?.error?.message || 'Provider declined the transaction';
+        toast.error('Payment declined by provider', { description: apiError });
+        return;
+      }
 
       toast.success('Payment created successfully!', {
         description: `${amount} ${currency} via ${selectedProvider} — ${data.transaction.id.slice(0, 8)}`,
