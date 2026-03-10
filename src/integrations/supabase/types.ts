@@ -333,30 +333,45 @@ export type Database = {
       merchants: {
         Row: {
           api_key_hash: string | null
+          business_currency: string | null
+          contact_email: string | null
+          contact_name: string | null
           created_at: string
           id: string
           name: string
+          phone_number: string | null
           updated_at: string
           user_id: string
           webhook_url: string | null
+          website_urls: string[] | null
         }
         Insert: {
           api_key_hash?: string | null
+          business_currency?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
           created_at?: string
           id?: string
           name: string
+          phone_number?: string | null
           updated_at?: string
           user_id: string
           webhook_url?: string | null
+          website_urls?: string[] | null
         }
         Update: {
           api_key_hash?: string | null
+          business_currency?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
           created_at?: string
           id?: string
           name?: string
+          phone_number?: string | null
           updated_at?: string
           user_id?: string
           webhook_url?: string | null
+          website_urls?: string[] | null
         }
         Relationships: []
       }
@@ -413,6 +428,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          phone_number: string | null
           updated_at: string
           user_id: string
         }
@@ -421,6 +437,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          phone_number?: string | null
           updated_at?: string
           user_id: string
         }
@@ -429,6 +446,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          phone_number?: string | null
           updated_at?: string
           user_id?: string
         }
