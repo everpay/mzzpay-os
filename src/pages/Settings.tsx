@@ -221,6 +221,7 @@ export default function Settings() {
     { key: 'webhooks', label: 'Webhooks', icon: Webhook },
     { key: 'api-keys', label: 'API Keys', icon: Key },
     { key: 'bank-accounts', label: 'Bank Accounts', icon: Building2 },
+    { key: 'developers', label: 'Developers', icon: Code },
     { key: 'deactivation', label: 'Account Deactivation', icon: AlertTriangle, destructive: true },
   ];
 
