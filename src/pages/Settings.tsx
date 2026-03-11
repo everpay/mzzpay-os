@@ -8,8 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Settings as SettingsIcon, Webhook, Key, Building2, Trash2, Save, Eye, EyeOff, Copy,
-  ChevronRight, ArrowLeft, User, Lock, Globe, Phone, Mail, Plus, X, AlertTriangle,
+  ChevronRight, ArrowLeft, User, Lock, Globe, Phone, Mail, Plus, X, AlertTriangle, Zap, Code,
 } from 'lucide-react';
+import { useProviderEvents } from '@/hooks/useProviderEvents';
+import { formatDate } from '@/lib/format';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
