@@ -150,6 +150,12 @@ export default function NewPayment() {
         throw new Error(detail);
       }
 
+      // Handle velocity/limit errors returned as 200
+      if (data?.velocityLimit || data?.limitError) {
+        setResponseMessage({ type: 'error', title: 'Transaction blocked', detail: data.error });
+        return;
+      }
+
       const providerStatus = (data?.providerResponse?.status || '').toLowerCase();
       const txStatus = (data?.providerResponse?.transaction_status || '').toLowerCase();
       if (['failed', 'declined', 'rejected', 'error'].includes(providerStatus) || ['failed', 'declined', 'rejected'].includes(txStatus)) {
