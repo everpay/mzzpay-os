@@ -108,7 +108,11 @@ const Index = () => {
               <div className="lg:col-span-2">
                 <VolumeChart />
               </div>
-              <ActivityFeed />
+              <div className="space-y-4">
+                <ActivityFeed />
+                <RollingReserveCard />
+                <CardVelocityCard />
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="providers" className="mt-4">
