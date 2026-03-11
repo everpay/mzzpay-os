@@ -320,7 +320,7 @@ export default function Payouts() {
                   </div>
                 </div>
 
-                <Button className="w-full gap-2" onClick={() => setStep(2)} disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > availableBalance}>
+                <Button className="w-full gap-2" onClick={() => setStep(2)} disabled={!amount || parseFloat(amount) <= 0}>
                   Continue <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
