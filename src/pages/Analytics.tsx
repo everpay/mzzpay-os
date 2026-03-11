@@ -660,39 +660,6 @@ export default function Analytics() {
         </TabsContent>
         {/* RISK & RATIOS TAB */}
         <TabsContent value="ratios" className="space-y-4">
-          {(() => {
-            const totalCount = filteredTransactions.length;
-            const refundedTx = filteredTransactions.filter(tx => tx.status === 'refunded');
-            const refundedVolume = refundedTx.reduce((s, tx) => s + tx.amount, 0);
-            const refundTxRatio = totalCount > 0 ? (refundedTx.length / totalCount * 100) : 0;
-            const refundVolRatio = totalVolume > 0 ? (refundedVolume / totalVolume * 100) : 0;
-            const disputeCount = disputes.length;
-            const cbTxRatio = totalCount > 0 ? (disputeCount / totalCount * 100) : 0;
-            const disputeVolume = disputes.reduce((s, d) => s + (d.amount || 0), 0);
-            const cbVolRatio = totalVolume > 0 ? (disputeVolume / totalVolume * 100) : 0;
-
-            // Group by provider for volume by payment method
-            const providerVolume = filteredTransactions.reduce<Record<string, { volume: number; count: number; enabled: boolean }>>((acc, tx) => {
-              if (!acc[tx.provider]) acc[tx.provider] = { volume: 0, count: 0, enabled: true };
-              acc[tx.provider].volume += tx.amount;
-              acc[tx.provider].count += 1;
-              return acc;
-            }, {});
-
-            // Transaction count over time by provider
-            const providerTimeline = useMemo(() => {
-              const providers = [...new Set(filteredTransactions.map(tx => tx.provider))];
-              const buckets: Record<string, Record<string, number>> = {};
-              filteredTransactions.forEach(tx => {
-                const key = new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                if (!buckets[key]) buckets[key] = {};
-                buckets[key][tx.provider] = (buckets[key][tx.provider] || 0) + 1;
-              });
-              return { data: Object.entries(buckets).map(([date, provs]) => ({ date, ...provs })), providers };
-            }, [filteredTransactions]);
-
-            return (
-              <>
                 {/* Chargeback & Refund Ratio Cards */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Card className="border-l-4 border-l-success">
