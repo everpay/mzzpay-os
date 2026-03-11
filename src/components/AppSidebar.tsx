@@ -23,6 +23,7 @@ import {
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
@@ -35,6 +36,7 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   children?: { to: string; icon: React.ElementType; label: string }[];
+  requiredRole?: 'admin' | 'reseller';
 }
 
 const navItems: NavItem[] = [
@@ -72,12 +74,21 @@ const navItems: NavItem[] = [
     ],
   },
   { to: '/activity', icon: Zap, label: 'Activity' },
-  { to: '/reseller', icon: Users, label: 'Reseller Portal' },
+  { to: '/reseller', icon: Users, label: 'Reseller Portal', requiredRole: 'reseller' },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
   const { signOut, user } = useAuth();
+  const { data: userRole } = useUserRole();
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (!item.requiredRole) return true;
+    if (!userRole) return false;
+    if (item.requiredRole === 'admin') return userRole.isAdmin;
+    if (item.requiredRole === 'reseller') return userRole.isAdmin || userRole.isReseller;
+    return false;
+  });
 
   const isChildActive = (item: NavItem) =>
     item.children?.some((c) => location.pathname === c.to) || location.pathname === item.to;
@@ -95,7 +106,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           if (item.children) {
             const active = isChildActive(item);
             return (
