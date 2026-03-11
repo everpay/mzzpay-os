@@ -629,6 +629,178 @@ export default function Analytics() {
             </Card>
           </div>
         </TabsContent>
+        {/* RISK & RATIOS TAB */}
+        <TabsContent value="ratios" className="space-y-4">
+          {(() => {
+            const totalCount = filteredTransactions.length;
+            const refundedTx = filteredTransactions.filter(tx => tx.status === 'refunded');
+            const refundedVolume = refundedTx.reduce((s, tx) => s + tx.amount, 0);
+            const refundTxRatio = totalCount > 0 ? (refundedTx.length / totalCount * 100) : 0;
+            const refundVolRatio = totalVolume > 0 ? (refundedVolume / totalVolume * 100) : 0;
+            const disputeCount = disputes.length;
+            const cbTxRatio = totalCount > 0 ? (disputeCount / totalCount * 100) : 0;
+            const disputeVolume = disputes.reduce((s, d) => s + (d.amount || 0), 0);
+            const cbVolRatio = totalVolume > 0 ? (disputeVolume / totalVolume * 100) : 0;
+
+            // Group by provider for volume by payment method
+            const providerVolume = filteredTransactions.reduce<Record<string, { volume: number; count: number; enabled: boolean }>>((acc, tx) => {
+              if (!acc[tx.provider]) acc[tx.provider] = { volume: 0, count: 0, enabled: true };
+              acc[tx.provider].volume += tx.amount;
+              acc[tx.provider].count += 1;
+              return acc;
+            }, {});
+
+            // Transaction count over time by provider
+            const providerTimeline = useMemo(() => {
+              const providers = [...new Set(filteredTransactions.map(tx => tx.provider))];
+              const buckets: Record<string, Record<string, number>> = {};
+              filteredTransactions.forEach(tx => {
+                const key = new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                if (!buckets[key]) buckets[key] = {};
+                buckets[key][tx.provider] = (buckets[key][tx.provider] || 0) + 1;
+              });
+              return { data: Object.entries(buckets).map(([date, provs]) => ({ date, ...provs })), providers };
+            }, [filteredTransactions]);
+
+            return (
+              <>
+                {/* Chargeback & Refund Ratio Cards */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <Card className="border-l-4 border-l-success">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-semibold">Chargeback Ratios</CardTitle>
+                        <div className="flex gap-2">
+                          <Badge variant={cbTxRatio < 0.5 ? 'default' : 'destructive'} className="text-xs">{cbTxRatio.toFixed(4)}%</Badge>
+                          <Badge variant={cbVolRatio < 0.5 ? 'default' : 'destructive'} className="text-xs">{cbVolRatio.toFixed(4)}%</Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={180}>
+                        <LineChart data={volumeOverTime} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                          <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                          <Tooltip contentStyle={tooltipStyle} />
+                          <Line type="monotone" dataKey="count" name="Transaction Ratio (%)" stroke={CHART_COLORS[0]} strokeWidth={2} dot={false} />
+                          <Legend wrapperStyle={{ fontSize: '11px' }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                      <div className="mt-3 p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs font-medium text-muted-foreground">Administrative Note:</p>
+                        <p className={`text-xs font-medium mt-1 ${cbTxRatio < 0.5 ? 'text-success' : 'text-destructive'}`}>
+                          {cbTxRatio < 0.5 ? 'Success! Your Chargeback Ratio is less than 0.50%' : 'Warning: Your Chargeback Ratio exceeds 0.50%'}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-l-4 border-l-primary">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-semibold">Refund Ratios</CardTitle>
+                        <div className="flex gap-2">
+                          <Badge variant="default" className="text-xs">{refundTxRatio.toFixed(4)}%</Badge>
+                          <Badge variant="default" className="text-xs">{refundVolRatio.toFixed(4)}%</Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={180}>
+                        <LineChart data={volumeOverTime} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                          <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                          <Tooltip contentStyle={tooltipStyle} />
+                          <Line type="monotone" dataKey="failed" name="Transaction Ratio (%)" stroke={CHART_COLORS[4]} strokeWidth={2} dot={false} />
+                          <Legend wrapperStyle={{ fontSize: '11px' }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                      <div className="mt-3 p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs font-medium text-muted-foreground">Administrative Note:</p>
+                        <p className="text-xs text-muted-foreground mt-1">Refund ratios are monitored for informational purposes and do not affect account status.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Volume by Payment Method (Incoming) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-primary" /> Volume by Payment Method (INCOMING)
+                      </CardTitle>
+                      <Badge variant="outline" className="text-xs">LIVE</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                      <div className="rounded-lg border border-border bg-muted/30 p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-muted-foreground">Total Volume</span>
+                          <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                        <p className="font-heading text-lg font-bold text-foreground">{formatCurrency(totalVolume, 'USD')}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">{formatCurrency(totalVolume, 'USD')} : 0 - 30 days</p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-muted/30 p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-muted-foreground">Total Transactions</span>
+                          <ArrowLeftRight className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                        <p className="font-heading text-lg font-bold text-foreground">{filteredTransactions.length}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">{filteredTransactions.length} : 0 - 30 days</p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-muted/30 p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-muted-foreground">Success Rate</span>
+                          <Activity className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                        <p className="font-heading text-lg font-bold text-foreground">{successRate.toFixed(1)}%</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">{successRate.toFixed(1)}% : 0 - 30 days</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {Object.entries(providerVolume).map(([name, data]) => (
+                        <div key={name} className="rounded-lg border border-border bg-card p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium text-primary capitalize">{name}</span>
+                            <Badge variant="default" className="text-[10px] px-1.5 py-0">ENABLED</Badge>
+                          </div>
+                          <p className="font-heading text-base font-bold text-foreground">{formatCurrency(data.volume, 'USD')}</p>
+                          <p className="text-[10px] text-muted-foreground">{data.count} transactions</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Transaction Count by Card Brand */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold">Transaction Count by Provider</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <LineChart data={providerTimeline.data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        {providerTimeline.providers.map((p, i) => (
+                          <Line key={p} type="monotone" dataKey={p} stroke={CHART_COLORS[i % CHART_COLORS.length]} strokeWidth={2} dot={false} name={p} />
+                        ))}
+                        <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </>
+            );
+          })()}
+        </TabsContent>
       </Tabs>
     </AppLayout>
   );
