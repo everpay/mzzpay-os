@@ -55,6 +55,47 @@ export type Database = {
           },
         ]
       }
+      card_velocity: {
+        Row: {
+          card_last4: string | null
+          created_at: string
+          customer_identifier: string
+          id: string
+          merchant_id: string
+          provider: string
+          transaction_count: number
+          transaction_date: string
+        }
+        Insert: {
+          card_last4?: string | null
+          created_at?: string
+          customer_identifier: string
+          id?: string
+          merchant_id: string
+          provider: string
+          transaction_count?: number
+          transaction_date?: string
+        }
+        Update: {
+          card_last4?: string | null
+          created_at?: string
+          customer_identifier?: string
+          id?: string
+          merchant_id?: string
+          provider?: string
+          transaction_count?: number
+          transaction_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_velocity_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           billing_address: Json | null
@@ -580,6 +621,63 @@ export type Database = {
           volume_tier?: string | null
         }
         Relationships: []
+      }
+      rolling_reserves: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          held_at: string
+          id: string
+          merchant_id: string
+          release_at: string
+          released_at: string | null
+          reserve_percent: number
+          status: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          held_at?: string
+          id?: string
+          merchant_id: string
+          release_at?: string
+          released_at?: string | null
+          reserve_percent?: number
+          status?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          held_at?: string
+          id?: string
+          merchant_id?: string
+          release_at?: string
+          released_at?: string | null
+          reserve_percent?: number
+          status?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rolling_reserves_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rolling_reserves_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_bank_accounts: {
         Row: {

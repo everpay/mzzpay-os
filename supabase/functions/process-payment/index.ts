@@ -87,6 +87,40 @@ serve(async (req) => {
       }
     }
 
+    // --- Card Velocity Check (3 per day per customer) ---
+    const customerIdentifier = customerEmail || cardDetails?.number?.slice(-4) || 'anonymous';
+    if (paymentMethod === 'card') {
+      const today = new Date().toISOString().split('T')[0];
+      const { data: velocityRecord } = await supabase
+        .from('card_velocity')
+        .select('transaction_count')
+        .eq('merchant_id', merchant.id)
+        .eq('customer_identifier', customerIdentifier)
+        .eq('transaction_date', today)
+        .single();
+
+      if (velocityRecord && velocityRecord.transaction_count >= 3) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Card velocity limit exceeded: maximum 3 card transactions per day per customer',
+            velocityLimit: true 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // --- Transaction Limits Check ($5 - $1000) ---
+    if (amount < 5 || amount > 1000) {
+      return new Response(
+        JSON.stringify({ 
+          error: `Transaction amount must be between $5.00 and $1,000.00. Received: $${amount.toFixed(2)}`,
+          limitError: true 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     let provider = 'mzzpay';
     let providerResponse;
     let vgsVaultPromise = null;
@@ -158,6 +192,50 @@ serve(async (req) => {
       event_type: 'payment.created',
       payload: providerResponse,
     });
+
+    // --- Rolling Reserve (10% held for 180 days) ---
+    if (txStatus === 'completed' || txStatus === 'processing') {
+      const reserveAmount = amount * 0.10;
+      await supabase.from('rolling_reserves').insert({
+        merchant_id: merchant.id,
+        transaction_id: transaction.id,
+        amount: reserveAmount,
+        currency,
+        reserve_percent: 10,
+        status: 'held',
+      });
+      console.log(`Rolling reserve: ${reserveAmount} ${currency} held for tx ${transaction.id}`);
+    }
+
+    // --- Update Card Velocity ---
+    if (paymentMethod === 'card') {
+      const today = new Date().toISOString().split('T')[0];
+      const cardLast4 = cardDetails?.number?.slice(-4) || null;
+      
+      const { data: existingVelocity } = await supabase
+        .from('card_velocity')
+        .select('id, transaction_count')
+        .eq('merchant_id', merchant.id)
+        .eq('customer_identifier', customerIdentifier)
+        .eq('transaction_date', today)
+        .single();
+
+      if (existingVelocity) {
+        await supabase
+          .from('card_velocity')
+          .update({ transaction_count: existingVelocity.transaction_count + 1 })
+          .eq('id', existingVelocity.id);
+      } else {
+        await supabase.from('card_velocity').insert({
+          merchant_id: merchant.id,
+          customer_identifier: customerIdentifier,
+          card_last4: cardLast4,
+          provider,
+          transaction_date: today,
+          transaction_count: 1,
+        });
+      }
+    }
 
     // Store idempotency response
     if (idempotencyKey) {

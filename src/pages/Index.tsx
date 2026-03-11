@@ -1,5 +1,7 @@
 import { AppLayout } from '@/components/AppLayout';
 import { StatCard } from '@/components/StatCard';
+import { RollingReserveCard } from '@/components/RollingReserveCard';
+import { CardVelocityCard } from '@/components/CardVelocityCard';
 import { VolumeChart } from '@/components/VolumeChart';
 import { TransactionTable } from '@/components/TransactionTable';
 import { ActivityFeed } from '@/components/ActivityFeed';
@@ -106,7 +108,11 @@ const Index = () => {
               <div className="lg:col-span-2">
                 <VolumeChart />
               </div>
-              <ActivityFeed />
+              <div className="space-y-4">
+                <ActivityFeed />
+                <RollingReserveCard />
+                <CardVelocityCard />
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="providers" className="mt-4">

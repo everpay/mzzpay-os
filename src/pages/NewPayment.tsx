@@ -150,7 +150,15 @@ export default function NewPayment() {
         throw new Error(detail);
       }
 
-      if (data?.providerResponse?.status === 'Failed' || data?.providerResponse?.transaction_status === 'FAILED') {
+      // Handle velocity/limit errors returned as 200
+      if (data?.velocityLimit || data?.limitError) {
+        setResponseMessage({ type: 'error', title: 'Transaction blocked', detail: data.error });
+        return;
+      }
+
+      const providerStatus = (data?.providerResponse?.status || '').toLowerCase();
+      const txStatus = (data?.providerResponse?.transaction_status || '').toLowerCase();
+      if (['failed', 'declined', 'rejected', 'error'].includes(providerStatus) || ['failed', 'declined', 'rejected'].includes(txStatus)) {
         const apiError = data.providerResponse?.error?.message || data.providerResponse?.gateway_message || 'Provider declined the transaction';
         setResponseMessage({ type: 'warning', title: 'Payment declined by provider', detail: apiError });
         return;
