@@ -355,11 +355,12 @@ export default function Analytics() {
 
       {/* Main Charts */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="bg-muted/50">
+        <TabsList className="bg-muted/50 flex-wrap">
           <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Overview</TabsTrigger>
           <TabsTrigger value="providers" className="gap-1.5"><Layers className="h-3.5 w-3.5" /> Providers</TabsTrigger>
           <TabsTrigger value="geography" className="gap-1.5"><Globe className="h-3.5 w-3.5" /> Currencies</TabsTrigger>
           <TabsTrigger value="performance" className="gap-1.5"><Activity className="h-3.5 w-3.5" /> Performance</TabsTrigger>
+          <TabsTrigger value="ratios" className="gap-1.5"><ShieldAlert className="h-3.5 w-3.5" /> Risk & Ratios</TabsTrigger>
         </TabsList>
 
         {/* OVERVIEW TAB */}
