@@ -11,7 +11,7 @@ import Payouts from "./pages/Payouts";
 import NewPayment from "./pages/NewPayment";
 import PaymentLinks from "./pages/PaymentLinks";
 import Checkout from "./pages/Checkout";
-import Activity from "./pages/Activity";
+import Analytics from "./pages/Analytics";
 import Subscriptions from "./pages/Subscriptions";
 import CustomerPortal from "./pages/CustomerPortal";
 import Chargebacks from "./pages/Chargebacks";
@@ -70,7 +70,7 @@ const AppRoutes = () => (
     <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/reseller" element={<ProtectedRoute><ResellerPortal /></ProtectedRoute>} />
-    <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
+    <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
     {/* Redirect old merchant routes */}
     <Route path="/merchant" element={<Navigate to="/chargebacks" replace />} />
     <Route path="/merchant/disputes" element={<Navigate to="/chargebacks/disputes" replace />} />

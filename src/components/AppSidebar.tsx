@@ -3,7 +3,7 @@ import {
   LayoutDashboard,
   ArrowLeftRight,
   Wallet,
-  Zap,
+  
   Settings,
   CreditCard,
   Menu,
@@ -73,7 +73,7 @@ const navItems: NavItem[] = [
       { to: '/chargebacks/analytics', icon: BarChart3, label: 'Analytics' },
     ],
   },
-  { to: '/activity', icon: Zap, label: 'Activity' },
+  { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/reseller', icon: Users, label: 'Reseller Portal', requiredRole: 'reseller' },
 ];
 
