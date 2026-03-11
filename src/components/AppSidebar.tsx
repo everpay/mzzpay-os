@@ -80,6 +80,15 @@ const navItems: NavItem[] = [
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
   const { signOut, user } = useAuth();
+  const { data: userRole } = useUserRole();
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (!item.requiredRole) return true;
+    if (!userRole) return false;
+    if (item.requiredRole === 'admin') return userRole.isAdmin;
+    if (item.requiredRole === 'reseller') return userRole.isAdmin || userRole.isReseller;
+    return false;
+  });
 
   const isChildActive = (item: NavItem) =>
     item.children?.some((c) => location.pathname === c.to) || location.pathname === item.to;
