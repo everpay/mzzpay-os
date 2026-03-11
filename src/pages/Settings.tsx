@@ -490,6 +490,8 @@ export default function Settings() {
         </Card>
       )}
 
+      {section === 'developers' && <DevelopersSection />}
+
       {section === 'deactivation' && (
         <Card className="border-destructive/30">
           <CardHeader>
