@@ -74,7 +74,7 @@ const navItems: NavItem[] = [
     ],
   },
   { to: '/activity', icon: Zap, label: 'Activity' },
-  { to: '/reseller', icon: Users, label: 'Reseller Portal' },
+  { to: '/reseller', icon: Users, label: 'Reseller Portal', requiredRole: 'reseller' },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
