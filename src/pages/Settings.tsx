@@ -19,7 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
 
-type SettingsSection = 'main' | 'business' | 'account' | 'password' | 'webhooks' | 'api-keys' | 'bank-accounts' | 'deactivation';
+type SettingsSection = 'main' | 'business' | 'account' | 'password' | 'webhooks' | 'api-keys' | 'bank-accounts' | 'developers' | 'deactivation';
 
 interface SavedBankAccount {
   id: string;
