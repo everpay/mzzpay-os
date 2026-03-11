@@ -61,7 +61,7 @@ const navItems: NavItem[] = [
   { to: '/chargebacks', icon: Shield, label: 'Chargebacks' },
   { to: '/activity', icon: Zap, label: 'Activity' },
   { to: '/reseller', icon: Users, label: 'Reseller Portal' },
-  { to: '/admin', icon: ShieldCheck, label: 'Admin' },
+  
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
