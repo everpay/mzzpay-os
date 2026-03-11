@@ -759,7 +759,7 @@ export default function Analytics() {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {Object.entries(providerVolume).map(([name, data]) => (
+                      {Object.entries(providerVolumeMap).map(([name, data]) => (
                         <div key={name} className="rounded-lg border border-border bg-card p-3">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs font-medium text-primary capitalize">{name}</span>
