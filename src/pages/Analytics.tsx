@@ -794,7 +794,6 @@ export default function Analytics() {
                   </CardContent>
                 </Card>
         </TabsContent>
-        </TabsContent>
       </Tabs>
     </AppLayout>
   );
