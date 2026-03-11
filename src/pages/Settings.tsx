@@ -556,3 +556,52 @@ export default function Settings() {
     </AppLayout>
   );
 }
+
+function DevelopersSection() {
+  const { data: events = [], isLoading } = useProviderEvents();
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Code className="h-5 w-5" /> Developers</CardTitle>
+          <CardDescription>Provider webhook events, system activity, and developer tools.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+            <Zap className="h-4 w-4 text-primary" /> Activity Log
+          </h4>
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <p className="text-muted-foreground text-sm">Loading events...</p>
+            </div>
+          ) : events.length === 0 ? (
+            <div className="flex items-center justify-center p-8 rounded-lg border border-border bg-muted/30">
+              <p className="text-muted-foreground text-sm">No events yet</p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-border divide-y divide-border max-h-[500px] overflow-y-auto">
+              {events.map((event) => (
+                <div key={event.id} className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/30">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 flex-shrink-0">
+                    <Zap className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">{event.event_type}</span>
+                      <Badge variant="outline" className="text-[10px]">{event.provider}</Badge>
+                    </div>
+                    {event.transaction_id && (
+                      <span className="font-mono text-xs text-muted-foreground">{event.transaction_id}</span>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(event.created_at)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
