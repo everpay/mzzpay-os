@@ -5,13 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -24,7 +26,7 @@ import { format } from 'date-fns';
 import { enrichWithTapix } from '@/lib/tapix';
 import {
   Search, MoreHorizontal, Eye, Pencil, UserCircle, CreditCard,
-  MapPin, Package, ShieldCheck, RefreshCw,
+  MapPin, Package, ShieldCheck, RefreshCw, Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CardBrandBadge } from '@/components/CardBrandBadge';
@@ -67,22 +69,26 @@ function useCustomerPaymentMethods(customerId: string | null) {
   });
 }
 
+const emptyForm = {
+  first_name: '', last_name: '', email: '',
+  billing_street: '', billing_city: '', billing_state: '', billing_zip: '', billing_country: '',
+  shipping_street: '', shipping_city: '', shipping_state: '', shipping_zip: '', shipping_country: '',
+};
+
 export default function Customers() {
   const { data: customers = [], isLoading } = useCustomers();
   const { data: transactions = [] } = useTransactions();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
-  const [editForm, setEditForm] = useState({
-    first_name: '', last_name: '', email: '',
-    billing_street: '', billing_city: '', billing_state: '', billing_zip: '', billing_country: '',
-    shipping_street: '', shipping_city: '', shipping_state: '', shipping_zip: '', shipping_country: '',
-  });
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editForm, setEditForm] = useState({ ...emptyForm });
   const [enrichingTx, setEnrichingTx] = useState<string | null>(null);
   const [enrichedData, setEnrichedData] = useState<Record<string, any>>({});
 
-  const { data: paymentMethods = [] } = useCustomerPaymentMethods(selectedCustomer?.id ?? editCustomer?.id ?? null);
+  const activeCustomerId = viewCustomer?.id ?? editCustomer?.id ?? null;
+  const { data: paymentMethods = [] } = useCustomerPaymentMethods(activeCustomerId);
 
   const filtered = useMemo(() => {
     if (!search) return customers;
@@ -95,13 +101,13 @@ export default function Customers() {
   }, [customers, search]);
 
   const customerTransactions = useMemo(() => {
-    if (!selectedCustomer) return [];
-    return transactions.filter(tx => tx.customer_email === selectedCustomer.email);
-  }, [selectedCustomer, transactions]);
+    if (!viewCustomer) return [];
+    return transactions.filter(tx => tx.customer_email === viewCustomer.email);
+  }, [viewCustomer, transactions]);
 
   const openEdit = (c: Customer) => {
     const billing = c.billing_address || {};
-    const shipping = (c.billing_address as any)?.shipping || {};
+    const shipping = billing?.shipping || {};
     setEditForm({
       first_name: c.first_name || '', last_name: c.last_name || '', email: c.email,
       billing_street: billing.street || '', billing_city: billing.city || '',
@@ -112,6 +118,11 @@ export default function Customers() {
     setEditCustomer(c);
   };
 
+  const openAdd = () => {
+    setEditForm({ ...emptyForm });
+    setShowAddModal(true);
+  };
+
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!editCustomer) return;
@@ -119,14 +130,7 @@ export default function Customers() {
         first_name: editForm.first_name || null,
         last_name: editForm.last_name || null,
         email: editForm.email,
-        billing_address: {
-          street: editForm.billing_street, city: editForm.billing_city,
-          state: editForm.billing_state, zip: editForm.billing_zip, country: editForm.billing_country,
-          shipping: {
-            street: editForm.shipping_street, city: editForm.shipping_city,
-            state: editForm.shipping_state, zip: editForm.shipping_zip, country: editForm.shipping_country,
-          },
-        },
+        billing_address: buildAddress(),
       }).eq('id', editCustomer.id);
       if (error) throw error;
     },
@@ -136,6 +140,38 @@ export default function Customers() {
       setEditCustomer(null);
     },
     onError: (e: Error) => toast.error(e.message),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const { data: merchant } = await supabase.from('merchants').select('id').eq('user_id', user.id).single();
+      if (!merchant) throw new Error('Merchant not found');
+      const { error } = await supabase.from('customers').insert({
+        merchant_id: merchant.id,
+        email: editForm.email,
+        first_name: editForm.first_name || null,
+        last_name: editForm.last_name || null,
+        billing_address: buildAddress(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Customer created');
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      setShowAddModal(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const buildAddress = () => ({
+    street: editForm.billing_street, city: editForm.billing_city,
+    state: editForm.billing_state, zip: editForm.billing_zip, country: editForm.billing_country,
+    shipping: {
+      street: editForm.shipping_street, city: editForm.shipping_city,
+      state: editForm.shipping_state, zip: editForm.shipping_zip, country: editForm.shipping_country,
+    },
   });
 
   const handleEnrich = async (txId: string, cardLast4?: string) => {
@@ -155,6 +191,49 @@ export default function Customers() {
     setEnrichingTx(null);
   };
 
+  const f = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setEditForm(f => ({ ...f, [key]: e.target.value }));
+
+  const renderFormFields = () => (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3">
+        <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">First Name</Label><Input value={editForm.first_name} onChange={f('first_name')} placeholder="John" /></div>
+        <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Last Name</Label><Input value={editForm.last_name} onChange={f('last_name')} placeholder="Doe" /></div>
+      </div>
+      <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</Label><Input value={editForm.email} onChange={f('email')} placeholder="john@example.com" type="email" /></div>
+
+      <div className="border-t border-border pt-4">
+        <h4 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3"><MapPin className="h-4 w-4 text-primary" /> Billing Address</h4>
+        <div className="space-y-3">
+          <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Street</Label><Input value={editForm.billing_street} onChange={f('billing_street')} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">City</Label><Input value={editForm.billing_city} onChange={f('billing_city')} /></div>
+            <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">State</Label><Input value={editForm.billing_state} onChange={f('billing_state')} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">ZIP</Label><Input value={editForm.billing_zip} onChange={f('billing_zip')} /></div>
+            <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Country</Label><Input value={editForm.billing_country} onChange={f('billing_country')} /></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-border pt-4">
+        <h4 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3"><MapPin className="h-4 w-4 text-primary" /> Shipping Address</h4>
+        <div className="space-y-3">
+          <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Street</Label><Input value={editForm.shipping_street} onChange={f('shipping_street')} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">City</Label><Input value={editForm.shipping_city} onChange={f('shipping_city')} /></div>
+            <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">State</Label><Input value={editForm.shipping_state} onChange={f('shipping_state')} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">ZIP</Label><Input value={editForm.shipping_zip} onChange={f('shipping_zip')} /></div>
+            <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Country</Label><Input value={editForm.shipping_country} onChange={f('shipping_country')} /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <AppLayout>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -162,9 +241,14 @@ export default function Customers() {
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Customers</h1>
           <p className="mt-1 text-sm text-muted-foreground">Manage your customer records and payment history</p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by name or email..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        <div className="flex items-center gap-3">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search by name or email..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <Button onClick={openAdd} className="gap-2 shrink-0">
+            <Plus className="h-4 w-4" /> Add Customer
+          </Button>
         </div>
       </div>
 
@@ -176,7 +260,10 @@ export default function Customers() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <UserCircle className="h-12 w-12 text-muted-foreground mb-3" />
-            <p className="text-muted-foreground">{search ? 'No customers match your search' : 'No customers yet'}</p>
+            <p className="text-muted-foreground font-medium">{search ? 'No customers match your search' : 'No customers yet'}</p>
+            <Button onClick={openAdd} variant="outline" className="mt-4 gap-2">
+              <Plus className="h-4 w-4" /> Add your first customer
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -197,7 +284,7 @@ export default function Customers() {
                   const addr = c.billing_address as any;
                   return (
                     <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50">
-                      <TableCell className="font-medium text-foreground">
+                      <TableCell className="font-semibold text-foreground">
                         {c.first_name || c.last_name ? `${c.first_name || ''} ${c.last_name || ''}`.trim() : '—'}
                       </TableCell>
                       <TableCell className="text-muted-foreground">{c.email}</TableCell>
@@ -210,12 +297,12 @@ export default function Customers() {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setSelectedCustomer(c)} className="gap-2">
+                            <DropdownMenuItem onClick={() => setViewCustomer(c)} className="gap-2">
                               <Eye className="h-4 w-4" /> View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openEdit(c)} className="gap-2">
@@ -233,19 +320,20 @@ export default function Customers() {
         </Card>
       )}
 
-      {/* View Customer Dialog */}
-      <Dialog open={!!selectedCustomer} onOpenChange={() => setSelectedCustomer(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+      {/* View Customer — Side Drawer */}
+      <Sheet open={!!viewCustomer} onOpenChange={() => setViewCustomer(null)}>
+        <SheetContent side="right" className="sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
               <UserCircle className="h-5 w-5 text-primary" />
-              {selectedCustomer?.first_name || selectedCustomer?.last_name
-                ? `${selectedCustomer?.first_name || ''} ${selectedCustomer?.last_name || ''}`.trim()
-                : selectedCustomer?.email}
-            </DialogTitle>
-          </DialogHeader>
+              {viewCustomer?.first_name || viewCustomer?.last_name
+                ? `${viewCustomer?.first_name || ''} ${viewCustomer?.last_name || ''}`.trim()
+                : viewCustomer?.email}
+            </SheetTitle>
+            <SheetDescription>{viewCustomer?.email}</SheetDescription>
+          </SheetHeader>
 
-          <Tabs defaultValue="details" className="mt-2">
+          <Tabs defaultValue="details" className="mt-4">
             <TabsList className="w-full">
               <TabsTrigger value="details" className="flex-1 gap-1.5"><UserCircle className="h-3.5 w-3.5" /> Details</TabsTrigger>
               <TabsTrigger value="purchases" className="flex-1 gap-1.5"><Package className="h-3.5 w-3.5" /> Purchases</TabsTrigger>
@@ -254,14 +342,14 @@ export default function Customers() {
 
             <TabsContent value="details" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
-                <div><Label className="text-xs text-muted-foreground">Email</Label><p className="text-sm font-medium text-foreground">{selectedCustomer?.email}</p></div>
-                <div><Label className="text-xs text-muted-foreground">Created</Label><p className="text-sm font-medium text-foreground">{selectedCustomer ? format(new Date(selectedCustomer.created_at), 'PPP') : ''}</p></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</Label><p className="text-sm font-semibold text-foreground">{viewCustomer?.email}</p></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Created</Label><p className="text-sm font-semibold text-foreground">{viewCustomer ? format(new Date(viewCustomer.created_at), 'PPP') : ''}</p></div>
               </div>
               {(() => {
-                const addr = selectedCustomer?.billing_address as any;
+                const addr = viewCustomer?.billing_address as any;
                 const ship = addr?.shipping;
                 return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <Card>
                       <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Billing Address</CardTitle></CardHeader>
                       <CardContent className="text-sm text-muted-foreground">
@@ -289,7 +377,7 @@ export default function Customers() {
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">{formatCurrency(tx.amount, tx.currency)}</span>
+                            <span className="font-semibold text-foreground">{formatCurrency(tx.amount, tx.currency)}</span>
                             <Badge variant={tx.status === 'completed' ? 'default' : tx.status === 'failed' ? 'destructive' : 'secondary'} className="text-xs">
                               {tx.status}
                             </Badge>
@@ -329,7 +417,7 @@ export default function Customers() {
                         <div className="flex items-center gap-3">
                           <CardBrandBadge brand={pm.card_brand || 'unknown'} />
                           <div>
-                            <p className="font-medium text-foreground">•••• {pm.card_last4}</p>
+                            <p className="font-semibold text-foreground">•••• {pm.card_last4}</p>
                             <p className="text-xs text-muted-foreground">
                               Exp {pm.exp_month}/{pm.exp_year}
                               {pm.is_default && <Badge variant="secondary" className="ml-2 text-[10px]">Default</Badge>}
@@ -346,10 +434,10 @@ export default function Customers() {
               )}
             </TabsContent>
           </Tabs>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
-      {/* Edit Customer Dialog */}
+      {/* Edit Customer — Modal */}
       <Dialog open={!!editCustomer} onOpenChange={() => setEditCustomer(null)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -357,47 +445,29 @@ export default function Customers() {
               <Pencil className="h-5 w-5 text-primary" /> Edit Customer
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>First Name</Label><Input value={editForm.first_name} onChange={e => setEditForm(f => ({ ...f, first_name: e.target.value }))} /></div>
-              <div><Label>Last Name</Label><Input value={editForm.last_name} onChange={e => setEditForm(f => ({ ...f, last_name: e.target.value }))} /></div>
-            </div>
-            <div><Label>Email</Label><Input value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} /></div>
-
-            <div className="border-t border-border pt-4">
-              <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3"><MapPin className="h-4 w-4 text-primary" /> Billing Address</h4>
-              <div className="space-y-3">
-                <div><Label>Street</Label><Input value={editForm.billing_street} onChange={e => setEditForm(f => ({ ...f, billing_street: e.target.value }))} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>City</Label><Input value={editForm.billing_city} onChange={e => setEditForm(f => ({ ...f, billing_city: e.target.value }))} /></div>
-                  <div><Label>State</Label><Input value={editForm.billing_state} onChange={e => setEditForm(f => ({ ...f, billing_state: e.target.value }))} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>ZIP</Label><Input value={editForm.billing_zip} onChange={e => setEditForm(f => ({ ...f, billing_zip: e.target.value }))} /></div>
-                  <div><Label>Country</Label><Input value={editForm.billing_country} onChange={e => setEditForm(f => ({ ...f, billing_country: e.target.value }))} /></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-border pt-4">
-              <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3"><MapPin className="h-4 w-4 text-primary" /> Shipping Address</h4>
-              <div className="space-y-3">
-                <div><Label>Street</Label><Input value={editForm.shipping_street} onChange={e => setEditForm(f => ({ ...f, shipping_street: e.target.value }))} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>City</Label><Input value={editForm.shipping_city} onChange={e => setEditForm(f => ({ ...f, shipping_city: e.target.value }))} /></div>
-                  <div><Label>State</Label><Input value={editForm.shipping_state} onChange={e => setEditForm(f => ({ ...f, shipping_state: e.target.value }))} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>ZIP</Label><Input value={editForm.shipping_zip} onChange={e => setEditForm(f => ({ ...f, shipping_zip: e.target.value }))} /></div>
-                  <div><Label>Country</Label><Input value={editForm.shipping_country} onChange={e => setEditForm(f => ({ ...f, shipping_country: e.target.value }))} /></div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <div className="mt-2">{renderFormFields()}</div>
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setEditCustomer(null)}>Cancel</Button>
             <Button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending}>
               {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Customer — Modal */}
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" /> Add Customer
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-2">{renderFormFields()}</div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
+            <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending || !editForm.email}>
+              {createMutation.isPending ? 'Creating...' : 'Create Customer'}
             </Button>
           </DialogFooter>
         </DialogContent>
