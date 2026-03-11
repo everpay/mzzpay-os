@@ -24,6 +24,7 @@ import Docs from "./pages/Docs";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
 import ResellerPortal from "./pages/ResellerPortal";
+import Customers from "./pages/Customers";
 import MerchantDisputes from "./pages/merchant/MerchantDisputes";
 import MerchantEvidence from "./pages/merchant/MerchantEvidence";
 import MerchantAnalytics from "./pages/merchant/MerchantAnalytics";
@@ -55,6 +56,7 @@ const AppRoutes = () => (
     <Route path="/docs" element={<Docs />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+    <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
     <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
     <Route path="/wallets" element={<ProtectedRoute><Wallets /></ProtectedRoute>} />
     <Route path="/payouts" element={<ProtectedRoute><Payouts /></ProtectedRoute>} />
@@ -72,7 +74,8 @@ const AppRoutes = () => (
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/reseller" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin', 'reseller']}><ResellerPortal /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-    {/* Redirect old merchant routes */}
+    {/* Redirect old routes */}
+    <Route path="/new-payment" element={<Navigate to="/payments/new" replace />} />
     <Route path="/merchant" element={<Navigate to="/chargebacks" replace />} />
     <Route path="/merchant/disputes" element={<Navigate to="/chargebacks/disputes" replace />} />
     <Route path="/merchant/evidence" element={<Navigate to="/chargebacks/evidence" replace />} />
