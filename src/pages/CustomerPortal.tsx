@@ -191,18 +191,14 @@ export default function CustomerPortal() {
             </CardHeader>
             <CardContent className="space-y-4">
               {subscription.payment_method ? (
-                <div className="flex items-center gap-4 p-4 rounded-lg border border-border bg-muted/30">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-background">
-                    <CreditCard className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">
-                      {subscription.payment_method.card_brand || 'Card'} •••• {subscription.payment_method.card_last4}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Expires {subscription.payment_method.exp_month}/{subscription.payment_method.exp_year}
-                    </p>
-                  </div>
+                <div className="p-4 rounded-lg border border-border bg-muted/30">
+                  <CardBrandBadge
+                    brand={subscription.payment_method.card_brand}
+                    last4={subscription.payment_method.card_last4}
+                    expMonth={subscription.payment_method.exp_month}
+                    expYear={subscription.payment_method.exp_year}
+                    size="md"
+                  />
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
