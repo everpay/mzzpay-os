@@ -24,7 +24,11 @@ import Docs from "./pages/Docs";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
 import ResellerPortal from "./pages/ResellerPortal";
-import AdminDashboard from "./pages/AdminDashboard";
+import MerchantDisputeDashboard from "./pages/merchant/MerchantDashboard";
+import MerchantDisputes from "./pages/merchant/MerchantDisputes";
+import MerchantEvidence from "./pages/merchant/MerchantEvidence";
+import MerchantAnalytics from "./pages/merchant/MerchantAnalytics";
+import MerchantDisputeDetail from "./pages/merchant/MerchantDisputeDetail";
 
 const queryClient = new QueryClient();
 
