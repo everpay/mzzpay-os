@@ -64,16 +64,11 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
                 <Shield className="h-4 w-4 text-primary" />
                 Vault
               </h4>
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
-                {cardBrand && (
-                  <DetailRow icon={CreditCard} label="Card Brand" value={
-                    <Badge variant="outline" className="capitalize text-xs">{cardBrand}</Badge>
-                  } />
-                )}
-                {cardLast4 && (
-                  <DetailRow icon={CreditCard} label="Card" value={
-                    <span className="font-mono text-sm">•••• {cardLast4}</span>
-                  } />
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                {(cardBrand || cardLast4) && (
+                  <div className="flex items-center gap-2">
+                    <CardBrandBadge brand={cardBrand} last4={cardLast4} size="md" />
+                  </div>
                 )}
                 {vgsAlias && (
                   <DetailRow icon={Shield} label="VGS Alias" value={
