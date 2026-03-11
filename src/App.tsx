@@ -27,6 +27,7 @@ import ResellerPortal from "./pages/ResellerPortal";
 import MerchantDisputes from "./pages/merchant/MerchantDisputes";
 import MerchantEvidence from "./pages/merchant/MerchantEvidence";
 import MerchantAnalytics from "./pages/merchant/MerchantAnalytics";
+import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 
 const queryClient = new QueryClient();
 
