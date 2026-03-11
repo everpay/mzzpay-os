@@ -27,6 +27,7 @@ import ResellerPortal from "./pages/ResellerPortal";
 import MerchantDisputes from "./pages/merchant/MerchantDisputes";
 import MerchantEvidence from "./pages/merchant/MerchantEvidence";
 import MerchantAnalytics from "./pages/merchant/MerchantAnalytics";
+import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -69,7 +70,7 @@ const AppRoutes = () => (
     <Route path="/chargebacks/analytics" element={<ProtectedRoute><MerchantAnalytics /></ProtectedRoute>} />
     <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-    <Route path="/reseller" element={<ProtectedRoute><ResellerPortal /></ProtectedRoute>} />
+    <Route path="/reseller" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['admin', 'reseller']}><ResellerPortal /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
     {/* Redirect old merchant routes */}
     <Route path="/merchant" element={<Navigate to="/chargebacks" replace />} />

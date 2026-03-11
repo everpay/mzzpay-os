@@ -1,15 +1,19 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useDisputes } from '@/hooks/useDisputes';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { formatCurrency } from '@/lib/format';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
@@ -17,9 +21,12 @@ import {
 } from 'recharts';
 import {
   TrendingUp, TrendingDown, DollarSign, ArrowLeftRight, Users, ShieldAlert,
-  Calendar, Download, Filter, BarChart3, PieChart as PieChartIcon, Activity,
-  Globe, CreditCard, RefreshCw, Layers,
+  CalendarIcon, Download, Filter, BarChart3, PieChart as PieChartIcon, Activity,
+  Globe, CreditCard, RefreshCw, Layers, FileText, FileDown,
 } from 'lucide-react';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const CHART_COLORS = [
   'hsl(172, 72%, 48%)',
@@ -30,10 +37,12 @@ const CHART_COLORS = [
   'hsl(48, 96%, 53%)',
 ];
 
-type DateRange = '7d' | '30d' | '90d' | '12m';
+type DateRange = '7d' | '30d' | '90d' | '12m' | 'custom';
 
 export default function Analytics() {
   const [dateRange, setDateRange] = useState<DateRange>('30d');
+  const [customFrom, setCustomFrom] = useState<Date | undefined>();
+  const [customTo, setCustomTo] = useState<Date | undefined>();
   const { data: transactions = [], isLoading: loadingTx } = useTransactions();
   const { data: accounts = [] } = useAccounts();
   const { data: disputes = [] } = useDisputes();
@@ -45,15 +54,24 @@ export default function Analytics() {
       case '30d': return 30;
       case '90d': return 90;
       case '12m': return 365;
+      case 'custom': return 0;
     }
   };
 
   const filteredTransactions = useMemo(() => {
+    if (dateRange === 'custom' && customFrom) {
+      const from = customFrom;
+      const to = customTo || new Date();
+      return transactions.filter(tx => {
+        const d = new Date(tx.created_at);
+        return d >= from && d <= to;
+      });
+    }
     const days = getDaysForRange(dateRange);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     return transactions.filter(tx => new Date(tx.created_at) >= cutoff);
-  }, [transactions, dateRange]);
+  }, [transactions, dateRange, customFrom, customTo]);
 
   // KPI calculations
   const totalVolume = filteredTransactions.reduce((s, tx) => s + tx.amount, 0);
@@ -64,7 +82,6 @@ export default function Analytics() {
   const avgTicket = completedTx.length > 0
     ? completedTx.reduce((s, tx) => s + tx.amount, 0) / completedTx.length
     : 0;
-  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
 
   // Previous period comparison
   const days = getDaysForRange(dateRange);
@@ -72,19 +89,21 @@ export default function Analytics() {
   prevCutoff.setDate(prevCutoff.getDate() - days * 2);
   const currentCutoff = new Date();
   currentCutoff.setDate(currentCutoff.getDate() - days);
-  const prevTransactions = transactions.filter(tx => {
+  const prevTransactions = dateRange !== 'custom' ? transactions.filter(tx => {
     const d = new Date(tx.created_at);
     return d >= prevCutoff && d < currentCutoff;
-  });
+  }) : [];
   const prevVolume = prevTransactions.reduce((s, tx) => s + tx.amount, 0);
   const volumeChange = prevVolume > 0 ? ((totalVolume - prevVolume) / prevVolume * 100) : 0;
 
   // Volume over time
   const volumeOverTime = useMemo(() => {
     const buckets: Record<string, { volume: number; count: number; failed: number }> = {};
-    const numDays = getDaysForRange(dateRange);
+    const numDays = dateRange === 'custom'
+      ? (customFrom && customTo ? Math.ceil((customTo.getTime() - customFrom.getTime()) / 86400000) : 30)
+      : getDaysForRange(dateRange);
     const bucketSize = numDays <= 7 ? 1 : numDays <= 30 ? 1 : numDays <= 90 ? 7 : 30;
-    
+
     for (let i = numDays - 1; i >= 0; i -= bucketSize) {
       const d = new Date();
       d.setDate(d.getDate() - i);
@@ -103,7 +122,7 @@ export default function Analytics() {
     });
 
     return Object.entries(buckets).map(([date, data]) => ({ date, ...data }));
-  }, [filteredTransactions, dateRange]);
+  }, [filteredTransactions, dateRange, customFrom, customTo]);
 
   // Provider breakdown
   const providerBreakdown = useMemo(() => {
@@ -164,6 +183,76 @@ export default function Analytics() {
     }));
   }, [filteredTransactions]);
 
+  // Export functions
+  const exportCSV = useCallback(() => {
+    const headers = ['ID', 'Date', 'Amount', 'Currency', 'Status', 'Provider', 'Customer Email', 'Description'];
+    const rows = filteredTransactions.map(tx => [
+      tx.id,
+      new Date(tx.created_at).toISOString(),
+      tx.amount.toString(),
+      tx.currency,
+      tx.status,
+      tx.provider,
+      tx.customer_email || '',
+      tx.description || '',
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [filteredTransactions]);
+
+  const exportPDF = useCallback(() => {
+    // Generate a printable HTML report
+    const reportHtml = `
+      <html><head><title>Analytics Report - ${format(new Date(), 'PPP')}</title>
+      <style>
+        body { font-family: system-ui, sans-serif; padding: 40px; color: #1a1a1a; }
+        h1 { font-size: 24px; margin-bottom: 4px; }
+        .subtitle { color: #666; font-size: 14px; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+        th, td { padding: 8px 12px; border-bottom: 1px solid #e5e5e5; text-align: left; }
+        th { background: #f5f5f5; font-weight: 600; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .kpi-card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; }
+        .kpi-label { font-size: 11px; text-transform: uppercase; color: #888; }
+        .kpi-value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+      </style></head><body>
+      <h1>MZZPay Analytics Report</h1>
+      <p class="subtitle">Generated ${format(new Date(), 'PPP')} · ${dateRange === 'custom' ? `${customFrom ? format(customFrom, 'PP') : ''} – ${customTo ? format(customTo, 'PP') : 'now'}` : `Last ${dateRange}`}</p>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Total Volume</div><div class="kpi-value">${formatCurrency(totalVolume, 'USD')}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Transactions</div><div class="kpi-value">${filteredTransactions.length}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Success Rate</div><div class="kpi-value">${successRate.toFixed(1)}%</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg Ticket</div><div class="kpi-value">${formatCurrency(avgTicket, 'USD')}</div></div>
+      </div>
+      <h2>Provider Breakdown</h2>
+      <table><tr><th>Provider</th><th>Volume</th><th>Transactions</th><th>Share</th></tr>
+      ${providerBreakdown.map(p => `<tr><td>${p.name}</td><td>${formatCurrency(p.volume, 'USD')}</td><td>${p.count}</td><td>${totalVolume > 0 ? (p.volume / totalVolume * 100).toFixed(1) : 0}%</td></tr>`).join('')}
+      </table>
+      <h2>Currency Breakdown</h2>
+      <table><tr><th>Currency</th><th>Volume</th><th>Share</th></tr>
+      ${currencyBreakdown.map(c => `<tr><td>${c.name}</td><td>$${c.value.toLocaleString()}</td><td>${totalVolume > 0 ? (c.value / totalVolume * 100).toFixed(1) : 0}%</td></tr>`).join('')}
+      </table>
+      <h2>Transactions</h2>
+      <table><tr><th>Date</th><th>Amount</th><th>Currency</th><th>Status</th><th>Provider</th></tr>
+      ${filteredTransactions.slice(0, 100).map(tx => `<tr><td>${format(new Date(tx.created_at), 'PP p')}</td><td>${tx.amount}</td><td>${tx.currency}</td><td>${tx.status}</td><td>${tx.provider}</td></tr>`).join('')}
+      ${filteredTransactions.length > 100 ? `<tr><td colspan="5" style="text-align:center;color:#888">... and ${filteredTransactions.length - 100} more</td></tr>` : ''}
+      </table>
+      </body></html>
+    `;
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(reportHtml);
+      win.document.close();
+      setTimeout(() => win.print(), 500);
+    }
+  }, [filteredTransactions, dateRange, customFrom, customTo, totalVolume, successRate, avgTicket, providerBreakdown, currencyBreakdown]);
+
   const isLoading = loadingTx;
 
   const tooltipStyle = {
@@ -174,6 +263,10 @@ export default function Analytics() {
     color: 'hsl(var(--foreground))',
   };
 
+  const dateRangeLabel = dateRange === 'custom'
+    ? (customFrom ? `${format(customFrom, 'MMM d')}${customTo ? ` – ${format(customTo, 'MMM d')}` : ' – now'}` : 'Custom')
+    : undefined;
+
   return (
     <AppLayout>
       {/* Header */}
@@ -182,48 +275,82 @@ export default function Analytics() {
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Analytics</h1>
           <p className="mt-1 text-sm text-muted-foreground">Business intelligence & reporting dashboard</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Date range presets */}
           <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRange)}>
-            <SelectTrigger className="w-[140px]">
-              <Calendar className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-              <SelectValue />
+            <SelectTrigger className="w-[150px]">
+              <CalendarIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+              <SelectValue>{dateRangeLabel}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="7d">Last 7 days</SelectItem>
               <SelectItem value="30d">Last 30 days</SelectItem>
               <SelectItem value="90d">Last 90 days</SelectItem>
               <SelectItem value="12m">Last 12 months</SelectItem>
+              <SelectItem value="custom">Custom range</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Custom date pickers */}
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-1.5">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("text-xs h-9", !customFrom && "text-muted-foreground")}>
+                    <CalendarIcon className="h-3 w-3 mr-1.5" />
+                    {customFrom ? format(customFrom, 'PP') : 'From'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={customFrom} onSelect={setCustomFrom} initialFocus className={cn("p-3 pointer-events-auto")} />
+                </PopoverContent>
+              </Popover>
+              <span className="text-xs text-muted-foreground">–</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("text-xs h-9", !customTo && "text-muted-foreground")}>
+                    <CalendarIcon className="h-3 w-3 mr-1.5" />
+                    {customTo ? format(customTo, 'PP') : 'To'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={customTo} onSelect={setCustomTo} initialFocus className={cn("p-3 pointer-events-auto")} />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+
+          {/* Export dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                <Download className="h-3.5 w-3.5" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportCSV} className="gap-2">
+                <FileDown className="h-4 w-4" /> Export CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportPDF} className="gap-2">
+                <FileText className="h-4 w-4" /> Export PDF Report
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KPICard
-          title="Total Volume"
-          value={formatCurrency(totalVolume, 'USD')}
-          change={volumeChange}
-          icon={DollarSign}
-        />
+        <KPICard title="Total Volume" value={formatCurrency(totalVolume, 'USD')} change={dateRange !== 'custom' ? volumeChange : undefined} icon={DollarSign} />
         <KPICard
           title="Transactions"
           value={filteredTransactions.length.toLocaleString()}
-          change={prevTransactions.length > 0 ? ((filteredTransactions.length - prevTransactions.length) / prevTransactions.length * 100) : 0}
+          change={dateRange !== 'custom' && prevTransactions.length > 0 ? ((filteredTransactions.length - prevTransactions.length) / prevTransactions.length * 100) : undefined}
           icon={ArrowLeftRight}
         />
-        <KPICard
-          title="Success Rate"
-          value={`${successRate.toFixed(1)}%`}
-          icon={Activity}
-          neutral
-        />
-        <KPICard
-          title="Avg. Ticket"
-          value={formatCurrency(avgTicket, 'USD')}
-          icon={CreditCard}
-          neutral
-        />
+        <KPICard title="Success Rate" value={`${successRate.toFixed(1)}%`} icon={Activity} neutral />
+        <KPICard title="Avg. Ticket" value={formatCurrency(avgTicket, 'USD')} icon={CreditCard} neutral />
       </div>
 
       {/* Main Charts */}
@@ -238,7 +365,6 @@ export default function Analytics() {
         {/* OVERVIEW TAB */}
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Volume Chart - 2/3 width */}
             <Card className="lg:col-span-2">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -269,7 +395,6 @@ export default function Analytics() {
               </CardContent>
             </Card>
 
-            {/* Status Pie - 1/3 width */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -308,7 +433,6 @@ export default function Analytics() {
             </Card>
           </div>
 
-          {/* Hourly Activity */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
