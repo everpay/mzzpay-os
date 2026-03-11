@@ -100,7 +100,7 @@ export default function Wallets() {
           </div>
           <p className="text-muted-foreground mb-2">No wallets yet</p>
           <p className="text-sm text-muted-foreground mb-4">Receive your first payment to create a wallet</p>
-          <Button onClick={() => navigate('/new-payment')} className="gap-2">
+          <Button onClick={() => navigate('/payments/new')} className="gap-2">
             <CreditCard className="h-4 w-4" />
             Create Payment
           </Button>

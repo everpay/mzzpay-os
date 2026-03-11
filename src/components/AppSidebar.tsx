@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   ArrowLeftRight,
   Wallet,
-  
   Settings,
   CreditCard,
   Menu,
@@ -19,6 +18,7 @@ import {
   BarChart3,
   AlertTriangle,
   Archive,
+  UserCircle,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -41,6 +41,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/customers', icon: UserCircle, label: 'Customers' },
   {
     to: '/transactions',
     icon: ArrowLeftRight,
@@ -51,6 +52,8 @@ const navItems: NavItem[] = [
       { to: '/payment-links', icon: Link2, label: 'Payment Links' },
     ],
   },
+  { to: '/subscriptions', icon: RefreshCw, label: 'Subscriptions' },
+  { to: '/invoices', icon: FileText, label: 'Invoices' },
   {
     to: '/wallets',
     icon: Wallet,
@@ -60,8 +63,6 @@ const navItems: NavItem[] = [
       { to: '/payouts', icon: ArrowUpRight, label: 'Payouts' },
     ],
   },
-  { to: '/invoices', icon: FileText, label: 'Invoices' },
-  { to: '/subscriptions', icon: RefreshCw, label: 'Subscriptions' },
   {
     to: '/chargebacks',
     icon: Shield,
@@ -74,6 +75,7 @@ const navItems: NavItem[] = [
     ],
   },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
   { to: '/reseller', icon: Users, label: 'Reseller Portal', requiredRole: 'reseller' },
 ];
 
@@ -169,18 +171,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
         )}
-        <NavLink
-          to="/settings"
-          onClick={onNavigate}
-          className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-            location.pathname === '/settings'
-              ? 'bg-sidebar-accent text-foreground'
-              : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground'
-          }`}
-        >
-          <Settings className={`h-4 w-4 ${location.pathname === '/settings' ? 'text-primary' : ''}`} />
-          Settings
-        </NavLink>
         <button
           onClick={() => { signOut(); onNavigate?.(); }}
           className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground transition-colors"
