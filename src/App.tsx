@@ -11,7 +11,7 @@ import Payouts from "./pages/Payouts";
 import NewPayment from "./pages/NewPayment";
 import PaymentLinks from "./pages/PaymentLinks";
 import Checkout from "./pages/Checkout";
-import Activity from "./pages/Activity";
+import Analytics from "./pages/Analytics";
 import Subscriptions from "./pages/Subscriptions";
 import CustomerPortal from "./pages/CustomerPortal";
 import Chargebacks from "./pages/Chargebacks";
