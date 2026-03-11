@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield, Wifi } from 'lucide-react';
+import { CardBrandBadge } from '@/components/CardBrandBadge';
 
 interface TransactionDetailDrawerProps {
   transaction: Transaction | null;
