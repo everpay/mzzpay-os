@@ -11,12 +11,14 @@ import {
   RefreshCw,
   Link2,
   Shield,
-  ShieldCheck,
   FileText,
   ChevronDown,
   ArrowUpRight,
   Eye,
   Users,
+  BarChart3,
+  AlertTriangle,
+  Archive,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -58,11 +60,19 @@ const navItems: NavItem[] = [
   },
   { to: '/invoices', icon: FileText, label: 'Invoices' },
   { to: '/subscriptions', icon: RefreshCw, label: 'Subscriptions' },
-  { to: '/chargebacks', icon: Shield, label: 'Chargebacks' },
-  { to: '/merchant', icon: ShieldCheck, label: 'Dispute Defense' },
+  {
+    to: '/chargebacks',
+    icon: Shield,
+    label: 'Chargebacks',
+    children: [
+      { to: '/chargebacks', icon: Eye, label: 'Overview' },
+      { to: '/chargebacks/disputes', icon: AlertTriangle, label: 'Disputes' },
+      { to: '/chargebacks/evidence', icon: Archive, label: 'Evidence' },
+      { to: '/chargebacks/analytics', icon: BarChart3, label: 'Analytics' },
+    ],
+  },
   { to: '/activity', icon: Zap, label: 'Activity' },
   { to: '/reseller', icon: Users, label: 'Reseller Portal' },
-  
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
