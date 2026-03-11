@@ -793,9 +793,7 @@ export default function Analytics() {
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
-              </>
-            );
-          })()}
+        </TabsContent>
         </TabsContent>
       </Tabs>
     </AppLayout>
