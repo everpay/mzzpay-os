@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ArrowUpRight,
   Eye,
+  Users,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -58,6 +59,7 @@ const navItems: NavItem[] = [
   { to: '/subscriptions', icon: RefreshCw, label: 'Subscriptions' },
   { to: '/chargebacks', icon: Shield, label: 'Chargebacks' },
   { to: '/activity', icon: Zap, label: 'Activity' },
+  { to: '/reseller', icon: Users, label: 'Reseller Portal' },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
