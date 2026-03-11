@@ -24,7 +24,11 @@ import Docs from "./pages/Docs";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
 import ResellerPortal from "./pages/ResellerPortal";
-import AdminDashboard from "./pages/AdminDashboard";
+import MerchantDisputeDashboard from "./pages/merchant/MerchantDashboard";
+import MerchantDisputes from "./pages/merchant/MerchantDisputes";
+import MerchantEvidence from "./pages/merchant/MerchantEvidence";
+import MerchantAnalytics from "./pages/merchant/MerchantAnalytics";
+import MerchantDisputeDetail from "./pages/merchant/MerchantDisputeDetail";
 
 const queryClient = new QueryClient();
 
@@ -65,7 +69,11 @@ const AppRoutes = () => (
     <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/reseller" element={<ProtectedRoute><ResellerPortal /></ProtectedRoute>} />
-    <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+    <Route path="/merchant" element={<ProtectedRoute><MerchantDisputeDashboard /></ProtectedRoute>} />
+    <Route path="/merchant/disputes" element={<ProtectedRoute><MerchantDisputes /></ProtectedRoute>} />
+    <Route path="/merchant/disputes/:id" element={<ProtectedRoute><MerchantDisputeDetail /></ProtectedRoute>} />
+    <Route path="/merchant/evidence" element={<ProtectedRoute><MerchantEvidence /></ProtectedRoute>} />
+    <Route path="/merchant/analytics" element={<ProtectedRoute><MerchantAnalytics /></ProtectedRoute>} />
     <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>

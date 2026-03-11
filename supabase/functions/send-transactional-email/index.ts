@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface EmailPayload {
-  type: 'payment_receipt' | 'payout_confirmation' | 'subscription_invoice' | 'payment_failed' | 'refund_confirmation' | 'invoice_sent';
+  type: 'payment_receipt' | 'payout_confirmation' | 'subscription_invoice' | 'payment_failed' | 'refund_confirmation' | 'invoice_sent' | 'reserve_release_notice';
   to: string;
   data: Record<string, any>;
 }
@@ -151,6 +151,28 @@ const buildEmailHtml = (type: string, data: Record<string, any>): { subject: str
           </div>
           <a href="${data.payment_url}" style="${buttonStyle}">Pay Invoice →</a>
           <p style="${textStyle}; margin-top: 20px;">If the button doesn't work, copy this link: <span style="font-size: 12px; word-break: break-all;">${data.payment_url}</span></p>
+        `),
+      };
+    }
+
+    case 'reserve_release_notice': {
+      const releaseDate = data.release_date ? new Date(data.release_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'soon';
+      return {
+        subject: `Rolling Reserve Release Notice — ${formatCurrency(data.amount, data.currency)}`,
+        html: wrapper(`
+          <h1 style="${headerStyle}">Rolling Reserve Release</h1>
+          <p style="${textStyle}">Hi ${data.merchant_name || 'there'},</p>
+          <p style="${textStyle}">This is a courtesy notice that your rolling reserves are scheduled for release within the next 48 hours.</p>
+          <div style="background-color: #f0fdf4; border-radius: 8px; padding: 20px; margin: 0 0 24px; border-left: 4px solid ${brandColor};">
+            <table style="width: 100%; font-family: 'Inter', sans-serif; font-size: 14px;">
+              <tr><td style="color: #64748b; padding: 4px 0;">Amount to Release</td><td style="text-align: right; font-weight: 600; color: #0f172a;">${formatCurrency(data.amount, data.currency)}</td></tr>
+              <tr><td style="color: #64748b; padding: 4px 0;">Number of Reserves</td><td style="text-align: right; color: #0f172a;">${data.reserve_count || 1}</td></tr>
+              <tr><td style="color: #64748b; padding: 4px 0;">Release Date</td><td style="text-align: right; color: #0f172a;">${releaseDate}</td></tr>
+              <tr><td style="color: #64748b; padding: 4px 0;">Hold Period</td><td style="text-align: right; color: #0f172a;">180 days (completed)</td></tr>
+            </table>
+          </div>
+          <p style="${textStyle}">Once released, the funds will be credited to your available balance automatically. No action is required on your part.</p>
+          <p style="${textStyle}">If you have any questions, please contact support.</p>
         `),
       };
     }

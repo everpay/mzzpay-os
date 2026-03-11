@@ -59,9 +59,10 @@ const navItems: NavItem[] = [
   { to: '/invoices', icon: FileText, label: 'Invoices' },
   { to: '/subscriptions', icon: RefreshCw, label: 'Subscriptions' },
   { to: '/chargebacks', icon: Shield, label: 'Chargebacks' },
+  { to: '/merchant', icon: ShieldCheck, label: 'Dispute Defense' },
   { to: '/activity', icon: Zap, label: 'Activity' },
   { to: '/reseller', icon: Users, label: 'Reseller Portal' },
-  { to: '/admin', icon: ShieldCheck, label: 'Admin' },
+  
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
