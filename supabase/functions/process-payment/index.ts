@@ -193,6 +193,50 @@ serve(async (req) => {
       payload: providerResponse,
     });
 
+    // --- Rolling Reserve (10% held for 180 days) ---
+    if (txStatus === 'completed' || txStatus === 'processing') {
+      const reserveAmount = amount * 0.10;
+      await supabase.from('rolling_reserves').insert({
+        merchant_id: merchant.id,
+        transaction_id: transaction.id,
+        amount: reserveAmount,
+        currency,
+        reserve_percent: 10,
+        status: 'held',
+      });
+      console.log(`Rolling reserve: ${reserveAmount} ${currency} held for tx ${transaction.id}`);
+    }
+
+    // --- Update Card Velocity ---
+    if (paymentMethod === 'card') {
+      const today = new Date().toISOString().split('T')[0];
+      const cardLast4 = cardDetails?.number?.slice(-4) || null;
+      
+      const { data: existingVelocity } = await supabase
+        .from('card_velocity')
+        .select('id, transaction_count')
+        .eq('merchant_id', merchant.id)
+        .eq('customer_identifier', customerIdentifier)
+        .eq('transaction_date', today)
+        .single();
+
+      if (existingVelocity) {
+        await supabase
+          .from('card_velocity')
+          .update({ transaction_count: existingVelocity.transaction_count + 1 })
+          .eq('id', existingVelocity.id);
+      } else {
+        await supabase.from('card_velocity').insert({
+          merchant_id: merchant.id,
+          customer_identifier: customerIdentifier,
+          card_last4: cardLast4,
+          provider,
+          transaction_date: today,
+          transaction_count: 1,
+        });
+      }
+    }
+
     // Store idempotency response
     if (idempotencyKey) {
       await supabase.from('idempotency_keys').insert({
