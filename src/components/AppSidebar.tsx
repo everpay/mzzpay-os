@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Link2,
   Shield,
+  ShieldCheck,
   FileText,
   ChevronDown,
   ArrowUpRight,
