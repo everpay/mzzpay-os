@@ -24,6 +24,7 @@ import Docs from "./pages/Docs";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
 import ResellerPortal from "./pages/ResellerPortal";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const AppRoutes = () => (
     <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/reseller" element={<ProtectedRoute><ResellerPortal /></ProtectedRoute>} />
+    <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
     <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
