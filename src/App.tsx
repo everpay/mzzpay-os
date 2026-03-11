@@ -24,11 +24,9 @@ import Docs from "./pages/Docs";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
 import ResellerPortal from "./pages/ResellerPortal";
-import MerchantDisputeDashboard from "./pages/merchant/MerchantDashboard";
 import MerchantDisputes from "./pages/merchant/MerchantDisputes";
 import MerchantEvidence from "./pages/merchant/MerchantEvidence";
 import MerchantAnalytics from "./pages/merchant/MerchantAnalytics";
-import MerchantDisputeDetail from "./pages/merchant/MerchantDisputeDetail";
 
 const queryClient = new QueryClient();
 
@@ -66,15 +64,18 @@ const AppRoutes = () => (
     <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
     <Route path="/portal" element={<ProtectedRoute><CustomerPortal /></ProtectedRoute>} />
     <Route path="/chargebacks" element={<ProtectedRoute><Chargebacks /></ProtectedRoute>} />
+    <Route path="/chargebacks/disputes" element={<ProtectedRoute><MerchantDisputes /></ProtectedRoute>} />
+    <Route path="/chargebacks/evidence" element={<ProtectedRoute><MerchantEvidence /></ProtectedRoute>} />
+    <Route path="/chargebacks/analytics" element={<ProtectedRoute><MerchantAnalytics /></ProtectedRoute>} />
     <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/reseller" element={<ProtectedRoute><ResellerPortal /></ProtectedRoute>} />
-    <Route path="/merchant" element={<ProtectedRoute><MerchantDisputeDashboard /></ProtectedRoute>} />
-    <Route path="/merchant/disputes" element={<ProtectedRoute><MerchantDisputes /></ProtectedRoute>} />
-    <Route path="/merchant/disputes/:id" element={<ProtectedRoute><MerchantDisputeDetail /></ProtectedRoute>} />
-    <Route path="/merchant/evidence" element={<ProtectedRoute><MerchantEvidence /></ProtectedRoute>} />
-    <Route path="/merchant/analytics" element={<ProtectedRoute><MerchantAnalytics /></ProtectedRoute>} />
     <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
+    {/* Redirect old merchant routes */}
+    <Route path="/merchant" element={<Navigate to="/chargebacks" replace />} />
+    <Route path="/merchant/disputes" element={<Navigate to="/chargebacks/disputes" replace />} />
+    <Route path="/merchant/evidence" element={<Navigate to="/chargebacks/evidence" replace />} />
+    <Route path="/merchant/analytics" element={<Navigate to="/chargebacks/analytics" replace />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
