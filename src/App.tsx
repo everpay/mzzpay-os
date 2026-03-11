@@ -23,6 +23,7 @@ import Landing from "./pages/Landing";
 import Docs from "./pages/Docs";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
+import ResellerPortal from "./pages/ResellerPortal";
 
 const queryClient = new QueryClient();
 
