@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface EmailPayload {
-  type: 'payment_receipt' | 'payout_confirmation' | 'subscription_invoice' | 'payment_failed' | 'refund_confirmation' | 'invoice_sent';
+  type: 'payment_receipt' | 'payout_confirmation' | 'subscription_invoice' | 'payment_failed' | 'refund_confirmation' | 'invoice_sent' | 'reserve_release_notice';
   to: string;
   data: Record<string, any>;
 }
