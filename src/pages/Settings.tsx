@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import {
   Settings as SettingsIcon, Webhook, Key, Building2, Trash2, Save, Eye, EyeOff, Copy,
   ChevronRight, ArrowLeft, User, Lock, Globe, Phone, Mail, Plus, X, AlertTriangle, Zap, Code,
+  ExternalLink, RefreshCw, Hash, MapPin, FileText,
 } from 'lucide-react';
 import { useProviderEvents } from '@/hooks/useProviderEvents';
 import { formatDate } from '@/lib/format';
@@ -19,7 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
 
-type SettingsSection = 'main' | 'business' | 'account' | 'password' | 'webhooks' | 'api-keys' | 'bank-accounts' | 'developers' | 'deactivation';
+type SettingsSection = 'main' | 'account' | 'business' | 'bank-accounts' | 'developers' | 'deactivation';
 
 interface SavedBankAccount {
   id: string;
@@ -38,24 +40,36 @@ export default function Settings() {
   const navigate = useNavigate();
   const [section, setSection] = useState<SettingsSection>('main');
 
-  // Business details
-  const [businessName, setBusinessName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
+  // Account details (personal)
   const [contactName, setContactName] = useState('');
-  const [websiteUrls, setWebsiteUrls] = useState<string[]>([]);
-  const [newUrl, setNewUrl] = useState('');
-
-  // Account details
+  const [contactEmail, setContactEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [businessCurrency, setBusinessCurrency] = useState('USD');
-
-  // Password
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Business details (KYB)
+  const [businessName, setBusinessName] = useState('');
+  const [businessEmail, setBusinessEmail] = useState('');
+  const [businessPhone, setBusinessPhone] = useState('');
+  const [businessAddress, setBusinessAddress] = useState('');
+  const [businessCity, setBusinessCity] = useState('');
+  const [businessState, setBusinessState] = useState('');
+  const [businessPostalCode, setBusinessPostalCode] = useState('');
+  const [businessCountry, setBusinessCountry] = useState('');
+  const [companyRegNumber, setCompanyRegNumber] = useState('');
+  const [taxId, setTaxId] = useState('');
+  const [websiteUrls, setWebsiteUrls] = useState<string[]>([]);
+  const [newUrl, setNewUrl] = useState('');
+
   // Webhook
   const [webhookUrl, setWebhookUrl] = useState('');
+
+  // API Keys
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showSecretKey, setShowSecretKey] = useState(false);
+  const [livePublicKey, setLivePublicKey] = useState('');
+  const [liveSecretKey, setLiveSecretKey] = useState('');
 
   // Deactivation
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -99,34 +113,21 @@ export default function Settings() {
       setBusinessCurrency((merchant as any).business_currency || 'USD');
       setPhoneNumber((merchant as any).phone_number || '');
       setWebsiteUrls((merchant as any).website_urls || []);
+      // Generate keys based on merchant ID if they exist
+      if (merchant.id) {
+        setLivePublicKey(`mzz_pk_live_${merchant.id.replace(/-/g, '').slice(0, 24)}`);
+        setLiveSecretKey(merchant.api_key_hash || '');
+      }
     }
   }, [merchant, user]);
-
-  const saveBusiness = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from('merchants')
-        .update({
-          name: businessName,
-          contact_email: contactEmail,
-          contact_name: contactName,
-          website_urls: websiteUrls,
-        } as any)
-        .eq('user_id', user!.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('Business details saved');
-      queryClient.invalidateQueries({ queryKey: ['merchant-settings'] });
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to save'),
-  });
 
   const saveAccount = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
         .from('merchants')
         .update({
+          contact_name: contactName,
+          contact_email: contactEmail,
           phone_number: phoneNumber,
           business_currency: businessCurrency,
         } as any)
@@ -135,6 +136,24 @@ export default function Settings() {
     },
     onSuccess: () => {
       toast.success('Account details saved');
+      queryClient.invalidateQueries({ queryKey: ['merchant-settings'] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to save'),
+  });
+
+  const saveBusiness = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('merchants')
+        .update({
+          name: businessName,
+          website_urls: websiteUrls,
+        } as any)
+        .eq('user_id', user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Business details saved');
       queryClient.invalidateQueries({ queryKey: ['merchant-settings'] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to save'),
@@ -183,8 +202,6 @@ export default function Settings() {
     if (deleteConfirmText !== 'DELETE') return;
     setIsDeleting(true);
     try {
-      // Delete profile and merchant data (payment data like transactions stays via RLS)
-      // The edge function handles the actual auth user deletion
       const { error } = await supabase.functions.invoke('delete-account');
       if (error) throw error;
       toast.success('Your account has been deactivated. Payment records are preserved for compliance.');
@@ -208,18 +225,28 @@ export default function Settings() {
     setWebsiteUrls(websiteUrls.filter((_, i) => i !== index));
   };
 
-  const generateApiKey = () => {
-    const newKey = `mzz_live_${crypto.randomUUID().replace(/-/g, '')}`;
+  const generateApiKey = async (type: 'public' | 'secret') => {
+    const prefix = type === 'public' ? 'mzz_pk_live_' : 'mzz_sk_live_';
+    const newKey = `${prefix}${crypto.randomUUID().replace(/-/g, '')}`;
+    if (type === 'secret') {
+      // Save hash to DB
+      const { error } = await supabase.from('merchants').update({ api_key_hash: newKey } as any).eq('user_id', user!.id);
+      if (error) {
+        toast.error('Failed to generate key');
+        return;
+      }
+      setLiveSecretKey(newKey);
+      queryClient.invalidateQueries({ queryKey: ['merchant-settings'] });
+    } else {
+      setLivePublicKey(newKey);
+    }
     navigator.clipboard.writeText(newKey);
-    toast.success('New API key generated and copied to clipboard');
+    toast.success(`New ${type} key generated and copied to clipboard. Store it securely!`);
   };
 
   const menuItems: { key: SettingsSection; label: string; icon: React.ElementType; destructive?: boolean }[] = [
-    { key: 'business', label: 'Business Details', icon: Building2 },
     { key: 'account', label: 'Account Details', icon: User },
-    { key: 'password', label: 'Password', icon: Lock },
-    { key: 'webhooks', label: 'Webhooks', icon: Webhook },
-    { key: 'api-keys', label: 'API Keys', icon: Key },
+    { key: 'business', label: 'Business Details', icon: Building2 },
     { key: 'bank-accounts', label: 'Bank Accounts', icon: Building2 },
     { key: 'developers', label: 'Developers', icon: Code },
     { key: 'deactivation', label: 'Account Deactivation', icon: AlertTriangle, destructive: true },
@@ -232,13 +259,13 @@ export default function Settings() {
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Settings</h1>
           <p className="mt-1 text-sm text-muted-foreground">Edit your business information and adjust your settings.</p>
         </div>
-        <Card>
+        <Card className="max-w-lg">
           <CardContent className="p-0">
             {menuItems.map((item, i) => (
               <button
                 key={item.key}
                 onClick={() => setSection(item.key)}
-                className={`flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium hover:bg-muted/50 transition-colors ${
+                className={`flex w-full items-center justify-between px-5 py-3.5 text-left text-sm font-medium hover:bg-muted/50 transition-colors ${
                   item.destructive ? 'text-destructive' : 'text-foreground'
                 } ${i < menuItems.length - 1 ? 'border-b border-border' : ''}`}
               >
@@ -263,295 +290,418 @@ export default function Settings() {
         </button>
       </div>
 
-      {section === 'business' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Business Details</CardTitle>
-            <CardDescription>Update your business details to ensure all information remains current.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <Label>Business Name</Label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="pl-9" placeholder="Your business name" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Contact Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="pl-9" placeholder="contact@business.com" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input value={contactName} onChange={(e) => setContactName(e.target.value)} className="pl-9" placeholder="Your full name" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Website URLs</Label>
+      {/* ===== ACCOUNT DETAILS (personal info + password) ===== */}
+      {section === 'account' && (
+        <div className="space-y-6 max-w-2xl">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Details</CardTitle>
+              <CardDescription>Manage your personal account information.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
               <div className="space-y-2">
-                {websiteUrls.map((url, i) => (
-                  <div key={i} className="flex items-center gap-2">
+                <Label>Full Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={contactName} onChange={(e) => setContactName(e.target.value)} className="pl-9" placeholder="Your full name" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="pl-9" placeholder="you@example.com" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="pl-9" placeholder="+1 (555) 000-0000" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Default Currency</Label>
+                <Select value={businessCurrency} onValueChange={setBusinessCurrency}>
+                  <SelectTrigger>
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD – United States Dollar</SelectItem>
+                    <SelectItem value="CAD">CAD – Canadian Dollar</SelectItem>
+                    <SelectItem value="EUR">EUR – Euro</SelectItem>
+                    <SelectItem value="GBP">GBP – British Pound</SelectItem>
+                    <SelectItem value="BRL">BRL – Brazilian Real</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={() => saveAccount.mutate()} disabled={saveAccount.isPending}>
+                <Save className="h-4 w-4 mr-2" /> {saveAccount.isPending ? 'Saving...' : 'Save Account'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Lock className="h-5 w-5" /> Change Password</CardTitle>
+              <CardDescription>Update your account password.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-2">
+                <Label>New Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="pl-9" placeholder="New password" minLength={6} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Confirm Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-9" placeholder="Confirm password" minLength={6} />
+                </div>
+              </div>
+              <Button onClick={() => changePassword.mutate()} disabled={changePassword.isPending}>
+                <Save className="h-4 w-4 mr-2" /> {changePassword.isPending ? 'Updating...' : 'Update Password'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ===== BUSINESS DETAILS (KYB) ===== */}
+      {section === 'business' && (
+        <div className="max-w-2xl">
+          <Card>
+            <CardHeader>
+              <CardTitle>Business Details</CardTitle>
+              <CardDescription>Complete your Know Your Business (KYB) information.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-2">
+                <Label>Legal Business Name</Label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="pl-9" placeholder="Acme Corp Ltd." />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Company Registration No.</Label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input value={companyRegNumber} onChange={(e) => setCompanyRegNumber(e.target.value)} className="pl-9" placeholder="e.g. 12345678" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Tax ID / VAT Number</Label>
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input value={taxId} onChange={(e) => setTaxId(e.target.value)} className="pl-9" placeholder="e.g. GB123456789" />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Business Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input type="email" value={businessEmail} onChange={(e) => setBusinessEmail(e.target.value)} className="pl-9" placeholder="info@business.com" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Business Phone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input type="tel" value={businessPhone} onChange={(e) => setBusinessPhone(e.target.value)} className="pl-9" placeholder="+1 (555) 000-0000" />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+              <h4 className="text-sm font-semibold text-foreground">Business Address</h4>
+              <div className="space-y-2">
+                <Label>Street Address</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={businessAddress} onChange={(e) => setBusinessAddress(e.target.value)} className="pl-9" placeholder="123 Business Ave, Suite 100" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>City</Label>
+                  <Input value={businessCity} onChange={(e) => setBusinessCity(e.target.value)} placeholder="City" />
+                </div>
+                <div className="space-y-2">
+                  <Label>State/Province</Label>
+                  <Input value={businessState} onChange={(e) => setBusinessState(e.target.value)} placeholder="State" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Postal Code</Label>
+                  <Input value={businessPostalCode} onChange={(e) => setBusinessPostalCode(e.target.value)} placeholder="Postal" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Country</Label>
+                  <Input value={businessCountry} onChange={(e) => setBusinessCountry(e.target.value)} placeholder="Country" />
+                </div>
+              </div>
+
+              <Separator />
+              <div className="space-y-2">
+                <Label>Website URLs</Label>
+                <div className="space-y-2">
+                  {websiteUrls.map((url, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input value={url} readOnly className="pl-9 bg-muted" />
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => removeUrl(i)}>
+                        <X className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2">
                     <div className="relative flex-1">
                       <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input value={url} readOnly className="pl-9 bg-muted" />
+                      <Input
+                        value={newUrl}
+                        onChange={(e) => setNewUrl(e.target.value)}
+                        className="pl-9"
+                        placeholder="https://example.com"
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addUrl())}
+                      />
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeUrl(i)}>
-                      <X className="h-4 w-4 text-destructive" />
+                    <Button variant="outline" size="icon" onClick={addUrl}>
+                      <Plus className="h-4 w-4" />
                     </Button>
                   </div>
-                ))}
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={newUrl}
-                      onChange={(e) => setNewUrl(e.target.value)}
-                      className="pl-9"
-                      placeholder="https://example.com"
-                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addUrl())}
-                    />
-                  </div>
-                  <Button variant="outline" size="icon" onClick={addUrl}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
-            </div>
-            <Button onClick={() => saveBusiness.mutate()} disabled={saveBusiness.isPending}>
-              <Save className="h-4 w-4 mr-2" /> {saveBusiness.isPending ? 'Saving...' : 'Save'}
-            </Button>
-          </CardContent>
-        </Card>
+              <Button onClick={() => saveBusiness.mutate()} disabled={saveBusiness.isPending}>
+                <Save className="h-4 w-4 mr-2" /> {saveBusiness.isPending ? 'Saving...' : 'Save Business Details'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      {section === 'account' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Details</CardTitle>
-            <CardDescription>Update your account details to ensure all information remains current.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <Label>Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="pl-9" placeholder="+1 (555) 000-0000" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Currency</Label>
-              <Select value={businessCurrency} onValueChange={setBusinessCurrency}>
-                <SelectTrigger>
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                    <SelectValue />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">USD – United States Dollar</SelectItem>
-                  <SelectItem value="CAD">CAD – Canadian Dollar</SelectItem>
-                  <SelectItem value="EUR">EUR – Euro</SelectItem>
-                  <SelectItem value="GBP">GBP – British Pound</SelectItem>
-                  <SelectItem value="BRL">BRL – Brazilian Real</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={() => saveAccount.mutate()} disabled={saveAccount.isPending}>
-              <Save className="h-4 w-4 mr-2" /> {saveAccount.isPending ? 'Saving...' : 'Save'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {section === 'password' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Change Password</CardTitle>
-            <CardDescription>Update your account password.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <Label>New Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="pl-9" placeholder="New password" minLength={6} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Confirm Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-9" placeholder="Confirm password" minLength={6} />
-              </div>
-            </div>
-            <Button onClick={() => changePassword.mutate()} disabled={changePassword.isPending}>
-              <Save className="h-4 w-4 mr-2" /> {changePassword.isPending ? 'Updating...' : 'Update Password'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {section === 'webhooks' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Webhook className="h-5 w-5" /> Webhook Configuration</CardTitle>
-            <CardDescription>Configure your webhook URL to receive payment notifications.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Webhook URL</Label>
-              <div className="flex gap-2">
-                <Input type="url" placeholder="https://your-domain.com/api/webhooks" value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} className="flex-1" />
-                <Button onClick={() => updateWebhook.mutate(webhookUrl)} disabled={updateWebhook.isPending}>
-                  <Save className="h-4 w-4 mr-2" /> {updateWebhook.isPending ? 'Saving...' : 'Save'}
-                </Button>
-              </div>
-            </div>
-            <div className="rounded-lg border border-border bg-muted/50 p-4">
-              <h4 className="font-medium text-sm mb-2">Webhook Events</h4>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">payment_link.completed</Badge>
-                <Badge variant="outline">payment_link.failed</Badge>
-                <Badge variant="outline">payment_link.expired</Badge>
-                <Badge variant="outline">moneto.payment.succeeded</Badge>
-                <Badge variant="outline">moneto.payout.completed</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {section === 'api-keys' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Key className="h-5 w-5" /> API Keys</CardTitle>
-            <CardDescription>Manage your API keys for programmatic access.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Live API Key</Label>
-              <div className="flex gap-2">
-                <div className="flex-1 relative">
-                  <Input type={showApiKey ? 'text' : 'password'} value={merchant?.api_key_hash ? 'mzz_live_••••••••••••••••' : 'No API key generated'} readOnly className="pr-10" />
-                  <button type="button" onClick={() => setShowApiKey(!showApiKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                    {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                <Button variant="outline" onClick={() => { navigator.clipboard.writeText(merchant?.api_key_hash || ''); toast.success('Copied'); }}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-                <Button variant="secondary" onClick={generateApiKey}>Generate New</Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
+      {/* ===== BANK ACCOUNTS ===== */}
       {section === 'bank-accounts' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5" /> Saved Bank Accounts</CardTitle>
-            <CardDescription>Manage your saved bank accounts for quick payouts.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {savedBankAccounts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Building2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No saved bank accounts</p>
-                <p className="text-sm">Bank accounts are saved automatically when you make a payout</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {savedBankAccounts.map((account) => (
-                  <div key={account.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 rounded-lg bg-muted"><Building2 className="h-5 w-5 text-muted-foreground" /></div>
-                      <div>
-                        <p className="font-medium">
-                          {account.nickname || account.account_holder_name}
-                          {account.is_default && <Badge variant="secondary" className="ml-2 text-xs">Default</Badge>}
-                        </p>
-                        <p className="text-sm text-muted-foreground">•••• {account.account_last4} • {account.currency}</p>
+        <div className="max-w-2xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5" /> Saved Bank Accounts</CardTitle>
+              <CardDescription>Manage your saved bank accounts for quick payouts.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {savedBankAccounts.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Building2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No saved bank accounts</p>
+                  <p className="text-sm">Bank accounts are saved automatically when you make a payout</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {savedBankAccounts.map((account) => (
+                    <div key={account.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 rounded-lg bg-muted"><Building2 className="h-5 w-5 text-muted-foreground" /></div>
+                        <div>
+                          <p className="font-medium">
+                            {account.nickname || account.account_holder_name}
+                            {account.is_default && <Badge variant="secondary" className="ml-2 text-xs">Default</Badge>}
+                          </p>
+                          <p className="text-sm text-muted-foreground">•••• {account.account_last4} • {account.currency}</p>
+                        </div>
                       </div>
+                      <Button variant="ghost" size="icon" onClick={() => deleteBankAccount.mutate(account.id)} disabled={deleteBankAccount.isPending}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => deleteBankAccount.mutate(account.id)} disabled={deleteBankAccount.isPending}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      {section === 'developers' && <DevelopersSection />}
-
-      {section === 'deactivation' && (
-        <Card className="border-destructive/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" /> Account Deactivation
-            </CardTitle>
-            <CardDescription>
-              Permanently delete your account. This action cannot be undone.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-3">
-              <h4 className="font-medium text-sm">What happens when you delete your account:</h4>
-              <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-4">
-                <li>Your login credentials and profile will be permanently removed</li>
-                <li>Your merchant profile and business settings will be deleted</li>
-                <li>You will lose access to the dashboard immediately</li>
-              </ul>
-              <h4 className="font-medium text-sm mt-3">What is preserved for compliance:</h4>
-              <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-4">
-                <li>Transaction records and payment history</li>
-                <li>Invoice records</li>
-                <li>Dispute and chargeback records</li>
-                <li>Ledger entries</li>
-              </ul>
-            </div>
-
-            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="destructive" className="gap-2">
-                  <Trash2 className="h-4 w-4" /> Delete My Account
+      {/* ===== DEVELOPERS (API Keys + Webhooks + Activity Log) ===== */}
+      {section === 'developers' && (
+        <div className="space-y-6 max-w-2xl">
+          {/* API Keys */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2"><Key className="h-5 w-5" /> API Keys</CardTitle>
+                  <CardDescription>Manage your API keys for programmatic access.</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => navigate('/docs')} className="gap-1.5">
+                  <ExternalLink className="h-3.5 w-3.5" /> API Docs
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="text-destructive">Confirm Account Deletion</DialogTitle>
-                  <DialogDescription>
-                    This will permanently delete your account. Your payment data will be preserved for regulatory compliance. Type <strong>DELETE</strong> to confirm.
-                  </DialogDescription>
-                </DialogHeader>
-                <Input
-                  placeholder="Type DELETE to confirm"
-                  value={deleteConfirmText}
-                  onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  className="mt-2"
-                />
-                <DialogFooter className="mt-4">
-                  <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-                  <Button
-                    variant="destructive"
-                    onClick={handleDeleteAccount}
-                    disabled={deleteConfirmText !== 'DELETE' || isDeleting}
-                  >
-                    {isDeleting ? 'Deleting...' : 'Permanently Delete'}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* Account ID */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Account ID</Label>
+                <div className="flex gap-2">
+                  <Input value={merchant?.id || ''} readOnly className="flex-1 font-mono text-xs" />
+                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(merchant?.id || ''); toast.success('Account ID copied'); }}>
+                    <Copy className="h-4 w-4" />
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Publishable Key */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Publishable Key</Label>
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Input type={showApiKey ? 'text' : 'password'} value={livePublicKey || 'No key generated'} readOnly className="pr-10 font-mono text-xs" />
+                    <button type="button" onClick={() => setShowApiKey(!showApiKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(livePublicKey); toast.success('Copied'); }}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => generateApiKey('public')} className="gap-1.5">
+                    <RefreshCw className="h-3.5 w-3.5" /> Rotate
+                  </Button>
+                </div>
+              </div>
+
+              {/* Secret Key */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Secret Key</Label>
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Input type={showSecretKey ? 'text' : 'password'} value={liveSecretKey || 'No key generated'} readOnly className="pr-10 font-mono text-xs" />
+                    <button type="button" onClick={() => setShowSecretKey(!showSecretKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(liveSecretKey); toast.success('Copied'); }}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => generateApiKey('secret')} className="gap-1.5">
+                    <RefreshCw className="h-3.5 w-3.5" /> {liveSecretKey ? 'Rotate' : 'Generate'}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Keep your secret key secure. Do not share it in public repositories.</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Webhooks */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Webhook className="h-5 w-5" /> Webhook Configuration</CardTitle>
+              <CardDescription>Configure your webhook URL to receive payment notifications.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Webhook URL</Label>
+                <div className="flex gap-2">
+                  <Input type="url" placeholder="https://your-domain.com/api/webhooks" value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} className="flex-1" />
+                  <Button onClick={() => updateWebhook.mutate(webhookUrl)} disabled={updateWebhook.isPending}>
+                    <Save className="h-4 w-4 mr-2" /> {updateWebhook.isPending ? 'Saving...' : 'Save'}
+                  </Button>
+                </div>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/50 p-4">
+                <h4 className="font-medium text-sm mb-2">Webhook Events</h4>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">payment_link.completed</Badge>
+                  <Badge variant="outline">payment_link.failed</Badge>
+                  <Badge variant="outline">payment_link.expired</Badge>
+                  <Badge variant="outline">moneto.payment.succeeded</Badge>
+                  <Badge variant="outline">moneto.payout.completed</Badge>
+                  <Badge variant="outline">invoice.paid</Badge>
+                  <Badge variant="outline">invoice.overdue</Badge>
+                  <Badge variant="outline">dispute.created</Badge>
+                  <Badge variant="outline">subscription.renewed</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Activity Log */}
+          <DevelopersSection />
+        </div>
+      )}
+
+      {/* ===== DEACTIVATION ===== */}
+      {section === 'deactivation' && (
+        <div className="max-w-2xl">
+          <Card className="border-destructive/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" /> Account Deactivation
+              </CardTitle>
+              <CardDescription>
+                Permanently delete your account. This action cannot be undone.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-3">
+                <h4 className="font-medium text-sm">What happens when you delete your account:</h4>
+                <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-4">
+                  <li>Your login credentials and profile will be permanently removed</li>
+                  <li>Your merchant profile and business settings will be deleted</li>
+                  <li>You will lose access to the dashboard immediately</li>
+                </ul>
+                <h4 className="font-medium text-sm mt-3">What is preserved for compliance:</h4>
+                <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-4">
+                  <li>Transaction records and payment history</li>
+                  <li>Invoice records</li>
+                  <li>Dispute and chargeback records</li>
+                  <li>Ledger entries</li>
+                </ul>
+              </div>
+
+              <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="destructive" className="gap-2">
+                    <Trash2 className="h-4 w-4" /> Delete My Account
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="text-destructive">Confirm Account Deletion</DialogTitle>
+                    <DialogDescription>
+                      This will permanently delete your account. Your payment data will be preserved for regulatory compliance. Type <strong>DELETE</strong> to confirm.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Input
+                    placeholder="Type DELETE to confirm"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    className="mt-2"
+                  />
+                  <DialogFooter className="mt-4">
+                    <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeleteAccount}
+                      disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+                    >
+                      {isDeleting ? 'Deleting...' : 'Permanently Delete'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </AppLayout>
   );
@@ -561,47 +711,42 @@ function DevelopersSection() {
   const { data: events = [], isLoading } = useProviderEvents();
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Code className="h-5 w-5" /> Developers</CardTitle>
-          <CardDescription>Provider webhook events, system activity, and developer tools.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
-            <Zap className="h-4 w-4 text-primary" /> Activity Log
-          </h4>
-          {isLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <p className="text-muted-foreground text-sm">Loading events...</p>
-            </div>
-          ) : events.length === 0 ? (
-            <div className="flex items-center justify-center p-8 rounded-lg border border-border bg-muted/30">
-              <p className="text-muted-foreground text-sm">No events yet</p>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-border divide-y divide-border max-h-[500px] overflow-y-auto">
-              {events.map((event) => (
-                <div key={event.id} className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/30">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 flex-shrink-0">
-                    <Zap className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">{event.event_type}</span>
-                      <Badge variant="outline" className="text-[10px]">{event.provider}</Badge>
-                    </div>
-                    {event.transaction_id && (
-                      <span className="font-mono text-xs text-muted-foreground">{event.transaction_id}</span>
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(event.created_at)}</span>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5" /> Activity Log</CardTitle>
+        <CardDescription>Provider webhook events and system activity.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <p className="text-muted-foreground text-sm">Loading events...</p>
+          </div>
+        ) : events.length === 0 ? (
+          <div className="flex items-center justify-center p-8 rounded-lg border border-border bg-muted/30">
+            <p className="text-muted-foreground text-sm">No events yet</p>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border divide-y divide-border max-h-[400px] overflow-y-auto">
+            {events.map((event) => (
+              <div key={event.id} className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/30">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 flex-shrink-0">
+                  <Zap className="h-3.5 w-3.5 text-primary" />
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">{event.event_type}</span>
+                    <Badge variant="outline" className="text-[10px]">{event.provider}</Badge>
+                  </div>
+                  {event.transaction_id && (
+                    <span className="font-mono text-xs text-muted-foreground">{event.transaction_id}</span>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(event.created_at)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
