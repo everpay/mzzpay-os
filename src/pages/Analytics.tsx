@@ -183,6 +183,35 @@ export default function Analytics() {
     }));
   }, [filteredTransactions]);
 
+  // Provider timeline for Risk & Ratios tab
+  const providerTimeline = useMemo(() => {
+    const providers = [...new Set(filteredTransactions.map(tx => tx.provider))];
+    const buckets: Record<string, Record<string, number>> = {};
+    filteredTransactions.forEach(tx => {
+      const key = new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (!buckets[key]) buckets[key] = {};
+      buckets[key][tx.provider] = (buckets[key][tx.provider] || 0) + 1;
+    });
+    return { data: Object.entries(buckets).map(([date, provs]) => ({ date, ...provs })), providers };
+  }, [filteredTransactions]);
+
+  const providerVolumeMap = useMemo(() => {
+    return filteredTransactions.reduce<Record<string, { volume: number; count: number }>>((acc, tx) => {
+      if (!acc[tx.provider]) acc[tx.provider] = { volume: 0, count: 0 };
+      acc[tx.provider].volume += tx.amount;
+      acc[tx.provider].count += 1;
+      return acc;
+    }, {});
+  }, [filteredTransactions]);
+
+  const refundedTx = useMemo(() => filteredTransactions.filter(tx => tx.status === 'refunded'), [filteredTransactions]);
+  const refundedVolume = useMemo(() => refundedTx.reduce((s, tx) => s + tx.amount, 0), [refundedTx]);
+  const refundTxRatio = filteredTransactions.length > 0 ? (refundedTx.length / filteredTransactions.length * 100) : 0;
+  const refundVolRatio = totalVolume > 0 ? (refundedVolume / totalVolume * 100) : 0;
+  const disputeVolume = disputes.reduce((s, d) => s + (d.amount || 0), 0);
+  const cbTxRatio = filteredTransactions.length > 0 ? (disputes.length / filteredTransactions.length * 100) : 0;
+  const cbVolRatio = totalVolume > 0 ? (disputeVolume / totalVolume * 100) : 0;
+
   // Export functions
   const exportCSV = useCallback(() => {
     const headers = ['ID', 'Date', 'Amount', 'Currency', 'Status', 'Provider', 'Customer Email', 'Description'];
