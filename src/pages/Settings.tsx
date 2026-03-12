@@ -34,6 +34,9 @@ import {
   Hash,
   MapPin,
   FileText,
+  Users,
+  UserPlus,
+  Shield,
 } from "lucide-react";
 import { useProviderEvents } from "@/hooks/useProviderEvents";
 import { formatDate } from "@/lib/format";
@@ -52,7 +55,7 @@ import {
 } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 
-type SettingsSection = "main" | "account" | "business" | "bank-accounts" | "developers" | "deactivation";
+type SettingsSection = "main" | "account" | "business" | "bank-accounts" | "developers" | "team" | "deactivation";
 
 interface SavedBankAccount {
   id: string;
@@ -106,6 +109,12 @@ export default function Settings() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Team invite
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteFullName, setInviteFullName] = useState("");
+  const [inviteRole, setInviteRole] = useState<"admin" | "reseller">("admin");
+  const [isInviting, setIsInviting] = useState(false);
 
   const { data: merchant } = useQuery({
     queryKey: ["merchant-settings"],
@@ -286,6 +295,7 @@ export default function Settings() {
     { key: "account", label: "Account Details", icon: User },
     { key: "business", label: "Business Details", icon: Building2 },
     { key: "bank-accounts", label: "Bank Accounts", icon: Building2 },
+    { key: "team", label: "Team", icon: Users },
     { key: "developers", label: "Developers", icon: Code },
     { key: "deactivation", label: "Close Account", icon: AlertTriangle, destructive: true },
   ];
@@ -819,6 +829,86 @@ export default function Settings() {
 
           {/* Activity Log */}
           <DevelopersSection />
+        </div>
+      )}
+
+      {/* ===== TEAM ===== */}
+      {section === "team" && (
+        <div className="space-y-6 max-w-2xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" /> Invite Team Member
+              </CardTitle>
+              <CardDescription>Send an invitation to add a new admin or reseller to your account.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-2">
+                <Label>Full Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={inviteFullName}
+                    onChange={(e) => setInviteFullName(e.target.value)}
+                    className="pl-9"
+                    placeholder="John Doe"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="pl-9"
+                    placeholder="colleague@company.com"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "admin" | "reseller")}>
+                  <SelectTrigger>
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin — Full dashboard access</SelectItem>
+                    <SelectItem value="reseller">Reseller — Reseller portal access</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                onClick={async () => {
+                  if (!inviteEmail) { toast.error("Email is required"); return; }
+                  setIsInviting(true);
+                  try {
+                    const { data, error } = await supabase.functions.invoke("invite-admin", {
+                      body: { email: inviteEmail, fullName: inviteFullName, role: inviteRole },
+                    });
+                    if (error) throw error;
+                    if (data?.error) throw new Error(data.error);
+                    toast.success(`Invitation sent to ${inviteEmail}`);
+                    setInviteEmail("");
+                    setInviteFullName("");
+                    setInviteRole("admin");
+                  } catch (err: any) {
+                    toast.error(err.message || "Failed to send invitation");
+                  } finally {
+                    setIsInviting(false);
+                  }
+                }}
+                disabled={isInviting || !inviteEmail}
+              >
+                <UserPlus className="h-4 w-4 mr-2" /> {isInviting ? "Sending..." : "Send Invitation"}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       )}
 
