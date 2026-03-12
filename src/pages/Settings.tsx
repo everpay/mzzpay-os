@@ -34,6 +34,9 @@ import {
   Hash,
   MapPin,
   FileText,
+  Users,
+  UserPlus,
+  Shield,
 } from "lucide-react";
 import { useProviderEvents } from "@/hooks/useProviderEvents";
 import { formatDate } from "@/lib/format";
