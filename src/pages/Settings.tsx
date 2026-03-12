@@ -287,7 +287,7 @@ export default function Settings() {
     { key: "business", label: "Business Details", icon: Building2 },
     { key: "bank-accounts", label: "Bank Accounts", icon: Building2 },
     { key: "developers", label: "Developers", icon: Code },
-    { key: "deactivation", label: "Account Deactivation", icon: AlertTriangle, destructive: true },
+    { key: "deactivation", label: "Deactivate Account", icon: AlertTriangle, destructive: true },
   ];
 
   if (section === "main") {
