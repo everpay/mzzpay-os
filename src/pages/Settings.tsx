@@ -295,6 +295,7 @@ export default function Settings() {
     { key: "account", label: "Account Details", icon: User },
     { key: "business", label: "Business Details", icon: Building2 },
     { key: "bank-accounts", label: "Bank Accounts", icon: Building2 },
+    { key: "team", label: "Team", icon: Users },
     { key: "developers", label: "Developers", icon: Code },
     { key: "deactivation", label: "Close Account", icon: AlertTriangle, destructive: true },
   ];
