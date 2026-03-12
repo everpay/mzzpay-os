@@ -110,6 +110,12 @@ export default function Settings() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Team invite
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteFullName, setInviteFullName] = useState("");
+  const [inviteRole, setInviteRole] = useState<"admin" | "reseller">("admin");
+  const [isInviting, setIsInviting] = useState(false);
+
   const { data: merchant } = useQuery({
     queryKey: ["merchant-settings"],
     queryFn: async () => {
