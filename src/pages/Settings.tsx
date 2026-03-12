@@ -1,27 +1,58 @@
-import { useState, useEffect } from 'react';
-import { AppLayout } from '@/components/AppLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
+import { useState, useEffect } from "react";
+import { AppLayout } from "@/components/AppLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
-  Settings as SettingsIcon, Webhook, Key, Building2, Trash2, Save, Eye, EyeOff, Copy,
-  ChevronRight, ArrowLeft, User, Lock, Globe, Phone, Mail, Plus, X, AlertTriangle, Zap, Code,
-  ExternalLink, RefreshCw, Hash, MapPin, FileText,
-} from 'lucide-react';
-import { useProviderEvents } from '@/hooks/useProviderEvents';
-import { formatDate } from '@/lib/format';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { useNavigate } from 'react-router-dom';
+  Settings as SettingsIcon,
+  Webhook,
+  Key,
+  Building2,
+  Trash2,
+  Save,
+  Eye,
+  EyeOff,
+  Copy,
+  ChevronRight,
+  ArrowLeft,
+  User,
+  Lock,
+  Globe,
+  Phone,
+  Mail,
+  Plus,
+  X,
+  AlertTriangle,
+  Zap,
+  Code,
+  ExternalLink,
+  RefreshCw,
+  Hash,
+  MapPin,
+  FileText,
+} from "lucide-react";
+import { useProviderEvents } from "@/hooks/useProviderEvents";
+import { formatDate } from "@/lib/format";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 
-type SettingsSection = 'main' | 'account' | 'business' | 'bank-accounts' | 'developers' | 'deactivation';
+type SettingsSection = "main" | "account" | "business" | "bank-accounts" | "developers" | "deactivation";
 
 interface SavedBankAccount {
   id: string;
@@ -38,67 +69,71 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [section, setSection] = useState<SettingsSection>('main');
+  const [section, setSection] = useState<SettingsSection>("main");
 
   // Account details (personal)
-  const [contactName, setContactName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [businessCurrency, setBusinessCurrency] = useState('USD');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [businessCurrency, setBusinessCurrency] = useState("USD");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Business details (KYB)
-  const [businessName, setBusinessName] = useState('');
-  const [businessEmail, setBusinessEmail] = useState('');
-  const [businessPhone, setBusinessPhone] = useState('');
-  const [businessAddress, setBusinessAddress] = useState('');
-  const [businessCity, setBusinessCity] = useState('');
-  const [businessState, setBusinessState] = useState('');
-  const [businessPostalCode, setBusinessPostalCode] = useState('');
-  const [businessCountry, setBusinessCountry] = useState('');
-  const [companyRegNumber, setCompanyRegNumber] = useState('');
-  const [taxId, setTaxId] = useState('');
+  const [businessName, setBusinessName] = useState("");
+  const [businessEmail, setBusinessEmail] = useState("");
+  const [businessPhone, setBusinessPhone] = useState("");
+  const [businessAddress, setBusinessAddress] = useState("");
+  const [businessCity, setBusinessCity] = useState("");
+  const [businessState, setBusinessState] = useState("");
+  const [businessPostalCode, setBusinessPostalCode] = useState("");
+  const [businessCountry, setBusinessCountry] = useState("");
+  const [companyRegNumber, setCompanyRegNumber] = useState("");
+  const [taxId, setTaxId] = useState("");
   const [websiteUrls, setWebsiteUrls] = useState<string[]>([]);
-  const [newUrl, setNewUrl] = useState('');
+  const [newUrl, setNewUrl] = useState("");
 
   // Webhook
-  const [webhookUrl, setWebhookUrl] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState("");
 
   // API Keys
   const [showApiKey, setShowApiKey] = useState(false);
   const [showSecretKey, setShowSecretKey] = useState(false);
-  const [livePublicKey, setLivePublicKey] = useState('');
-  const [liveSecretKey, setLiveSecretKey] = useState('');
+  const [livePublicKey, setLivePublicKey] = useState("");
+  const [liveSecretKey, setLiveSecretKey] = useState("");
 
   // Deactivation
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const { data: merchant } = useQuery({
-    queryKey: ['merchant-settings'],
+    queryKey: ["merchant-settings"],
     queryFn: async () => {
-      const { data: { user: u } } = await supabase.auth.getUser();
-      if (!u) throw new Error('Not authenticated');
-      const { data, error } = await supabase
-        .from('merchants')
-        .select('*')
-        .eq('user_id', u.id)
-        .single();
+      const {
+        data: { user: u },
+      } = await supabase.auth.getUser();
+      if (!u) throw new Error("Not authenticated");
+      const { data, error } = await supabase.from("merchants").select("*").eq("user_id", u.id).single();
       if (error) throw error;
       return data;
     },
   });
 
   const { data: savedBankAccounts = [] } = useQuery({
-    queryKey: ['saved-bank-accounts'],
+    queryKey: ["saved-bank-accounts"],
     queryFn: async () => {
-      const { data: { user: u } } = await supabase.auth.getUser();
-      if (!u) throw new Error('Not authenticated');
-      const { data: m } = await supabase.from('merchants').select('id').eq('user_id', u.id).single();
-      if (!m) throw new Error('Merchant not found');
-      const { data, error } = await supabase.from('saved_bank_accounts').select('*').eq('merchant_id', m.id).order('created_at', { ascending: false });
+      const {
+        data: { user: u },
+      } = await supabase.auth.getUser();
+      if (!u) throw new Error("Not authenticated");
+      const { data: m } = await supabase.from("merchants").select("id").eq("user_id", u.id).single();
+      if (!m) throw new Error("Merchant not found");
+      const { data, error } = await supabase
+        .from("saved_bank_accounts")
+        .select("*")
+        .eq("merchant_id", m.id)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data as SavedBankAccount[];
     },
@@ -106,17 +141,17 @@ export default function Settings() {
 
   useEffect(() => {
     if (merchant) {
-      setBusinessName(merchant.name || '');
-      setContactEmail((merchant as any).contact_email || user?.email || '');
-      setContactName((merchant as any).contact_name || '');
-      setWebhookUrl(merchant.webhook_url || '');
-      setBusinessCurrency((merchant as any).business_currency || 'USD');
-      setPhoneNumber((merchant as any).phone_number || '');
+      setBusinessName(merchant.name || "");
+      setContactEmail((merchant as any).contact_email || user?.email || "");
+      setContactName((merchant as any).contact_name || "");
+      setWebhookUrl(merchant.webhook_url || "");
+      setBusinessCurrency((merchant as any).business_currency || "USD");
+      setPhoneNumber((merchant as any).phone_number || "");
       setWebsiteUrls((merchant as any).website_urls || []);
       // Generate keys based on merchant ID if they exist
       if (merchant.id) {
-        setLivePublicKey(`mzz_pk_live_${merchant.id.replace(/-/g, '').slice(0, 24)}`);
-        setLiveSecretKey(merchant.api_key_hash || '');
+        setLivePublicKey(`mzz_pk_live_${merchant.id.replace(/-/g, "").slice(0, 24)}`);
+        setLiveSecretKey(merchant.api_key_hash || "");
       }
     }
   }, [merchant, user]);
@@ -124,91 +159,91 @@ export default function Settings() {
   const saveAccount = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
-        .from('merchants')
+        .from("merchants")
         .update({
           contact_name: contactName,
           contact_email: contactEmail,
           phone_number: phoneNumber,
           business_currency: businessCurrency,
         } as any)
-        .eq('user_id', user!.id);
+        .eq("user_id", user!.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Account details saved');
-      queryClient.invalidateQueries({ queryKey: ['merchant-settings'] });
+      toast.success("Account details saved");
+      queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to save'),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to save"),
   });
 
   const saveBusiness = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
-        .from('merchants')
+        .from("merchants")
         .update({
           name: businessName,
           website_urls: websiteUrls,
         } as any)
-        .eq('user_id', user!.id);
+        .eq("user_id", user!.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Business details saved');
-      queryClient.invalidateQueries({ queryKey: ['merchant-settings'] });
+      toast.success("Business details saved");
+      queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to save'),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to save"),
   });
 
   const changePassword = useMutation({
     mutationFn: async () => {
-      if (newPassword !== confirmPassword) throw new Error('Passwords do not match');
-      if (newPassword.length < 6) throw new Error('Password must be at least 6 characters');
+      if (newPassword !== confirmPassword) throw new Error("Passwords do not match");
+      if (newPassword.length < 6) throw new Error("Password must be at least 6 characters");
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Password updated');
-      setNewPassword('');
-      setConfirmPassword('');
+      toast.success("Password updated");
+      setNewPassword("");
+      setConfirmPassword("");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to update password'),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update password"),
   });
 
   const updateWebhook = useMutation({
     mutationFn: async (url: string) => {
-      const { error } = await supabase.from('merchants').update({ webhook_url: url }).eq('user_id', user!.id);
+      const { error } = await supabase.from("merchants").update({ webhook_url: url }).eq("user_id", user!.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Webhook URL updated');
-      queryClient.invalidateQueries({ queryKey: ['merchant-settings'] });
+      toast.success("Webhook URL updated");
+      queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to update webhook'),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update webhook"),
   });
 
   const deleteBankAccount = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('saved_bank_accounts').delete().eq('id', id);
+      const { error } = await supabase.from("saved_bank_accounts").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Bank account removed');
-      queryClient.invalidateQueries({ queryKey: ['saved-bank-accounts'] });
+      toast.success("Bank account removed");
+      queryClient.invalidateQueries({ queryKey: ["saved-bank-accounts"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to delete'),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to delete"),
   });
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirmText !== 'DELETE') return;
+    if (deleteConfirmText !== "DELETE") return;
     setIsDeleting(true);
     try {
-      const { error } = await supabase.functions.invoke('delete-account');
+      const { error } = await supabase.functions.invoke("delete-account");
       if (error) throw error;
-      toast.success('Your account has been deactivated. Payment records are preserved for compliance.');
+      toast.success("Your account has been deactivated. Payment records are preserved for compliance.");
       await signOut();
-      navigate('/login');
+      navigate("/login");
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete account');
+      toast.error(error.message || "Failed to delete account");
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
@@ -218,25 +253,28 @@ export default function Settings() {
   const addUrl = () => {
     if (!newUrl.trim()) return;
     setWebsiteUrls([...websiteUrls, newUrl.trim()]);
-    setNewUrl('');
+    setNewUrl("");
   };
 
   const removeUrl = (index: number) => {
     setWebsiteUrls(websiteUrls.filter((_, i) => i !== index));
   };
 
-  const generateApiKey = async (type: 'public' | 'secret') => {
-    const prefix = type === 'public' ? 'mzz_pk_live_' : 'mzz_sk_live_';
-    const newKey = `${prefix}${crypto.randomUUID().replace(/-/g, '')}`;
-    if (type === 'secret') {
+  const generateApiKey = async (type: "public" | "secret") => {
+    const prefix = type === "public" ? "mzz_pk_live_" : "mzz_sk_live_";
+    const newKey = `${prefix}${crypto.randomUUID().replace(/-/g, "")}`;
+    if (type === "secret") {
       // Save hash to DB
-      const { error } = await supabase.from('merchants').update({ api_key_hash: newKey } as any).eq('user_id', user!.id);
+      const { error } = await supabase
+        .from("merchants")
+        .update({ api_key_hash: newKey } as any)
+        .eq("user_id", user!.id);
       if (error) {
-        toast.error('Failed to generate key');
+        toast.error("Failed to generate key");
         return;
       }
       setLiveSecretKey(newKey);
-      queryClient.invalidateQueries({ queryKey: ['merchant-settings'] });
+      queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
     } else {
       setLivePublicKey(newKey);
     }
@@ -245,14 +283,14 @@ export default function Settings() {
   };
 
   const menuItems: { key: SettingsSection; label: string; icon: React.ElementType; destructive?: boolean }[] = [
-    { key: 'account', label: 'Account Details', icon: User },
-    { key: 'business', label: 'Business Details', icon: Building2 },
-    { key: 'bank-accounts', label: 'Bank Accounts', icon: Building2 },
-    { key: 'developers', label: 'Developers', icon: Code },
-    { key: 'deactivation', label: 'Account Deactivation', icon: AlertTriangle, destructive: true },
+    { key: "account", label: "Account Details", icon: User },
+    { key: "business", label: "Business Details", icon: Building2 },
+    { key: "bank-accounts", label: "Bank Accounts", icon: Building2 },
+    { key: "developers", label: "Developers", icon: Code },
+    { key: "deactivation", label: "Account Deactivation", icon: AlertTriangle, destructive: true },
   ];
 
-  if (section === 'main') {
+  if (section === "main") {
     return (
       <AppLayout>
         <div className="mb-6">
@@ -266,8 +304,8 @@ export default function Settings() {
                 key={item.key}
                 onClick={() => setSection(item.key)}
                 className={`flex w-full items-center justify-between px-5 py-3.5 text-left text-sm font-medium hover:bg-muted/50 transition-colors ${
-                  item.destructive ? 'text-destructive' : 'text-foreground'
-                } ${i < menuItems.length - 1 ? 'border-b border-border' : ''}`}
+                  item.destructive ? "text-destructive" : "text-foreground"
+                } ${i < menuItems.length - 1 ? "border-b border-border" : ""}`}
               >
                 <span className="flex items-center gap-3">
                   <item.icon className="h-4 w-4" />
@@ -285,13 +323,16 @@ export default function Settings() {
   return (
     <AppLayout>
       <div className="mb-6">
-        <button onClick={() => setSection('main')} className="flex items-center gap-1 text-sm text-primary hover:underline mb-3">
+        <button
+          onClick={() => setSection("main")}
+          className="flex items-center gap-1 text-sm text-primary hover:underline mb-3"
+        >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
       </div>
 
       {/* ===== ACCOUNT DETAILS (personal info + password) ===== */}
-      {section === 'account' && (
+      {section === "account" && (
         <div className="space-y-6 max-w-2xl">
           <Card>
             <CardHeader>
@@ -303,21 +344,38 @@ export default function Settings() {
                 <Label>Full Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={contactName} onChange={(e) => setContactName(e.target.value)} className="pl-9" placeholder="Your full name" />
+                  <Input
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    className="pl-9"
+                    placeholder="Your full name"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Email Address</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="pl-9" placeholder="you@example.com" />
+                  <Input
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    className="pl-9"
+                    placeholder="you@example.com"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Phone Number</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="pl-9" placeholder="+1 (555) 000-0000" />
+                  <Input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="pl-9"
+                    placeholder="+1 (555) 000-0000"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
@@ -339,14 +397,16 @@ export default function Settings() {
                 </Select>
               </div>
               <Button onClick={() => saveAccount.mutate()} disabled={saveAccount.isPending}>
-                <Save className="h-4 w-4 mr-2" /> {saveAccount.isPending ? 'Saving...' : 'Save Account'}
+                <Save className="h-4 w-4 mr-2" /> {saveAccount.isPending ? "Saving..." : "Save Account"}
               </Button>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Lock className="h-5 w-5" /> Change Password</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" /> Change Password
+              </CardTitle>
               <CardDescription>Update your account password.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -354,18 +414,32 @@ export default function Settings() {
                 <Label>New Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="pl-9" placeholder="New password" minLength={6} />
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="pl-9"
+                    placeholder="New password"
+                    minLength={6}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Confirm Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-9" placeholder="Confirm password" minLength={6} />
+                  <Input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-9"
+                    placeholder="Confirm password"
+                    minLength={6}
+                  />
                 </div>
               </div>
               <Button onClick={() => changePassword.mutate()} disabled={changePassword.isPending}>
-                <Save className="h-4 w-4 mr-2" /> {changePassword.isPending ? 'Updating...' : 'Update Password'}
+                <Save className="h-4 w-4 mr-2" /> {changePassword.isPending ? "Updating..." : "Update Password"}
               </Button>
             </CardContent>
           </Card>
@@ -373,7 +447,7 @@ export default function Settings() {
       )}
 
       {/* ===== BUSINESS DETAILS (KYB) ===== */}
-      {section === 'business' && (
+      {section === "business" && (
         <div className="max-w-2xl">
           <Card>
             <CardHeader>
@@ -385,7 +459,12 @@ export default function Settings() {
                 <Label>Legal Business Name</Label>
                 <div className="relative">
                   <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="pl-9" placeholder="Acme Corp Ltd." />
+                  <Input
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    className="pl-9"
+                    placeholder="Acme Corp Ltd."
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -393,14 +472,24 @@ export default function Settings() {
                   <Label>Company Registration No.</Label>
                   <div className="relative">
                     <Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input value={companyRegNumber} onChange={(e) => setCompanyRegNumber(e.target.value)} className="pl-9" placeholder="e.g. 12345678" />
+                    <Input
+                      value={companyRegNumber}
+                      onChange={(e) => setCompanyRegNumber(e.target.value)}
+                      className="pl-9"
+                      placeholder="e.g. 12345678"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Tax ID / VAT Number</Label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input value={taxId} onChange={(e) => setTaxId(e.target.value)} className="pl-9" placeholder="e.g. GB123456789" />
+                    <Input
+                      value={taxId}
+                      onChange={(e) => setTaxId(e.target.value)}
+                      className="pl-9"
+                      placeholder="e.g. GB123456789"
+                    />
                   </div>
                 </div>
               </div>
@@ -409,14 +498,26 @@ export default function Settings() {
                   <Label>Business Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input type="email" value={businessEmail} onChange={(e) => setBusinessEmail(e.target.value)} className="pl-9" placeholder="info@business.com" />
+                    <Input
+                      type="email"
+                      value={businessEmail}
+                      onChange={(e) => setBusinessEmail(e.target.value)}
+                      className="pl-9"
+                      placeholder="info@business.com"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Business Phone</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input type="tel" value={businessPhone} onChange={(e) => setBusinessPhone(e.target.value)} className="pl-9" placeholder="+1 (555) 000-0000" />
+                    <Input
+                      type="tel"
+                      value={businessPhone}
+                      onChange={(e) => setBusinessPhone(e.target.value)}
+                      className="pl-9"
+                      placeholder="+1 (555) 000-0000"
+                    />
                   </div>
                 </div>
               </div>
@@ -427,7 +528,12 @@ export default function Settings() {
                 <Label>Street Address</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={businessAddress} onChange={(e) => setBusinessAddress(e.target.value)} className="pl-9" placeholder="123 Business Ave, Suite 100" />
+                  <Input
+                    value={businessAddress}
+                    onChange={(e) => setBusinessAddress(e.target.value)}
+                    className="pl-9"
+                    placeholder="123 Business Ave, Suite 100"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -441,11 +547,19 @@ export default function Settings() {
                 </div>
                 <div className="space-y-2">
                   <Label>Postal Code</Label>
-                  <Input value={businessPostalCode} onChange={(e) => setBusinessPostalCode(e.target.value)} placeholder="Postal" />
+                  <Input
+                    value={businessPostalCode}
+                    onChange={(e) => setBusinessPostalCode(e.target.value)}
+                    placeholder="Postal"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Country</Label>
-                  <Input value={businessCountry} onChange={(e) => setBusinessCountry(e.target.value)} placeholder="Country" />
+                  <Input
+                    value={businessCountry}
+                    onChange={(e) => setBusinessCountry(e.target.value)}
+                    placeholder="Country"
+                  />
                 </div>
               </div>
 
@@ -472,7 +586,7 @@ export default function Settings() {
                         onChange={(e) => setNewUrl(e.target.value)}
                         className="pl-9"
                         placeholder="https://example.com"
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addUrl())}
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addUrl())}
                       />
                     </div>
                     <Button variant="outline" size="icon" onClick={addUrl}>
@@ -482,7 +596,7 @@ export default function Settings() {
                 </div>
               </div>
               <Button onClick={() => saveBusiness.mutate()} disabled={saveBusiness.isPending}>
-                <Save className="h-4 w-4 mr-2" /> {saveBusiness.isPending ? 'Saving...' : 'Save Business Details'}
+                <Save className="h-4 w-4 mr-2" /> {saveBusiness.isPending ? "Saving..." : "Save Business Details"}
               </Button>
             </CardContent>
           </Card>
@@ -490,11 +604,13 @@ export default function Settings() {
       )}
 
       {/* ===== BANK ACCOUNTS ===== */}
-      {section === 'bank-accounts' && (
+      {section === "bank-accounts" && (
         <div className="max-w-2xl">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5" /> Saved Bank Accounts</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" /> Saved Bank Accounts
+              </CardTitle>
               <CardDescription>Manage your saved bank accounts for quick payouts.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -507,18 +623,34 @@ export default function Settings() {
               ) : (
                 <div className="space-y-3">
                   {savedBankAccounts.map((account) => (
-                    <div key={account.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
+                    <div
+                      key={account.id}
+                      className="flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors"
+                    >
                       <div className="flex items-center gap-4">
-                        <div className="p-2 rounded-lg bg-muted"><Building2 className="h-5 w-5 text-muted-foreground" /></div>
+                        <div className="p-2 rounded-lg bg-muted">
+                          <Building2 className="h-5 w-5 text-muted-foreground" />
+                        </div>
                         <div>
                           <p className="font-medium">
                             {account.nickname || account.account_holder_name}
-                            {account.is_default && <Badge variant="secondary" className="ml-2 text-xs">Default</Badge>}
+                            {account.is_default && (
+                              <Badge variant="secondary" className="ml-2 text-xs">
+                                Default
+                              </Badge>
+                            )}
                           </p>
-                          <p className="text-sm text-muted-foreground">•••• {account.account_last4} • {account.currency}</p>
+                          <p className="text-sm text-muted-foreground">
+                            •••• {account.account_last4} • {account.currency}
+                          </p>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => deleteBankAccount.mutate(account.id)} disabled={deleteBankAccount.isPending}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteBankAccount.mutate(account.id)}
+                        disabled={deleteBankAccount.isPending}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -531,17 +663,19 @@ export default function Settings() {
       )}
 
       {/* ===== DEVELOPERS (API Keys + Webhooks + Activity Log) ===== */}
-      {section === 'developers' && (
+      {section === "developers" && (
         <div className="space-y-6 max-w-2xl">
           {/* API Keys */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2"><Key className="h-5 w-5" /> API Keys</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Key className="h-5 w-5" /> API Keys
+                  </CardTitle>
                   <CardDescription>Manage your API keys for programmatic access.</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => navigate('/docs')} className="gap-1.5">
+                <Button variant="outline" size="sm" onClick={() => navigate("/docs")} className="gap-1.5">
                   <ExternalLink className="h-3.5 w-3.5" /> API Docs
                 </Button>
               </div>
@@ -551,8 +685,15 @@ export default function Settings() {
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Account ID</Label>
                 <div className="flex gap-2">
-                  <Input value={merchant?.id || ''} readOnly className="flex-1 font-mono text-xs" />
-                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(merchant?.id || ''); toast.success('Account ID copied'); }}>
+                  <Input value={merchant?.id || ""} readOnly className="flex-1 font-mono text-xs" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(merchant?.id || "");
+                      toast.success("Account ID copied");
+                    }}
+                  >
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -565,15 +706,31 @@ export default function Settings() {
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Publishable Key</Label>
                 <div className="flex gap-2">
                   <div className="flex-1 relative">
-                    <Input type={showApiKey ? 'text' : 'password'} value={livePublicKey || 'No key generated'} readOnly className="pr-10 font-mono text-xs" />
-                    <button type="button" onClick={() => setShowApiKey(!showApiKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <Input
+                      type={showApiKey ? "text" : "password"}
+                      value={livePublicKey || "No key generated"}
+                      readOnly
+                      className="pr-10 font-mono text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
                       {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(livePublicKey); toast.success('Copied'); }}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(livePublicKey);
+                      toast.success("Copied");
+                    }}
+                  >
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={() => generateApiKey('public')} className="gap-1.5">
+                  <Button variant="secondary" size="sm" onClick={() => generateApiKey("public")} className="gap-1.5">
                     <RefreshCw className="h-3.5 w-3.5" /> Rotate
                   </Button>
                 </div>
@@ -584,19 +741,37 @@ export default function Settings() {
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Secret Key</Label>
                 <div className="flex gap-2">
                   <div className="flex-1 relative">
-                    <Input type={showSecretKey ? 'text' : 'password'} value={liveSecretKey || 'No key generated'} readOnly className="pr-10 font-mono text-xs" />
-                    <button type="button" onClick={() => setShowSecretKey(!showSecretKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <Input
+                      type={showSecretKey ? "text" : "password"}
+                      value={liveSecretKey || "No key generated"}
+                      readOnly
+                      className="pr-10 font-mono text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSecretKey(!showSecretKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
                       {showSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(liveSecretKey); toast.success('Copied'); }}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(liveSecretKey);
+                      toast.success("Copied");
+                    }}
+                  >
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={() => generateApiKey('secret')} className="gap-1.5">
-                    <RefreshCw className="h-3.5 w-3.5" /> {liveSecretKey ? 'Rotate' : 'Generate'}
+                  <Button variant="secondary" size="sm" onClick={() => generateApiKey("secret")} className="gap-1.5">
+                    <RefreshCw className="h-3.5 w-3.5" /> {liveSecretKey ? "Rotate" : "Generate"}
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">Keep your secret key secure. Do not share it in public repositories.</p>
+                <p className="text-xs text-muted-foreground">
+                  Keep your secret key secure. Do not share it in public repositories.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -604,16 +779,24 @@ export default function Settings() {
           {/* Webhooks */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Webhook className="h-5 w-5" /> Webhook Configuration</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Webhook className="h-5 w-5" /> Webhook Configuration
+              </CardTitle>
               <CardDescription>Configure your webhook URL to receive payment notifications.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Webhook URL</Label>
                 <div className="flex gap-2">
-                  <Input type="url" placeholder="https://your-domain.com/api/webhooks" value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} className="flex-1" />
+                  <Input
+                    type="url"
+                    placeholder="https://your-domain.com/api/webhooks"
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
+                    className="flex-1"
+                  />
                   <Button onClick={() => updateWebhook.mutate(webhookUrl)} disabled={updateWebhook.isPending}>
-                    <Save className="h-4 w-4 mr-2" /> {updateWebhook.isPending ? 'Saving...' : 'Save'}
+                    <Save className="h-4 w-4 mr-2" /> {updateWebhook.isPending ? "Saving..." : "Save"}
                   </Button>
                 </div>
               </div>
@@ -640,16 +823,14 @@ export default function Settings() {
       )}
 
       {/* ===== DEACTIVATION ===== */}
-      {section === 'deactivation' && (
+      {section === "deactivation" && (
         <div className="max-w-2xl">
           <Card className="border-destructive/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="h-5 w-5" /> Account Deactivation
+                <AlertTriangle className="h-5 w-5" /> Deactivate Account
               </CardTitle>
-              <CardDescription>
-                Permanently delete your account. This action cannot be undone.
-              </CardDescription>
+              <CardDescription>Permanently delete your account. This action cannot be undone.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-3">
@@ -678,7 +859,8 @@ export default function Settings() {
                   <DialogHeader>
                     <DialogTitle className="text-destructive">Confirm Account Deletion</DialogTitle>
                     <DialogDescription>
-                      This will permanently delete your account. Your payment data will be preserved for regulatory compliance. Type <strong>DELETE</strong> to confirm.
+                      This will permanently delete your account. Your payment data will be preserved for regulatory
+                      compliance. Type <strong>DELETE</strong> to confirm.
                     </DialogDescription>
                   </DialogHeader>
                   <Input
@@ -688,13 +870,15 @@ export default function Settings() {
                     className="mt-2"
                   />
                   <DialogFooter className="mt-4">
-                    <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                    <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                      Cancel
+                    </Button>
                     <Button
                       variant="destructive"
                       onClick={handleDeleteAccount}
-                      disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+                      disabled={deleteConfirmText !== "DELETE" || isDeleting}
                     >
-                      {isDeleting ? 'Deleting...' : 'Permanently Delete'}
+                      {isDeleting ? "Deleting..." : "Permanently Delete"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -713,7 +897,9 @@ function DevelopersSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5" /> Activity Log</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Zap className="h-5 w-5" /> Activity Log
+        </CardTitle>
         <CardDescription>Provider webhook events and system activity.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -735,7 +921,9 @@ function DevelopersSection() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground">{event.event_type}</span>
-                    <Badge variant="outline" className="text-[10px]">{event.provider}</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {event.provider}
+                    </Badge>
                   </div>
                   {event.transaction_id && (
                     <span className="font-mono text-xs text-muted-foreground">{event.transaction_id}</span>

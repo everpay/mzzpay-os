@@ -57,7 +57,7 @@ const navItems: NavItem[] = [
   {
     to: '/wallets',
     icon: Wallet,
-    label: 'Wallets',
+    label: 'Treasury,
     children: [
       { to: '/wallets', icon: Eye, label: 'Overview' },
       { to: '/payouts', icon: ArrowUpRight, label: 'Payouts' },
@@ -99,9 +99,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <>
       <div className="flex h-16 items-center justify-between border-b border-border px-6">
         <div className="flex items-center gap-2.5">
-          <img src={everpayIcon} alt="MZZPay" className="h-8 w-8 rounded-lg" />
+          <img src={everpayIcon} alt="MzzPay" className="h-8 w-8 rounded-lg" />
           <span className="font-heading text-lg font-bold text-foreground tracking-tight">
-            MZZPay
+            MzzPay
           </span>
         </div>
         <ThemeToggle />
@@ -175,7 +175,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           onClick={() => { signOut(); onNavigate?.(); }}
           className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground transition-colors"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-4 w-4 text-destructive" />
           Sign Out
         </button>
       </div>
