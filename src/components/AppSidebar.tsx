@@ -57,7 +57,7 @@ const navItems: NavItem[] = [
   {
     to: '/wallets',
     icon: Wallet,
-    label: 'Treasury,
+    label: 'Treasury',
     children: [
       { to: '/wallets', icon: Eye, label: 'Overview' },
       { to: '/payouts', icon: ArrowUpRight, label: 'Payouts' },
