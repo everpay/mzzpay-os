@@ -870,7 +870,7 @@ export default function Settings() {
               </div>
               <div className="space-y-2">
                 <Label>Role</Label>
-                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "admin" | "reseller")}>
+                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v)}>
                   <SelectTrigger>
                     <div className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-muted-foreground" />
@@ -880,6 +880,11 @@ export default function Settings() {
                   <SelectContent>
                     <SelectItem value="admin">Admin — Full dashboard access</SelectItem>
                     <SelectItem value="reseller">Reseller — Reseller portal access</SelectItem>
+                    <SelectItem value="developer">Developer — API & integrations access</SelectItem>
+                    <SelectItem value="compliance_officer">Compliance Officer — Risk & compliance</SelectItem>
+                    <SelectItem value="support">Support — Customer support access</SelectItem>
+                    <SelectItem value="agent">Agent — Transaction processing</SelectItem>
+                    <SelectItem value="employee">Employee — Basic dashboard access</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
