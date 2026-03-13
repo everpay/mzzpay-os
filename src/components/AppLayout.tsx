@@ -1,5 +1,6 @@
 import { AppSidebar } from './AppSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { MerchantChat } from './MerchantChat';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
@@ -13,6 +14,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </main>
+      <MerchantChat />
     </div>
   );
 }
