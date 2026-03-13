@@ -1,8 +1,8 @@
-export type Currency = 'USD' | 'EUR' | 'GBP' | 'BRL' | 'MXN' | 'COP' | 'CAD';
+export type Currency = "USD" | "EUR" | "GBP" | "BRL" | "MXN" | "COP" | "CAD";
 
-export type TransactionStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
-export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed';
-export type Provider = 'facilitapay' | 'mondo' | 'stripe' | 'mzzpay' | 'moneto';
+export type TransactionStatus = "pending" | "processing" | "completed" | "failed" | "refunded";
+export type PayoutStatus = "pending" | "processing" | "completed" | "failed";
+export type Provider = "facilitapay" | "mondo" | "stripe" | "mzzpay" | "moneto";
 
 export interface Merchant {
   id: string;
@@ -39,11 +39,27 @@ export interface Transaction {
   updated_at: string;
 }
 
+export interface SurchargeSettings {
+  enabled: boolean;
+  percentageFee: number; // 0.029 = 2.9%
+  fixedFee: number; // 0.30 USD
+  maxCap?: number;
+}
+
+export interface Transaction {
+  id: string;
+  merchantId: string;
+  amount: number;
+  surchargeAmount: number;
+  totalAmount: number;
+  status: "pending" | "completed" | "failed";
+}
+
 export interface LedgerEntry {
   id: string;
   transaction_id: string;
   account_id: string;
-  entry_type: 'debit' | 'credit';
+  entry_type: "debit" | "credit";
   amount: number;
   currency: Currency;
   created_at: string;
