@@ -36,7 +36,8 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   children?: { to: string; icon: React.ElementType; label: string }[];
-  requiredRole?: "admin" | "reseller";
+  requiredRole?: "admin" | "reseller" | "developer" | "compliance_officer" | "support" | "agent" | "employee";
+  hiddenFromRoles?: string[];
 }
 
 const navItems: NavItem[] = [
