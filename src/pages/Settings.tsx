@@ -901,7 +901,7 @@ export default function Settings() {
                     toast.success(`Invitation sent to ${inviteEmail}`);
                     setInviteEmail("");
                     setInviteFullName("");
-                    setInviteRole("admin");
+                    setInviteRole("employee");
                   } catch (err: any) {
                     toast.error(err.message || "Failed to send invitation");
                   } finally {
