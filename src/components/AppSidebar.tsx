@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -19,64 +19,64 @@ import {
   AlertTriangle,
   Archive,
   UserCircle,
-} from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useAuth } from '@/contexts/AuthContext';
-import { useUserRole } from '@/hooks/useUserRole';
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import everpayIcon from '@/assets/everpay-icon.png';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import everpayIcon from "@/assets/mzzpay-logo.png";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface NavItem {
   to: string;
   icon: React.ElementType;
   label: string;
   children?: { to: string; icon: React.ElementType; label: string }[];
-  requiredRole?: 'admin' | 'reseller';
+  requiredRole?: "admin" | "reseller";
 }
 
 const navItems: NavItem[] = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/customers', icon: UserCircle, label: 'Customers' },
+  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/customers", icon: UserCircle, label: "Customers" },
   {
-    to: '/transactions',
+    to: "/transactions",
     icon: ArrowLeftRight,
-    label: 'Transactions',
+    label: "Transactions",
     children: [
-      { to: '/transactions', icon: Eye, label: 'Overview' },
-      { to: '/payments/new', icon: CreditCard, label: 'New Payment' },
-      { to: '/payment-links', icon: Link2, label: 'Payment Links' },
+      { to: "/transactions", icon: Eye, label: "Overview" },
+      { to: "/payments/new", icon: CreditCard, label: "New Payment" },
+      { to: "/payment-links", icon: Link2, label: "Payment Links" },
     ],
   },
-  { to: '/subscriptions', icon: RefreshCw, label: 'Subscriptions' },
-  { to: '/invoices', icon: FileText, label: 'Invoices' },
+  { to: "/subscriptions", icon: RefreshCw, label: "Subscriptions" },
+  { to: "/invoices", icon: FileText, label: "Invoices" },
   {
-    to: '/wallets',
+    to: "/wallets",
     icon: Wallet,
-    label: 'Treasury',
+    label: "Treasury",
     children: [
-      { to: '/wallets', icon: Eye, label: 'Overview' },
-      { to: '/payouts', icon: ArrowUpRight, label: 'Payouts' },
+      { to: "/wallets", icon: Eye, label: "Overview" },
+      { to: "/payouts", icon: ArrowUpRight, label: "Payouts" },
     ],
   },
   {
-    to: '/chargebacks',
+    to: "/chargebacks",
     icon: Shield,
-    label: 'Chargebacks',
+    label: "Chargebacks",
     children: [
-      { to: '/chargebacks', icon: Eye, label: 'Overview' },
-      { to: '/chargebacks/disputes', icon: AlertTriangle, label: 'Disputes' },
-      { to: '/chargebacks/evidence', icon: Archive, label: 'Evidence' },
-      { to: '/chargebacks/analytics', icon: BarChart3, label: 'Analytics' },
+      { to: "/chargebacks", icon: Eye, label: "Overview" },
+      { to: "/chargebacks/disputes", icon: AlertTriangle, label: "Disputes" },
+      { to: "/chargebacks/evidence", icon: Archive, label: "Evidence" },
+      { to: "/chargebacks/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
-  { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
-  { to: '/reseller', icon: Users, label: 'Reseller Portal', requiredRole: 'reseller' },
+  { to: "/analytics", icon: BarChart3, label: "Analytics" },
+  { to: "/settings", icon: Settings, label: "Settings" },
+  { to: "/reseller", icon: Users, label: "Reseller Portal", requiredRole: "reseller" },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -87,8 +87,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const visibleNavItems = navItems.filter((item) => {
     if (!item.requiredRole) return true;
     if (!userRole) return false;
-    if (item.requiredRole === 'admin') return userRole.isAdmin;
-    if (item.requiredRole === 'reseller') return userRole.isReseller;
+    if (item.requiredRole === "admin") return userRole.isAdmin;
+    if (item.requiredRole === "reseller") return userRole.isReseller;
     return false;
   });
 
@@ -100,9 +100,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="flex h-16 items-center justify-between border-b border-border px-6">
         <div className="flex items-center gap-2.5">
           <img src={everpayIcon} alt="MzzPay" className="h-8 w-8 rounded-lg" />
-          <span className="font-heading text-lg font-bold text-foreground tracking-tight">
-            MzzPay
-          </span>
+          <span className="font-heading text-lg font-bold text-foreground tracking-tight">MzzPay</span>
         </div>
         <ThemeToggle />
       </div>
@@ -115,7 +113,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               <Collapsible key={item.to} defaultOpen={active}>
                 <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground">
                   <span className="flex items-center gap-3">
-                    <item.icon className={`h-4 w-4 ${active ? 'text-primary' : ''}`} />
+                    <item.icon className={`h-4 w-4 ${active ? "text-primary" : ""}`} />
                     {item.label}
                   </span>
                   <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
@@ -131,11 +129,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                           onClick={onNavigate}
                           className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                             childActive
-                              ? 'bg-sidebar-accent text-foreground'
-                              : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground'
+                              ? "bg-sidebar-accent text-foreground"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
                           }`}
                         >
-                          <child.icon className={`h-3.5 w-3.5 ${childActive ? 'text-primary' : ''}`} />
+                          <child.icon className={`h-3.5 w-3.5 ${childActive ? "text-primary" : ""}`} />
                           {child.label}
                         </NavLink>
                       );
@@ -154,11 +152,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               onClick={onNavigate}
               className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-sidebar-accent text-foreground'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground'
+                  ? "bg-sidebar-accent text-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
               }`}
             >
-              <item.icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
+              <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
               {item.label}
             </NavLink>
           );
@@ -172,7 +170,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         )}
         <button
-          onClick={() => { signOut(); onNavigate?.(); }}
+          onClick={() => {
+            signOut();
+            onNavigate?.();
+          }}
           className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground transition-colors"
         >
           <LogOut className="h-4 w-4 text-destructive" />
