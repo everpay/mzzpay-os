@@ -46,14 +46,6 @@ export interface SurchargeSettings {
   maxCap?: number;
 }
 
-export interface Transaction {
-  id: string;
-  merchantId: string;
-  amount: number;
-  surchargeAmount: number;
-  totalAmount: number;
-  status: "pending" | "completed" | "failed";
-}
 
 export interface LedgerEntry {
   id: string;

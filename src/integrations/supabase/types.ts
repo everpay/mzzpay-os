@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -843,6 +843,82 @@ export type Database = {
           },
         ]
       }
+      surcharge_audit_logs: {
+        Row: {
+          changed_by: string
+          created_at: string | null
+          id: string
+          merchant_id: string
+          new_settings: Json | null
+          old_settings: Json | null
+        }
+        Insert: {
+          changed_by: string
+          created_at?: string | null
+          id?: string
+          merchant_id: string
+          new_settings?: Json | null
+          old_settings?: Json | null
+        }
+        Update: {
+          changed_by?: string
+          created_at?: string | null
+          id?: string
+          merchant_id?: string
+          new_settings?: Json | null
+          old_settings?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surcharge_audit_logs_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surcharge_settings: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          fixed_fee: number | null
+          id: string
+          max_fee_cap: number | null
+          merchant_id: string
+          percentage_fee: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          fixed_fee?: number | null
+          id?: string
+          max_fee_cap?: number | null
+          merchant_id: string
+          percentage_fee?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          fixed_fee?: number | null
+          id?: string
+          max_fee_cap?: number | null
+          merchant_id?: string
+          percentage_fee?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surcharge_settings_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -859,6 +935,8 @@ export type Database = {
           settlement_amount: number | null
           settlement_currency: string | null
           status: string
+          surcharge_amount: number
+          total_amount: number | null
           updated_at: string
         }
         Insert: {
@@ -876,6 +954,8 @@ export type Database = {
           settlement_amount?: number | null
           settlement_currency?: string | null
           status?: string
+          surcharge_amount?: number
+          total_amount?: number | null
           updated_at?: string
         }
         Update: {
@@ -893,6 +973,8 @@ export type Database = {
           settlement_amount?: number | null
           settlement_currency?: string | null
           status?: string
+          surcharge_amount?: number
+          total_amount?: number | null
           updated_at?: string
         }
         Relationships: [

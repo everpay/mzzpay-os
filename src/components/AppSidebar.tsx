@@ -36,7 +36,8 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   children?: { to: string; icon: React.ElementType; label: string }[];
-  requiredRole?: "admin" | "reseller";
+  requiredRole?: "admin" | "reseller" | "developer" | "compliance_officer" | "support" | "agent" | "employee";
+  hiddenFromRoles?: string[];
 }
 
 const navItems: NavItem[] = [
@@ -58,6 +59,7 @@ const navItems: NavItem[] = [
     to: "/wallets",
     icon: Wallet,
     label: "Treasury",
+    hiddenFromRoles: ["support", "agent", "employee"],
     children: [
       { to: "/wallets", icon: Eye, label: "Overview" },
       { to: "/payouts", icon: ArrowUpRight, label: "Payouts" },
@@ -74,8 +76,8 @@ const navItems: NavItem[] = [
       { to: "/chargebacks/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
-  { to: "/analytics", icon: BarChart3, label: "Analytics" },
-  { to: "/settings", icon: Settings, label: "Settings" },
+  { to: "/analytics", icon: BarChart3, label: "Analytics", hiddenFromRoles: ["agent", "employee"] },
+  { to: "/settings", icon: Settings, label: "Settings", hiddenFromRoles: ["agent", "employee"] },
   { to: "/reseller", icon: Users, label: "Reseller Portal", requiredRole: "reseller" },
 ];
 
@@ -85,10 +87,21 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { data: userRole } = useUserRole();
 
   const visibleNavItems = navItems.filter((item) => {
-    if (!item.requiredRole) return true;
+    if (!item.requiredRole) {
+      // Hide certain items from limited roles
+      if (item.hiddenFromRoles && userRole) {
+        return !item.hiddenFromRoles.some(r => userRole.roles.includes(r as any));
+      }
+      return true;
+    }
     if (!userRole) return false;
     if (item.requiredRole === "admin") return userRole.isAdmin;
     if (item.requiredRole === "reseller") return userRole.isReseller;
+    if (item.requiredRole === "developer") return userRole.isDeveloper || userRole.isAdmin;
+    if (item.requiredRole === "compliance_officer") return userRole.isComplianceOfficer || userRole.isAdmin;
+    if (item.requiredRole === "support") return userRole.isSupport || userRole.isAdmin;
+    if (item.requiredRole === "agent") return userRole.isAgent || userRole.isAdmin;
+    if (item.requiredRole === "employee") return userRole.isEmployee || userRole.isAdmin;
     return false;
   });
 
