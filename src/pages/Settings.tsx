@@ -113,7 +113,7 @@ export default function Settings() {
   // Team invite
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteFullName, setInviteFullName] = useState("");
-  const [inviteRole, setInviteRole] = useState<"admin" | "reseller">("admin");
+  const [inviteRole, setInviteRole] = useState<string>("employee");
   const [isInviting, setIsInviting] = useState(false);
 
   const { data: merchant } = useQuery({
