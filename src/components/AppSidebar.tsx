@@ -59,6 +59,7 @@ const navItems: NavItem[] = [
     to: "/wallets",
     icon: Wallet,
     label: "Treasury",
+    hiddenFromRoles: ["support", "agent", "employee"],
     children: [
       { to: "/wallets", icon: Eye, label: "Overview" },
       { to: "/payouts", icon: ArrowUpRight, label: "Payouts" },
@@ -75,8 +76,8 @@ const navItems: NavItem[] = [
       { to: "/chargebacks/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
-  { to: "/analytics", icon: BarChart3, label: "Analytics" },
-  { to: "/settings", icon: Settings, label: "Settings" },
+  { to: "/analytics", icon: BarChart3, label: "Analytics", hiddenFromRoles: ["agent", "employee"] },
+  { to: "/settings", icon: Settings, label: "Settings", hiddenFromRoles: ["agent", "employee"] },
   { to: "/reseller", icon: Users, label: "Reseller Portal", requiredRole: "reseller" },
 ];
 
