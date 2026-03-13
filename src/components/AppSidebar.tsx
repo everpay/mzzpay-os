@@ -88,7 +88,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     if (!item.requiredRole) return true;
     if (!userRole) return false;
     if (item.requiredRole === 'admin') return userRole.isAdmin;
-    if (item.requiredRole === 'reseller') return userRole.isAdmin || userRole.isReseller;
+    if (item.requiredRole === 'reseller') return userRole.isReseller;
     return false;
   });
 
