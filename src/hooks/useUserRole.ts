@@ -21,6 +21,11 @@ export function useUserRole() {
         isAdmin: roles.includes('super_admin') || roles.includes('admin'),
         isSuperAdmin: roles.includes('super_admin'),
         isReseller: roles.includes('reseller'),
+        isDeveloper: roles.includes('developer'),
+        isComplianceOfficer: roles.includes('compliance_officer'),
+        isSupport: roles.includes('support'),
+        isAgent: roles.includes('agent'),
+        isEmployee: roles.includes('employee'),
       };
     },
   });
