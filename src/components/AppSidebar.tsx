@@ -72,7 +72,6 @@ const navItems: NavItem[] = [
       { to: "/chargebacks", icon: Eye, label: "Overview" },
       { to: "/chargebacks/disputes", icon: AlertTriangle, label: "Disputes" },
       { to: "/chargebacks/evidence", icon: Archive, label: "Evidence" },
-      { to: "/chargebacks/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
   { to: "/analytics", icon: BarChart3, label: "Analytics", hiddenFromRoles: ["agent", "employee"] },
