@@ -27,7 +27,6 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import everpayIcon from "@/assets/mzzpay-logo.png";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -90,7 +89,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     if (!item.requiredRole) {
       // Hide certain items from limited roles
       if (item.hiddenFromRoles && userRole) {
-        return !item.hiddenFromRoles.some(r => userRole.roles.includes(r as any));
+        return !item.hiddenFromRoles.some((r) => userRole.roles.includes(r as any));
       }
       return true;
     }
@@ -115,7 +114,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <img src={everpayIcon} alt="MzzPay" className="h-8 w-8 rounded-lg" />
           <span className="font-heading text-lg font-bold text-foreground tracking-tight">MzzPay</span>
         </div>
-        <ThemeToggle />
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
