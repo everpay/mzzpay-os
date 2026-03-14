@@ -1,46 +1,77 @@
-import { useState, useMemo, useCallback } from 'react';
-import { AppLayout } from '@/components/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { useTransactions } from '@/hooks/useTransactions';
-import { useAccounts } from '@/hooks/useAccounts';
-import { useDisputes } from '@/hooks/useDisputes';
-import { useSubscriptions } from '@/hooks/useSubscriptions';
-import { formatCurrency } from '@/lib/format';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { useState, useMemo, useCallback } from "react";
+import { AppLayout } from "@/components/AppLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useAccounts } from "@/hooks/useAccounts";
+import { useDisputes, useDisputeStats } from "@/hooks/useDisputes";
+import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { formatCurrency } from "@/lib/format";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
   ComposedChart,
-} from 'recharts';
+} from "recharts";
 import {
-  TrendingUp, TrendingDown, DollarSign, ArrowLeftRight, Users, ShieldAlert,
-  CalendarIcon, Download, Filter, BarChart3, PieChart as PieChartIcon, Activity,
-  Globe, CreditCard, RefreshCw, Layers, FileText, FileDown,
-} from 'lucide-react';
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  ArrowLeftRight,
+  Users,
+  ShieldAlert,
+  CalendarIcon,
+  Download,
+  Filter,
+  BarChart3,
+  PieChart as PieChartIcon,
+  Activity,
+  Globe,
+  CreditCard,
+  RefreshCw,
+  Layers,
+  FileText,
+  FileDown,
+} from "lucide-react";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const CHART_COLORS = [
-  'hsl(172, 72%, 48%)',
-  'hsl(217, 91%, 60%)',
-  'hsl(262, 83%, 58%)',
-  'hsl(24, 95%, 53%)',
-  'hsl(340, 82%, 52%)',
-  'hsl(48, 96%, 53%)',
+  "hsl(172, 72%, 48%)",
+  "hsl(217, 91%, 60%)",
+  "hsl(262, 83%, 58%)",
+  "hsl(24, 95%, 53%)",
+  "hsl(340, 82%, 52%)",
+  "hsl(48, 96%, 53%)",
 ];
 
-type DateRange = '7d' | '30d' | '90d' | '12m' | 'custom';
+type DateRange = "7d" | "30d" | "90d" | "12m" | "custom";
 
 export default function Analytics() {
-  const [dateRange, setDateRange] = useState<DateRange>('30d');
+  const [dateRange, setDateRange] = useState<DateRange>("30d");
   const [customFrom, setCustomFrom] = useState<Date | undefined>();
   const [customTo, setCustomTo] = useState<Date | undefined>();
   const { data: transactions = [], isLoading: loadingTx } = useTransactions();
@@ -50,19 +81,24 @@ export default function Analytics() {
 
   const getDaysForRange = (range: DateRange) => {
     switch (range) {
-      case '7d': return 7;
-      case '30d': return 30;
-      case '90d': return 90;
-      case '12m': return 365;
-      case 'custom': return 0;
+      case "7d":
+        return 7;
+      case "30d":
+        return 30;
+      case "90d":
+        return 90;
+      case "12m":
+        return 365;
+      case "custom":
+        return 0;
     }
   };
 
   const filteredTransactions = useMemo(() => {
-    if (dateRange === 'custom' && customFrom) {
+    if (dateRange === "custom" && customFrom) {
       const from = customFrom;
       const to = customTo || new Date();
-      return transactions.filter(tx => {
+      return transactions.filter((tx) => {
         const d = new Date(tx.created_at);
         return d >= from && d <= to;
       });
@@ -70,18 +106,14 @@ export default function Analytics() {
     const days = getDaysForRange(dateRange);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    return transactions.filter(tx => new Date(tx.created_at) >= cutoff);
+    return transactions.filter((tx) => new Date(tx.created_at) >= cutoff);
   }, [transactions, dateRange, customFrom, customTo]);
 
   // KPI calculations
   const totalVolume = filteredTransactions.reduce((s, tx) => s + tx.amount, 0);
-  const completedTx = filteredTransactions.filter(tx => tx.status === 'completed');
-  const successRate = filteredTransactions.length > 0
-    ? (completedTx.length / filteredTransactions.length * 100)
-    : 0;
-  const avgTicket = completedTx.length > 0
-    ? completedTx.reduce((s, tx) => s + tx.amount, 0) / completedTx.length
-    : 0;
+  const completedTx = filteredTransactions.filter((tx) => tx.status === "completed");
+  const successRate = filteredTransactions.length > 0 ? (completedTx.length / filteredTransactions.length) * 100 : 0;
+  const avgTicket = completedTx.length > 0 ? completedTx.reduce((s, tx) => s + tx.amount, 0) / completedTx.length : 0;
 
   // Previous period comparison
   const days = getDaysForRange(dateRange);
@@ -89,35 +121,41 @@ export default function Analytics() {
   prevCutoff.setDate(prevCutoff.getDate() - days * 2);
   const currentCutoff = new Date();
   currentCutoff.setDate(currentCutoff.getDate() - days);
-  const prevTransactions = dateRange !== 'custom' ? transactions.filter(tx => {
-    const d = new Date(tx.created_at);
-    return d >= prevCutoff && d < currentCutoff;
-  }) : [];
+  const prevTransactions =
+    dateRange !== "custom"
+      ? transactions.filter((tx) => {
+          const d = new Date(tx.created_at);
+          return d >= prevCutoff && d < currentCutoff;
+        })
+      : [];
   const prevVolume = prevTransactions.reduce((s, tx) => s + tx.amount, 0);
-  const volumeChange = prevVolume > 0 ? ((totalVolume - prevVolume) / prevVolume * 100) : 0;
+  const volumeChange = prevVolume > 0 ? ((totalVolume - prevVolume) / prevVolume) * 100 : 0;
 
   // Volume over time
   const volumeOverTime = useMemo(() => {
     const buckets: Record<string, { volume: number; count: number; failed: number }> = {};
-    const numDays = dateRange === 'custom'
-      ? (customFrom && customTo ? Math.ceil((customTo.getTime() - customFrom.getTime()) / 86400000) : 30)
-      : getDaysForRange(dateRange);
+    const numDays =
+      dateRange === "custom"
+        ? customFrom && customTo
+          ? Math.ceil((customTo.getTime() - customFrom.getTime()) / 86400000)
+          : 30
+        : getDaysForRange(dateRange);
     const bucketSize = numDays <= 7 ? 1 : numDays <= 30 ? 1 : numDays <= 90 ? 7 : 30;
 
     for (let i = numDays - 1; i >= 0; i -= bucketSize) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       buckets[key] = { volume: 0, count: 0, failed: 0 };
     }
 
-    filteredTransactions.forEach(tx => {
+    filteredTransactions.forEach((tx) => {
       const d = new Date(tx.created_at);
-      const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       if (buckets[key]) {
         buckets[key].volume += tx.amount;
         buckets[key].count += 1;
-        if (tx.status === 'failed') buckets[key].failed += 1;
+        if (tx.status === "failed") buckets[key].failed += 1;
       }
     });
 
@@ -127,7 +165,7 @@ export default function Analytics() {
   // Provider breakdown
   const providerBreakdown = useMemo(() => {
     const map: Record<string, { volume: number; count: number }> = {};
-    filteredTransactions.forEach(tx => {
+    filteredTransactions.forEach((tx) => {
       if (!map[tx.provider]) map[tx.provider] = { volume: 0, count: 0 };
       map[tx.provider].volume += tx.amount;
       map[tx.provider].count += 1;
@@ -140,7 +178,7 @@ export default function Analytics() {
   // Status distribution
   const statusDistribution = useMemo(() => {
     const map: Record<string, number> = {};
-    filteredTransactions.forEach(tx => {
+    filteredTransactions.forEach((tx) => {
       map[tx.status] = (map[tx.status] || 0) + 1;
     });
     return Object.entries(map).map(([name, value]) => ({ name, value }));
@@ -149,7 +187,7 @@ export default function Analytics() {
   // Currency breakdown
   const currencyBreakdown = useMemo(() => {
     const map: Record<string, number> = {};
-    filteredTransactions.forEach(tx => {
+    filteredTransactions.forEach((tx) => {
       map[tx.currency] = (map[tx.currency] || 0) + tx.amount;
     });
     return Object.entries(map)
@@ -159,8 +197,12 @@ export default function Analytics() {
 
   // Hourly heatmap data
   const hourlyData = useMemo(() => {
-    const hours = Array.from({ length: 24 }, (_, i) => ({ hour: `${i.toString().padStart(2, '0')}:00`, count: 0, volume: 0 }));
-    filteredTransactions.forEach(tx => {
+    const hours = Array.from({ length: 24 }, (_, i) => ({
+      hour: `${i.toString().padStart(2, "0")}:00`,
+      count: 0,
+      volume: 0,
+    }));
+    filteredTransactions.forEach((tx) => {
       const h = new Date(tx.created_at).getHours();
       hours[h].count += 1;
       hours[h].volume += tx.amount;
@@ -171,24 +213,24 @@ export default function Analytics() {
   // Daily success rate trend
   const successRateTrend = useMemo(() => {
     const buckets: Record<string, { total: number; success: number }> = {};
-    filteredTransactions.forEach(tx => {
-      const key = new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    filteredTransactions.forEach((tx) => {
+      const key = new Date(tx.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
       if (!buckets[key]) buckets[key] = { total: 0, success: 0 };
       buckets[key].total += 1;
-      if (tx.status === 'completed') buckets[key].success += 1;
+      if (tx.status === "completed") buckets[key].success += 1;
     });
     return Object.entries(buckets).map(([date, data]) => ({
       date,
-      rate: data.total > 0 ? Math.round(data.success / data.total * 100) : 0,
+      rate: data.total > 0 ? Math.round((data.success / data.total) * 100) : 0,
     }));
   }, [filteredTransactions]);
 
   // Provider timeline for Risk & Ratios tab
   const providerTimeline = useMemo(() => {
-    const providers = [...new Set(filteredTransactions.map(tx => tx.provider))];
+    const providers = [...new Set(filteredTransactions.map((tx) => tx.provider))];
     const buckets: Record<string, Record<string, number>> = {};
-    filteredTransactions.forEach(tx => {
-      const key = new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    filteredTransactions.forEach((tx) => {
+      const key = new Date(tx.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
       if (!buckets[key]) buckets[key] = {};
       buckets[key][tx.provider] = (buckets[key][tx.provider] || 0) + 1;
     });
@@ -204,33 +246,36 @@ export default function Analytics() {
     }, {});
   }, [filteredTransactions]);
 
-  const refundedTx = useMemo(() => filteredTransactions.filter(tx => tx.status === 'refunded'), [filteredTransactions]);
+  const refundedTx = useMemo(
+    () => filteredTransactions.filter((tx) => tx.status === "refunded"),
+    [filteredTransactions],
+  );
   const refundedVolume = useMemo(() => refundedTx.reduce((s, tx) => s + tx.amount, 0), [refundedTx]);
-  const refundTxRatio = filteredTransactions.length > 0 ? (refundedTx.length / filteredTransactions.length * 100) : 0;
-  const refundVolRatio = totalVolume > 0 ? (refundedVolume / totalVolume * 100) : 0;
+  const refundTxRatio = filteredTransactions.length > 0 ? (refundedTx.length / filteredTransactions.length) * 100 : 0;
+  const refundVolRatio = totalVolume > 0 ? (refundedVolume / totalVolume) * 100 : 0;
   const disputeVolume = disputes.reduce((s, d) => s + (d.amount || 0), 0);
-  const cbTxRatio = filteredTransactions.length > 0 ? (disputes.length / filteredTransactions.length * 100) : 0;
-  const cbVolRatio = totalVolume > 0 ? (disputeVolume / totalVolume * 100) : 0;
+  const cbTxRatio = filteredTransactions.length > 0 ? (disputes.length / filteredTransactions.length) * 100 : 0;
+  const cbVolRatio = totalVolume > 0 ? (disputeVolume / totalVolume) * 100 : 0;
 
   // Export functions
   const exportCSV = useCallback(() => {
-    const headers = ['ID', 'Date', 'Amount', 'Currency', 'Status', 'Provider', 'Customer Email', 'Description'];
-    const rows = filteredTransactions.map(tx => [
+    const headers = ["ID", "Date", "Amount", "Currency", "Status", "Provider", "Customer Email", "Description"];
+    const rows = filteredTransactions.map((tx) => [
       tx.id,
       new Date(tx.created_at).toISOString(),
       tx.amount.toString(),
       tx.currency,
       tx.status,
       tx.provider,
-      tx.customer_email || '',
-      tx.description || '',
+      tx.customer_email || "",
+      tx.description || "",
     ]);
-    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `analytics-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.download = `analytics-export-${format(new Date(), "yyyy-MM-dd")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }, [filteredTransactions]);
@@ -238,7 +283,7 @@ export default function Analytics() {
   const exportPDF = useCallback(() => {
     // Generate a printable HTML report
     const reportHtml = `
-      <html><head><title>Analytics Report - ${format(new Date(), 'PPP')}</title>
+      <html><head><title>Analytics Report - ${format(new Date(), "PPP")}</title>
       <style>
         body { font-family: system-ui, sans-serif; padding: 40px; color: #1a1a1a; }
         h1 { font-size: 24px; margin-bottom: 4px; }
@@ -252,49 +297,97 @@ export default function Analytics() {
         .kpi-value { font-size: 22px; font-weight: 700; margin-top: 4px; }
       </style></head><body>
       <h1>MZZPay Analytics Report</h1>
-      <p class="subtitle">Generated ${format(new Date(), 'PPP')} · ${dateRange === 'custom' ? `${customFrom ? format(customFrom, 'PP') : ''} – ${customTo ? format(customTo, 'PP') : 'now'}` : `Last ${dateRange}`}</p>
+      <p class="subtitle">Generated ${format(new Date(), "PPP")} · ${dateRange === "custom" ? `${customFrom ? format(customFrom, "PP") : ""} – ${customTo ? format(customTo, "PP") : "now"}` : `Last ${dateRange}`}</p>
       <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-label">Total Volume</div><div class="kpi-value">${formatCurrency(totalVolume, 'USD')}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Volume</div><div class="kpi-value">${formatCurrency(totalVolume, "USD")}</div></div>
         <div class="kpi-card"><div class="kpi-label">Transactions</div><div class="kpi-value">${filteredTransactions.length}</div></div>
         <div class="kpi-card"><div class="kpi-label">Success Rate</div><div class="kpi-value">${successRate.toFixed(1)}%</div></div>
-        <div class="kpi-card"><div class="kpi-label">Avg Ticket</div><div class="kpi-value">${formatCurrency(avgTicket, 'USD')}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg Ticket</div><div class="kpi-value">${formatCurrency(avgTicket, "USD")}</div></div>
       </div>
       <h2>Provider Breakdown</h2>
       <table><tr><th>Provider</th><th>Volume</th><th>Transactions</th><th>Share</th></tr>
-      ${providerBreakdown.map(p => `<tr><td>${p.name}</td><td>${formatCurrency(p.volume, 'USD')}</td><td>${p.count}</td><td>${totalVolume > 0 ? (p.volume / totalVolume * 100).toFixed(1) : 0}%</td></tr>`).join('')}
+      ${providerBreakdown.map((p) => `<tr><td>${p.name}</td><td>${formatCurrency(p.volume, "USD")}</td><td>${p.count}</td><td>${totalVolume > 0 ? ((p.volume / totalVolume) * 100).toFixed(1) : 0}%</td></tr>`).join("")}
       </table>
       <h2>Currency Breakdown</h2>
       <table><tr><th>Currency</th><th>Volume</th><th>Share</th></tr>
-      ${currencyBreakdown.map(c => `<tr><td>${c.name}</td><td>$${c.value.toLocaleString()}</td><td>${totalVolume > 0 ? (c.value / totalVolume * 100).toFixed(1) : 0}%</td></tr>`).join('')}
+      ${currencyBreakdown.map((c) => `<tr><td>${c.name}</td><td>$${c.value.toLocaleString()}</td><td>${totalVolume > 0 ? ((c.value / totalVolume) * 100).toFixed(1) : 0}%</td></tr>`).join("")}
       </table>
       <h2>Transactions</h2>
       <table><tr><th>Date</th><th>Amount</th><th>Currency</th><th>Status</th><th>Provider</th></tr>
-      ${filteredTransactions.slice(0, 100).map(tx => `<tr><td>${format(new Date(tx.created_at), 'PP p')}</td><td>${tx.amount}</td><td>${tx.currency}</td><td>${tx.status}</td><td>${tx.provider}</td></tr>`).join('')}
-      ${filteredTransactions.length > 100 ? `<tr><td colspan="5" style="text-align:center;color:#888">... and ${filteredTransactions.length - 100} more</td></tr>` : ''}
+      ${filteredTransactions
+        .slice(0, 100)
+        .map(
+          (tx) =>
+            `<tr><td>${format(new Date(tx.created_at), "PP p")}</td><td>${tx.amount}</td><td>${tx.currency}</td><td>${tx.status}</td><td>${tx.provider}</td></tr>`,
+        )
+        .join("")}
+      ${filteredTransactions.length > 100 ? `<tr><td colspan="5" style="text-align:center;color:#888">... and ${filteredTransactions.length - 100} more</td></tr>` : ""}
       </table>
       </body></html>
     `;
-    const win = window.open('', '_blank');
+    const win = window.open("", "_blank");
     if (win) {
       win.document.write(reportHtml);
       win.document.close();
       setTimeout(() => win.print(), 500);
     }
-  }, [filteredTransactions, dateRange, customFrom, customTo, totalVolume, successRate, avgTicket, providerBreakdown, currencyBreakdown]);
+  }, [
+    filteredTransactions,
+    dateRange,
+    customFrom,
+    customTo,
+    totalVolume,
+    successRate,
+    avgTicket,
+    providerBreakdown,
+    currencyBreakdown,
+  ]);
 
   const isLoading = loadingTx;
 
   const tooltipStyle = {
-    backgroundColor: 'hsl(var(--card))',
-    border: '1px solid hsl(var(--border))',
-    borderRadius: '8px',
-    fontSize: '12px',
-    color: 'hsl(var(--foreground))',
+    backgroundColor: "hsl(var(--card))",
+    border: "1px solid hsl(var(--border))",
+    borderRadius: "8px",
+    fontSize: "12px",
+    color: "hsl(var(--foreground))",
   };
 
-  const dateRangeLabel = dateRange === 'custom'
-    ? (customFrom ? `${format(customFrom, 'MMM d')}${customTo ? ` – ${format(customTo, 'MMM d')}` : ' – now'}` : 'Custom')
-    : undefined;
+  const dateRangeLabel =
+    dateRange === "custom"
+      ? customFrom
+        ? `${format(customFrom, "MMM d")}${customTo ? ` – ${format(customTo, "MMM d")}` : " – now"}`
+        : "Custom"
+      : undefined;
+
+  const stats = useDisputeStats(disputes);
+
+  // Group by status for pie chart
+  const statusCounts = disputes.reduce<Record<string, number>>((acc, d) => {
+    acc[d.status] = (acc[d.status] || 0) + 1;
+    return acc;
+  }, {});
+
+  const pieData = Object.entries(statusCounts).map(([name, value]) => ({ name: name.replace(/_/g, " "), value }));
+  const COLORS = [
+    "hsl(var(--warning))",
+    "hsl(var(--primary))",
+    "hsl(var(--success))",
+    "hsl(var(--destructive))",
+    "hsl(var(--muted-foreground))",
+  ];
+
+  // Group by month for bar chart
+  const monthlyData = disputes.reduce<Record<string, { won: number; lost: number; open: number }>>((acc, d) => {
+    const month = new Date(d.created_at).toLocaleString("en", { month: "short" });
+    if (!acc[month]) acc[month] = { won: 0, lost: 0, open: 0 };
+    if (d.status === "won" || d.outcome === "won") acc[month].won++;
+    else if (d.status === "lost" || d.outcome === "lost") acc[month].lost++;
+    else acc[month].open++;
+    return acc;
+  }, {});
+
+  const barData = Object.entries(monthlyData).map(([month, data]) => ({ month, ...data }));
 
   return (
     <AppLayout>
@@ -321,29 +414,49 @@ export default function Analytics() {
           </Select>
 
           {/* Custom date pickers */}
-          {dateRange === 'custom' && (
+          {dateRange === "custom" && (
             <div className="flex items-center gap-1.5">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className={cn("text-xs h-9", !customFrom && "text-muted-foreground")}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn("text-xs h-9", !customFrom && "text-muted-foreground")}
+                  >
                     <CalendarIcon className="h-3 w-3 mr-1.5" />
-                    {customFrom ? format(customFrom, 'PP') : 'From'}
+                    {customFrom ? format(customFrom, "PP") : "From"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={customFrom} onSelect={setCustomFrom} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  <Calendar
+                    mode="single"
+                    selected={customFrom}
+                    onSelect={setCustomFrom}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
                 </PopoverContent>
               </Popover>
               <span className="text-xs text-muted-foreground">–</span>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className={cn("text-xs h-9", !customTo && "text-muted-foreground")}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn("text-xs h-9", !customTo && "text-muted-foreground")}
+                  >
                     <CalendarIcon className="h-3 w-3 mr-1.5" />
-                    {customTo ? format(customTo, 'PP') : 'To'}
+                    {customTo ? format(customTo, "PP") : "To"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={customTo} onSelect={setCustomTo} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  <Calendar
+                    mode="single"
+                    selected={customTo}
+                    onSelect={setCustomTo}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -371,25 +484,44 @@ export default function Analytics() {
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KPICard title="Total Volume" value={formatCurrency(totalVolume, 'USD')} change={dateRange !== 'custom' ? volumeChange : undefined} icon={DollarSign} />
+        <KPICard
+          title="Total Volume"
+          value={formatCurrency(totalVolume, "USD")}
+          change={dateRange !== "custom" ? volumeChange : undefined}
+          icon={DollarSign}
+        />
         <KPICard
           title="Transactions"
           value={filteredTransactions.length.toLocaleString()}
-          change={dateRange !== 'custom' && prevTransactions.length > 0 ? ((filteredTransactions.length - prevTransactions.length) / prevTransactions.length * 100) : undefined}
+          change={
+            dateRange !== "custom" && prevTransactions.length > 0
+              ? ((filteredTransactions.length - prevTransactions.length) / prevTransactions.length) * 100
+              : undefined
+          }
           icon={ArrowLeftRight}
         />
         <KPICard title="Success Rate" value={`${successRate.toFixed(1)}%`} icon={Activity} neutral />
-        <KPICard title="Avg. Ticket" value={formatCurrency(avgTicket, 'USD')} icon={CreditCard} neutral />
+        <KPICard title="Avg. Ticket" value={formatCurrency(avgTicket, "USD")} icon={CreditCard} neutral />
       </div>
 
       {/* Main Charts */}
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="bg-muted/50 flex-wrap">
-          <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Overview</TabsTrigger>
-          <TabsTrigger value="providers" className="gap-1.5"><Layers className="h-3.5 w-3.5" /> Providers</TabsTrigger>
-          <TabsTrigger value="geography" className="gap-1.5"><Globe className="h-3.5 w-3.5" /> Currencies</TabsTrigger>
-          <TabsTrigger value="performance" className="gap-1.5"><Activity className="h-3.5 w-3.5" /> Performance</TabsTrigger>
-          <TabsTrigger value="ratios" className="gap-1.5"><ShieldAlert className="h-3.5 w-3.5" /> Risk & Ratios</TabsTrigger>
+          <TabsTrigger value="overview" className="gap-1.5">
+            <BarChart3 className="h-3.5 w-3.5" /> Overview
+          </TabsTrigger>
+          <TabsTrigger value="providers" className="gap-1.5">
+            <Layers className="h-3.5 w-3.5" /> Providers
+          </TabsTrigger>
+          <TabsTrigger value="geography" className="gap-1.5">
+            <Globe className="h-3.5 w-3.5" /> Currencies
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="gap-1.5">
+            <Activity className="h-3.5 w-3.5" /> Performance
+          </TabsTrigger>
+          <TabsTrigger value="ratios" className="gap-1.5">
+            <ShieldAlert className="h-3.5 w-3.5" /> Risk & Ratios
+          </TabsTrigger>
         </TabsList>
 
         {/* OVERVIEW TAB */}
@@ -403,7 +535,9 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">Loading...</div>
+                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+                    Loading...
+                  </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={280}>
                     <ComposedChart data={volumeOverTime} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
@@ -414,10 +548,32 @@ export default function Analytics() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                      <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [name === 'volume' ? `$${value.toLocaleString()}` : value, name === 'volume' ? 'Volume' : name === 'count' ? 'Transactions' : 'Failed']} />
-                      <Area type="monotone" dataKey="volume" stroke={CHART_COLORS[0]} strokeWidth={2} fill="url(#volGrad)" />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        formatter={(value: number, name: string) => [
+                          name === "volume" ? `$${value.toLocaleString()}` : value,
+                          name === "volume" ? "Volume" : name === "count" ? "Transactions" : "Failed",
+                        ]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="volume"
+                        stroke={CHART_COLORS[0]}
+                        strokeWidth={2}
+                        fill="url(#volGrad)"
+                      />
                       <Bar dataKey="failed" fill={CHART_COLORS[4]} radius={[2, 2, 0, 0]} barSize={8} opacity={0.7} />
                     </ComposedChart>
                   </ResponsiveContainer>
@@ -433,14 +589,26 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">Loading...</div>
+                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+                    Loading...
+                  </div>
                 ) : statusDistribution.length === 0 ? (
-                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">No data</div>
+                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+                    No data
+                  </div>
                 ) : (
                   <div>
                     <ResponsiveContainer width="100%" height={200}>
                       <PieChart>
-                        <Pie data={statusDistribution} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3}>
+                        <Pie
+                          data={statusDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={80}
+                          dataKey="value"
+                          paddingAngle={3}
+                        >
                           {statusDistribution.map((_, i) => (
                             <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                           ))}
@@ -451,7 +619,10 @@ export default function Analytics() {
                     <div className="flex flex-wrap gap-3 mt-2 justify-center">
                       {statusDistribution.map((entry, i) => (
                         <div key={entry.name} className="flex items-center gap-1.5 text-xs">
-                          <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                          <div
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                          />
                           <span className="text-muted-foreground capitalize">{entry.name}</span>
                           <span className="font-medium text-foreground">{entry.value}</span>
                         </div>
@@ -473,8 +644,18 @@ export default function Analytics() {
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={hourlyData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="hour" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={2} />
-                  <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                  <XAxis
+                    dataKey="hour"
+                    tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                    axisLine={false}
+                    tickLine={false}
+                    interval={2}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="count" fill={CHART_COLORS[1]} radius={[3, 3, 0, 0]} />
                 </BarChart>
@@ -492,14 +673,36 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 {providerBreakdown.length === 0 ? (
-                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">No data</div>
+                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+                    No data
+                  </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={providerBreakdown} layout="vertical" margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
+                    <BarChart
+                      data={providerBreakdown}
+                      layout="vertical"
+                      margin={{ top: 5, right: 5, left: 5, bottom: 0 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                      <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                      <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} width={80} />
-                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`$${v.toLocaleString()}`, 'Volume']} />
+                      <XAxis
+                        type="number"
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={80}
+                      />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        formatter={(v: number) => [`$${v.toLocaleString()}`, "Volume"]}
+                      />
                       <Bar dataKey="volume" radius={[0, 4, 4, 0]}>
                         {providerBreakdown.map((_, i) => (
                           <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -517,31 +720,49 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 {providerBreakdown.length === 0 ? (
-                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">No data</div>
+                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+                    No data
+                  </div>
                 ) : (
                   <div>
                     <ResponsiveContainer width="100%" height={220}>
                       <PieChart>
-                        <Pie data={providerBreakdown} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="volume" paddingAngle={3}>
+                        <Pie
+                          data={providerBreakdown}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={55}
+                          outerRadius={85}
+                          dataKey="volume"
+                          paddingAngle={3}
+                        >
                           {providerBreakdown.map((_, i) => (
                             <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`$${v.toLocaleString()}`, 'Volume']} />
+                        <Tooltip
+                          contentStyle={tooltipStyle}
+                          formatter={(v: number) => [`$${v.toLocaleString()}`, "Volume"]}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="space-y-2 mt-2">
                       {providerBreakdown.map((p, i) => {
-                        const pct = totalVolume > 0 ? (p.volume / totalVolume * 100).toFixed(1) : '0';
+                        const pct = totalVolume > 0 ? ((p.volume / totalVolume) * 100).toFixed(1) : "0";
                         return (
                           <div key={p.name} className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2">
-                              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                              <div
+                                className="h-2.5 w-2.5 rounded-full"
+                                style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                              />
                               <span className="text-muted-foreground capitalize">{p.name}</span>
                             </div>
                             <div className="flex items-center gap-3">
                               <span className="text-xs text-muted-foreground">{p.count} txns</span>
-                              <Badge variant="outline" className="text-xs">{pct}%</Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {pct}%
+                              </Badge>
                             </div>
                           </div>
                         );
@@ -565,14 +786,29 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 {currencyBreakdown.length === 0 ? (
-                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">No data</div>
+                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+                    No data
+                  </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={currencyBreakdown} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`$${v.toLocaleString()}`, 'Volume']} />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        formatter={(v: number) => [`$${v.toLocaleString()}`, "Volume"]}
+                      />
                       <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                         {currencyBreakdown.map((_, i) => (
                           <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -591,12 +827,14 @@ export default function Analytics() {
               <CardContent>
                 <div className="space-y-3">
                   {currencyBreakdown.map((c, i) => {
-                    const pct = totalVolume > 0 ? (c.value / totalVolume * 100) : 0;
+                    const pct = totalVolume > 0 ? (c.value / totalVolume) * 100 : 0;
                     return (
                       <div key={c.name} className="space-y-1.5">
                         <div className="flex items-center justify-between text-sm">
                           <span className="font-medium text-foreground">{c.name}</span>
-                          <span className="text-muted-foreground">${c.value.toLocaleString()} ({pct.toFixed(1)}%)</span>
+                          <span className="text-muted-foreground">
+                            ${c.value.toLocaleString()} ({pct.toFixed(1)}%)
+                          </span>
                         </div>
                         <div className="h-2 rounded-full bg-muted overflow-hidden">
                           <div
@@ -624,15 +862,34 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 {successRateTrend.length === 0 ? (
-                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">No data</div>
+                  <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+                    No data
+                  </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={280}>
                     <LineChart data={successRateTrend} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
-                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v}%`, 'Success Rate']} />
-                      <Line type="monotone" dataKey="rate" stroke={CHART_COLORS[0]} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS[0] }} />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v) => `${v}%`}
+                      />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v}%`, "Success Rate"]} />
+                      <Line
+                        type="monotone"
+                        dataKey="rate"
+                        stroke={CHART_COLORS[0]}
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: CHART_COLORS[0] }}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -645,14 +902,30 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <MetricRow label="Total Volume" value={formatCurrency(totalVolume, 'USD')} />
+                  <MetricRow label="Total Volume" value={formatCurrency(totalVolume, "USD")} />
                   <MetricRow label="Completed" value={completedTx.length.toLocaleString()} />
-                  <MetricRow label="Failed" value={filteredTransactions.filter(tx => tx.status === 'failed').length.toLocaleString()} />
-                  <MetricRow label="Pending" value={filteredTransactions.filter(tx => tx.status === 'pending').length.toLocaleString()} />
+                  <MetricRow
+                    label="Failed"
+                    value={filteredTransactions.filter((tx) => tx.status === "failed").length.toLocaleString()}
+                  />
+                  <MetricRow
+                    label="Pending"
+                    value={filteredTransactions.filter((tx) => tx.status === "pending").length.toLocaleString()}
+                  />
                   <MetricRow label="Success Rate" value={`${successRate.toFixed(1)}%`} />
-                  <MetricRow label="Average Ticket" value={formatCurrency(avgTicket, 'USD')} />
-                  <MetricRow label="Active Disputes" value={disputes.filter(d => d.status !== 'won' && d.status !== 'lost').length.toLocaleString()} />
-                  <MetricRow label="Active Subscriptions" value={Array.isArray(subscriptions) ? subscriptions.filter((s: any) => s.status === 'active').length.toLocaleString() : '0'} />
+                  <MetricRow label="Average Ticket" value={formatCurrency(avgTicket, "USD")} />
+                  <MetricRow
+                    label="Active Disputes"
+                    value={disputes.filter((d) => d.status !== "won" && d.status !== "lost").length.toLocaleString()}
+                  />
+                  <MetricRow
+                    label="Active Subscriptions"
+                    value={
+                      Array.isArray(subscriptions)
+                        ? subscriptions.filter((s: any) => s.status === "active").length.toLocaleString()
+                        : "0"
+                    }
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -660,146 +933,333 @@ export default function Analytics() {
         </TabsContent>
         {/* RISK & RATIOS TAB */}
         <TabsContent value="ratios" className="space-y-4">
-                {/* Chargeback & Refund Ratio Cards */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Card className="border-l-4 border-l-success">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-semibold">Chargeback Ratios</CardTitle>
-                        <div className="flex gap-2">
-                          <Badge variant={cbTxRatio < 0.5 ? 'default' : 'destructive'} className="text-xs">{cbTxRatio.toFixed(4)}%</Badge>
-                          <Badge variant={cbVolRatio < 0.5 ? 'default' : 'destructive'} className="text-xs">{cbVolRatio.toFixed(4)}%</Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={180}>
-                        <LineChart data={volumeOverTime} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                          <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                          <Tooltip contentStyle={tooltipStyle} />
-                          <Line type="monotone" dataKey="count" name="Transaction Ratio (%)" stroke={CHART_COLORS[0]} strokeWidth={2} dot={false} />
-                          <Legend wrapperStyle={{ fontSize: '11px' }} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                      <div className="mt-3 p-3 rounded-lg bg-muted/50">
-                        <p className="text-xs font-medium text-muted-foreground">Administrative Note:</p>
-                        <p className={`text-xs font-medium mt-1 ${cbTxRatio < 0.5 ? 'text-success' : 'text-destructive'}`}>
-                          {cbTxRatio < 0.5 ? 'Success! Your Chargeback Ratio is less than 0.50%' : 'Warning: Your Chargeback Ratio exceeds 0.50%'}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-l-4 border-l-primary">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-semibold">Refund Ratios</CardTitle>
-                        <div className="flex gap-2">
-                          <Badge variant="default" className="text-xs">{refundTxRatio.toFixed(4)}%</Badge>
-                          <Badge variant="default" className="text-xs">{refundVolRatio.toFixed(4)}%</Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={180}>
-                        <LineChart data={volumeOverTime} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                          <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                          <Tooltip contentStyle={tooltipStyle} />
-                          <Line type="monotone" dataKey="failed" name="Transaction Ratio (%)" stroke={CHART_COLORS[4]} strokeWidth={2} dot={false} />
-                          <Legend wrapperStyle={{ fontSize: '11px' }} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                      <div className="mt-3 p-3 rounded-lg bg-muted/50">
-                        <p className="text-xs font-medium text-muted-foreground">Administrative Note:</p>
-                        <p className="text-xs text-muted-foreground mt-1">Refund ratios are monitored for informational purposes and do not affect account status.</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+          {/* Chargeback & Refund Ratio Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className="border-l-4 border-l-success">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold">Chargeback Ratios</CardTitle>
+                  <div className="flex gap-2">
+                    <Badge variant={cbTxRatio < 0.5 ? "default" : "destructive"} className="text-xs">
+                      {cbTxRatio.toFixed(4)}%
+                    </Badge>
+                    <Badge variant={cbVolRatio < 0.5 ? "default" : "destructive"} className="text-xs">
+                      {cbVolRatio.toFixed(4)}%
+                    </Badge>
+                  </div>
                 </div>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={volumeOverTime} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      name="Transaction Ratio (%)"
+                      stroke={CHART_COLORS[0]}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "11px" }} />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="mt-3 p-3 rounded-lg bg-muted/50">
+                  <p className="text-xs font-medium text-muted-foreground">Administrative Note:</p>
+                  <p className={`text-xs font-medium mt-1 ${cbTxRatio < 0.5 ? "text-success" : "text-destructive"}`}>
+                    {cbTxRatio < 0.5
+                      ? "Success! Your Chargeback Ratio is less than 0.50%"
+                      : "Warning: Your Chargeback Ratio exceeds 0.50%"}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-                {/* Volume by Payment Method (Incoming) */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-primary" /> Volume by Payment Method (INCOMING)
-                      </CardTitle>
-                      <Badge variant="outline" className="text-xs">LIVE</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                      <div className="rounded-lg border border-border bg-muted/30 p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-muted-foreground">Total Volume</span>
-                          <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                        </div>
-                        <p className="font-heading text-lg font-bold text-foreground">{formatCurrency(totalVolume, 'USD')}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1">{formatCurrency(totalVolume, 'USD')} : 0 - 30 days</p>
-                      </div>
-                      <div className="rounded-lg border border-border bg-muted/30 p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-muted-foreground">Total Transactions</span>
-                          <ArrowLeftRight className="h-3.5 w-3.5 text-muted-foreground" />
-                        </div>
-                        <p className="font-heading text-lg font-bold text-foreground">{filteredTransactions.length}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1">{filteredTransactions.length} : 0 - 30 days</p>
-                      </div>
-                      <div className="rounded-lg border border-border bg-muted/30 p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-muted-foreground">Success Rate</span>
-                          <Activity className="h-3.5 w-3.5 text-muted-foreground" />
-                        </div>
-                        <p className="font-heading text-lg font-bold text-foreground">{successRate.toFixed(1)}%</p>
-                        <p className="text-[10px] text-muted-foreground mt-1">{successRate.toFixed(1)}% : 0 - 30 days</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {Object.entries(providerVolumeMap).map(([name, data]) => (
-                        <div key={name} className="rounded-lg border border-border bg-card p-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium text-primary capitalize">{name}</span>
-                            <Badge variant="default" className="text-[10px] px-1.5 py-0">ENABLED</Badge>
-                          </div>
-                          <p className="font-heading text-base font-bold text-foreground">{formatCurrency(data.volume, 'USD')}</p>
-                          <p className="text-[10px] text-muted-foreground">{data.count} transactions</p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+            <Card className="border-l-4 border-l-primary">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold">Refund Ratios</CardTitle>
+                  <div className="flex gap-2">
+                    <Badge variant="default" className="text-xs">
+                      {refundTxRatio.toFixed(4)}%
+                    </Badge>
+                    <Badge variant="default" className="text-xs">
+                      {refundVolRatio.toFixed(4)}%
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={volumeOverTime} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Line
+                      type="monotone"
+                      dataKey="failed"
+                      name="Transaction Ratio (%)"
+                      stroke={CHART_COLORS[4]}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "11px" }} />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="mt-3 p-3 rounded-lg bg-muted/50">
+                  <p className="text-xs font-medium text-muted-foreground">Administrative Note:</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Refund ratios are monitored for informational purposes and do not affect account status.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-                {/* Transaction Count by Card Brand */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold">Transaction Count by Provider</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <LineChart data={providerTimeline.data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={tooltipStyle} />
-                        {providerTimeline.providers.map((p, i) => (
-                          <Line key={p} type="monotone" dataKey={p} stroke={CHART_COLORS[i % CHART_COLORS.length]} strokeWidth={2} dot={false} name={p} />
-                        ))}
-                        <Legend wrapperStyle={{ fontSize: '11px' }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
+          {/* Volume by Payment Method (Incoming) */}
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" /> Volume by Payment Method (INCOMING)
+                </CardTitle>
+                <Badge variant="outline" className="text-xs">
+                  LIVE
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Total Volume</span>
+                    <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  <p className="font-heading text-lg font-bold text-foreground">{formatCurrency(totalVolume, "USD")}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {formatCurrency(totalVolume, "USD")} : 0 - 30 days
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Total Transactions</span>
+                    <ArrowLeftRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  <p className="font-heading text-lg font-bold text-foreground">{filteredTransactions.length}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">{filteredTransactions.length} : 0 - 30 days</p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Success Rate</span>
+                    <Activity className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  <p className="font-heading text-lg font-bold text-foreground">{successRate.toFixed(1)}%</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">{successRate.toFixed(1)}% : 0 - 30 days</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {Object.entries(providerVolumeMap).map(([name, data]) => (
+                  <div key={name} className="rounded-lg border border-border bg-card p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium text-primary capitalize">{name}</span>
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0">
+                        ENABLED
+                      </Badge>
+                    </div>
+                    <p className="font-heading text-base font-bold text-foreground">
+                      {formatCurrency(data.volume, "USD")}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">{data.count} transactions</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Transaction Count by Card Brand */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold">Transaction Count by Provider</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={providerTimeline.data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  {providerTimeline.providers.map((p, i) => (
+                    <Line
+                      key={p}
+                      type="monotone"
+                      dataKey={p}
+                      stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                      strokeWidth={2}
+                      dot={false}
+                      name={p}
+                    />
+                  ))}
+                  <Legend wrapperStyle={{ fontSize: "11px" }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Dispute Analytics</h1>
+          <p className="text-sm text-muted-foreground mt-1">Performance insights from your dispute data</p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center p-12">
+            <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : disputes.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <p className="text-muted-foreground">No dispute data available yet.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground">Total</p>
+                  <p className="text-2xl font-bold text-foreground">{disputes.length}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground">Win Rate</p>
+                  <p className="text-2xl font-bold text-success">{stats.winRate}%</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground">Recovered</p>
+                  <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.recoveredAmount, "USD")}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-xs text-muted-foreground">Open</p>
+                  <p className="text-2xl font-bold text-warning">{stats.openCount}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="border-border bg-card">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    Dispute Outcomes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={barData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                        }}
+                      />
+                      <Bar dataKey="won" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="lost" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border bg-card">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    Status Breakdown
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={4}
+                        dataKey="value"
+                        label={({ name, value }) => `${name}: ${value}`}
+                      >
+                        {pieData.map((_, i) => (
+                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+      </div>
     </AppLayout>
   );
 }
 
-function KPICard({ title, value, change, icon: Icon, neutral }: {
+function KPICard({
+  title,
+  value,
+  change,
+  icon: Icon,
+  neutral,
+}: {
   title: string;
   value: string;
   change?: number;
@@ -818,7 +1278,7 @@ function KPICard({ title, value, change, icon: Icon, neutral }: {
         </div>
         <p className="font-heading text-xl font-bold text-foreground">{value}</p>
         {!neutral && change !== undefined && (
-          <div className={`flex items-center gap-1 mt-1 text-xs ${isPositive ? 'text-success' : 'text-destructive'}`}>
+          <div className={`flex items-center gap-1 mt-1 text-xs ${isPositive ? "text-success" : "text-destructive"}`}>
             {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             <span>{Math.abs(change).toFixed(1)}% vs prev period</span>
           </div>
