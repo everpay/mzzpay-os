@@ -371,6 +371,51 @@ export type Database = {
           },
         ]
       }
+      merchant_processor_configs: {
+        Row: {
+          encrypted_api_secret: string
+          encrypted_client_id: string
+          environment: string | null
+          id: string
+          is_primary: boolean | null
+          merchant_id: string | null
+          provider_id: string | null
+        }
+        Insert: {
+          encrypted_api_secret: string
+          encrypted_client_id: string
+          environment?: string | null
+          id?: string
+          is_primary?: boolean | null
+          merchant_id?: string | null
+          provider_id?: string | null
+        }
+        Update: {
+          encrypted_api_secret?: string
+          encrypted_client_id?: string
+          environment?: string | null
+          id?: string
+          is_primary?: boolean | null
+          merchant_id?: string | null
+          provider_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_processor_configs_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merchant_processor_configs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "payment_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchants: {
         Row: {
           api_key_hash: string | null
@@ -378,11 +423,20 @@ export type Database = {
           contact_email: string | null
           contact_name: string | null
           created_at: string
+          custom_markup_fixed: number | null
+          custom_markup_percentage: number | null
           id: string
           name: string
           phone_number: string | null
+          receipt_enabled_by_admin: boolean | null
+          receipt_enabled_by_merchant: boolean | null
+          receipt_logo_url: string | null
+          receipt_primary_color: string | null
+          receipt_support_email: string | null
+          status: string | null
           updated_at: string
           user_id: string
+          vgs_vault_id: string | null
           webhook_url: string | null
           website_urls: string[] | null
         }
@@ -392,11 +446,20 @@ export type Database = {
           contact_email?: string | null
           contact_name?: string | null
           created_at?: string
+          custom_markup_fixed?: number | null
+          custom_markup_percentage?: number | null
           id?: string
           name: string
           phone_number?: string | null
+          receipt_enabled_by_admin?: boolean | null
+          receipt_enabled_by_merchant?: boolean | null
+          receipt_logo_url?: string | null
+          receipt_primary_color?: string | null
+          receipt_support_email?: string | null
+          status?: string | null
           updated_at?: string
           user_id: string
+          vgs_vault_id?: string | null
           webhook_url?: string | null
           website_urls?: string[] | null
         }
@@ -406,15 +469,84 @@ export type Database = {
           contact_email?: string | null
           contact_name?: string | null
           created_at?: string
+          custom_markup_fixed?: number | null
+          custom_markup_percentage?: number | null
           id?: string
           name?: string
           phone_number?: string | null
+          receipt_enabled_by_admin?: boolean | null
+          receipt_enabled_by_merchant?: boolean | null
+          receipt_logo_url?: string | null
+          receipt_primary_color?: string | null
+          receipt_support_email?: string | null
+          status?: string | null
           updated_at?: string
           user_id?: string
+          vgs_vault_id?: string | null
           webhook_url?: string | null
           website_urls?: string[] | null
         }
         Relationships: []
+      }
+      orchestrated_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          id: string
+          idempotency_key: string | null
+          merchant_id: string | null
+          metadata: Json | null
+          platform_fee: number | null
+          provider_fee: number | null
+          provider_id: string | null
+          status: string
+          vgs_alias_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          idempotency_key?: string | null
+          merchant_id?: string | null
+          metadata?: Json | null
+          platform_fee?: number | null
+          provider_fee?: number | null
+          provider_id?: string | null
+          status: string
+          vgs_alias_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          idempotency_key?: string | null
+          merchant_id?: string | null
+          metadata?: Json | null
+          platform_fee?: number | null
+          provider_fee?: number | null
+          provider_id?: string | null
+          status?: string
+          vgs_alias_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orchestrated_transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orchestrated_transactions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "payment_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_methods: {
         Row: {
@@ -462,6 +594,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_processors: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          processor_fee_fixed: number | null
+          processor_fee_percentage: number | null
+          provider_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          processor_fee_fixed?: number | null
+          processor_fee_percentage?: number | null
+          provider_type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          processor_fee_fixed?: number | null
+          processor_fee_percentage?: number | null
+          provider_type?: string
+        }
+        Relationships: []
+      }
+      payment_providers: {
+        Row: {
+          api_endpoint: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          provider_type: string
+        }
+        Insert: {
+          api_endpoint?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          provider_type: string
+        }
+        Update: {
+          api_endpoint?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          provider_type?: string
+        }
+        Relationships: []
+      }
+      platform_fees: {
+        Row: {
+          config_name: string | null
+          fixed_amount: number | null
+          id: string
+          is_active: boolean | null
+          percentage: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          config_name?: string | null
+          fixed_amount?: number | null
+          id?: string
+          is_active?: boolean | null
+          percentage?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          config_name?: string | null
+          fixed_amount?: number | null
+          id?: string
+          is_active?: boolean | null
+          percentage?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       platform_markup: {
         Row: {
@@ -622,6 +838,38 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_pricing: {
+        Row: {
+          base_fixed: number
+          base_percentage: number
+          currency: string | null
+          id: string
+          provider_id: string | null
+        }
+        Insert: {
+          base_fixed: number
+          base_percentage: number
+          currency?: string | null
+          id?: string
+          provider_id?: string | null
+        }
+        Update: {
+          base_fixed?: number
+          base_percentage?: number
+          currency?: string | null
+          id?: string
+          provider_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_pricing_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "payment_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rolling_reserves: {
         Row: {
           amount: number
@@ -675,6 +923,51 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routing_rules: {
+        Row: {
+          conditions: Json
+          id: string
+          is_active: boolean | null
+          merchant_id: string | null
+          name: string
+          priority: number | null
+          target_provider_id: string | null
+        }
+        Insert: {
+          conditions?: Json
+          id?: string
+          is_active?: boolean | null
+          merchant_id?: string | null
+          name: string
+          priority?: number | null
+          target_provider_id?: string | null
+        }
+        Update: {
+          conditions?: Json
+          id?: string
+          is_active?: boolean | null
+          merchant_id?: string | null
+          name?: string
+          priority?: number | null
+          target_provider_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routing_rules_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routing_rules_target_provider_id_fkey"
+            columns: ["target_provider_id"]
+            isOneToOne: false
+            referencedRelation: "payment_providers"
             referencedColumns: ["id"]
           },
         ]
