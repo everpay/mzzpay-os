@@ -3,6 +3,7 @@ import { Transaction } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
 import { TransactionDetailDrawer } from './TransactionDetailDrawer';
+import { PaymentMethodIcon } from './PaymentMethodIcon';
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -22,11 +23,12 @@ export function TransactionTable({ transactions, compact = false }: TransactionT
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Customer</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">Payment Method</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Provider</th>
               {!compact && (
                 <>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Description</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">FX</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Customer IP</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden xl:table-cell">FX</th>
                 </>
               )}
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">Date</th>
@@ -51,20 +53,38 @@ export function TransactionTable({ transactions, compact = false }: TransactionT
                 <td className="px-4 py-3">
                   <Badge variant={getStatusVariant(tx.status)}>{tx.status}</Badge>
                 </td>
+                <td className="px-4 py-3 hidden md:table-cell">
+                  {tx.card_brand || tx.payment_method_type || tx.card_last4 ? (
+                    <PaymentMethodIcon
+                      brand={tx.card_brand}
+                      paymentMethodType={tx.payment_method_type}
+                      bin={tx.card_bin}
+                      last4={tx.card_last4}
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 hidden sm:table-cell">
                   <Badge variant="provider">{tx.provider}</Badge>
                 </td>
                 {!compact && (
                   <>
-                    <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate hidden lg:table-cell">
-                      {tx.description || '—'}
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      {tx.customer_ip ? (
+                        <span className="font-mono text-xs text-muted-foreground">{tx.customer_ip}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground hidden lg:table-cell">
+                    <td className="px-4 py-3 text-xs text-muted-foreground hidden xl:table-cell">
                       {tx.fx_rate ? (
                         <span>
                           {tx.fx_rate} → {formatCurrency(tx.settlement_amount || 0, tx.settlement_currency || 'USD')}
                         </span>
-                      ) : '—'}
+                      ) : (
+                        '—'
+                      )}
                     </td>
                   </>
                 )}

@@ -3,8 +3,9 @@ import { useProviderEvents } from '@/hooks/useProviderEvents';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield, Wifi } from 'lucide-react';
+import { ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield, Wifi, Globe, Monitor } from 'lucide-react';
 import { CardBrandBadge } from '@/components/CardBrandBadge';
+import { PaymentMethodIcon } from '@/components/PaymentMethodIcon';
 
 interface TransactionDetailDrawerProps {
   transaction: Transaction | null;
@@ -24,8 +25,11 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
   const vaultEvent = relatedEvents.find((e) => e.event_type === 'vault.completed');
 
   const vgsAlias = (vaultEvent?.payload as any)?.vgs_alias || (tapixEvent?.payload as any)?.vgs_alias || null;
-  const cardBrand = (tapixEvent?.payload as any)?.card_brand || (vaultEvent?.payload as any)?.card_brand || null;
-  const cardLast4 = (tapixEvent?.payload as any)?.card_last4 || (vaultEvent?.payload as any)?.card_last4 || null;
+  // Prefer columns on the transaction (real data) and fall back to enrichment events
+  const cardBrand = transaction.card_brand || (tapixEvent?.payload as any)?.card_brand || (vaultEvent?.payload as any)?.card_brand || null;
+  const cardLast4 = transaction.card_last4 || (tapixEvent?.payload as any)?.card_last4 || (vaultEvent?.payload as any)?.card_last4 || null;
+  const cardBin = transaction.card_bin || (tapixEvent?.payload as any)?.card_bin || (vaultEvent?.payload as any)?.card_bin || null;
+  const paymentMethodType = transaction.payment_method_type || null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
