@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CountrySelect } from '@/components/CountrySelect';
 import { Mail, Lock, User, ArrowRight, Building2, Phone, Globe, Zap, CreditCard, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import everpayIcon from '@/assets/everpay-icon.png';
@@ -204,18 +205,7 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
                 </div>
                 <div className="space-y-2">
                   <Label>Country</Label>
-                  <Select value={country} onValueChange={setCountry}>
-                    <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="US">United States</SelectItem>
-                      <SelectItem value="CA">Canada</SelectItem>
-                      <SelectItem value="GB">United Kingdom</SelectItem>
-                      <SelectItem value="EU">Europe</SelectItem>
-                      <SelectItem value="BR">Brazil</SelectItem>
-                      <SelectItem value="JM">Jamaica</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <CountrySelect value={country} onValueChange={setCountry} />
                 </div>
 
                 <p className="text-[10px] text-muted-foreground">

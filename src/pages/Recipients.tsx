@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Search, User, Mail, MapPin, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CountrySelect } from '@/components/CountrySelect';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -57,7 +58,7 @@ export default function Recipients() {
               <div className="space-y-3 pt-2">
                 <div><Label>Name</Label><Input className="rounded-2xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
                 <div><Label>Email</Label><Input className="rounded-2xl" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div>
-                <div><Label>Country</Label><Input className="rounded-2xl" value={form.country} onChange={e => setForm({...form, country: e.target.value})} /></div>
+                <div><Label>Country</Label><CountrySelect value={form.country} onValueChange={(v) => setForm({...form, country: v})} /></div>
                 <div><Label>Account Type</Label><Input className="rounded-2xl" placeholder="ACH / SWIFT / SEPA" value={form.account_type} onChange={e => setForm({...form, account_type: e.target.value})} /></div>
                 <Button className="w-full rounded-full" onClick={add}>Save Recipient</Button>
               </div>
