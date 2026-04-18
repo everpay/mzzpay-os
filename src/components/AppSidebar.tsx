@@ -80,26 +80,20 @@ const navSections: NavSection[] = [
   {
     title: "Treasury",
     items: [
-      { to: "/wallets", icon: Wallet, label: "Wallets" },
-      { to: "/treasury", icon: Landmark, label: "Multi-currency" },
-      { to: "/payouts", icon: ArrowUpRight, label: "Payouts" },
       { to: "/settlements", icon: Landmark, label: "Settlements" },
-      { to: "/reconciliation", icon: FileBarChart, label: "Reconciliation" },
       { to: "/bank-accounts", icon: Building2, label: "Bank Accounts" },
+      { to: "/payouts", icon: ArrowUpRight, label: "Payouts" },
+      { to: "/wallets", icon: Wallet, label: "Wallets" },
       { to: "/recipients", icon: Send, label: "Recipients" },
     ],
   },
   {
     title: "Risk & Disputes",
     items: [
-      { to: "/risk", icon: ShieldCheck, label: "Risk Profile" },
       { to: "/kyc", icon: BadgeCheck, label: "KYC / Onboarding" },
-      { to: "/3ds-settings", icon: Lock, label: "3D Secure" },
-      { to: "/smart-retry", icon: Repeat, label: "Smart Retry" },
       { to: "/chargebacks", icon: Shield, label: "Chargebacks" },
       { to: "/chargebacks/disputes", icon: AlertTriangle, label: "Disputes" },
       { to: "/chargebacks/evidence", icon: Archive, label: "Evidence" },
-      { to: "/chargeflow", icon: Activity, label: "Chargeflow" },
     ],
   },
   {
@@ -107,14 +101,23 @@ const navSections: NavSection[] = [
     items: [
       { to: "/analytics", icon: BarChart3, label: "Analytics" },
       { to: "/reports", icon: FileText, label: "Reports" },
-      { to: "/audit-trail", icon: ScrollText, label: "Audit Trail" },
     ],
   },
   {
-    title: "Developer",
+    title: "Company",
     items: [
-      { to: "/webhooks", icon: Webhook, label: "Webhooks" },
       { to: "/docs", icon: Globe, label: "API Docs" },
+    ],
+  },
+  {
+    title: "Super Admin",
+    items: [
+      { to: "/risk", icon: ShieldCheck, label: "Risk Profile", visibleTo: ["super_admin"] },
+      { to: "/3ds-settings", icon: Lock, label: "3D Secure", visibleTo: ["super_admin"] },
+      { to: "/smart-retry", icon: Repeat, label: "Smart Retry", visibleTo: ["super_admin"] },
+      { to: "/reconciliation", icon: FileBarChart, label: "Reconciliation", visibleTo: ["super_admin"] },
+      { to: "/treasury", icon: Landmark, label: "Multi-currency", visibleTo: ["super_admin"] },
+      { to: "/audit-trail", icon: ScrollText, label: "Audit Trail", visibleTo: ["super_admin"] },
     ],
   },
   {
