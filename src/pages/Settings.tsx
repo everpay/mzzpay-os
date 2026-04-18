@@ -70,6 +70,30 @@ type SettingsSection =
   | "verification"
   | "deactivation";
 
+type TeamRole = "admin" | "reseller" | "developer" | "compliance_officer" | "support" | "agent" | "employee";
+
+const TEAM_ROLES: { value: TeamRole; label: string }[] = [
+  { value: "admin", label: "Admin — Full dashboard access" },
+  { value: "reseller", label: "Reseller — Partner portal access" },
+  { value: "developer", label: "Developer — API & integrations" },
+  { value: "compliance_officer", label: "Compliance Officer — KYB & disputes" },
+  { value: "support", label: "Support — Customer assistance" },
+  { value: "agent", label: "Agent — Limited operational access" },
+  { value: "employee", label: "Employee — Read-only baseline" },
+];
+
+const RESEND_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
+interface TeamInvitation {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: TeamRole;
+  status: "pending" | "accepted" | "revoked";
+  last_sent_at: string;
+  created_at: string;
+}
+
 interface SavedBankAccount {
   id: string;
   nickname: string | null;
