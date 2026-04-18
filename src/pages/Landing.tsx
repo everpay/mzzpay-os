@@ -1,377 +1,330 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import everpayIcon from "@/assets/everpay-icon.png";
+import dashboardImg from "@/assets/mzz-dashboard.jpg";
+import diningImg from "@/assets/vertical-dining.jpg";
+import retailImg from "@/assets/vertical-retail.jpg";
+import saasImg from "@/assets/vertical-saas.jpg";
 import {
+  ArrowRight,
   ChevronDown,
   Menu,
   X,
-  ShoppingBag,
-  UtensilsCrossed,
-  ShoppingCart,
-  Smartphone,
-  Laptop,
-  Store,
-  Building2,
-  CreditCard,
-  Plug,
-  Globe,
-  Shield,
-  Lock,
-  DollarSign,
-  Star,
+  Hub,
   Zap,
-  ShieldCheck,
+  Terminal,
+  LayoutGrid,
+  Globe,
+  CheckCircle2,
+  CreditCard,
   Repeat,
-  BarChart3,
+  ShieldCheck,
+  Server,
   Facebook,
   Twitter,
   Linkedin,
   Github,
 } from "lucide-react";
 
+// MzzPay brand palette (primary #004BCA / #0061FF)
+const PRIMARY = "#004BCA";
+const PRIMARY_HOVER = "#0061FF";
+
 // ============= SITE HEADER =============
 function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
-  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  const handleMenuEnter = (menu: string) => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-    setActiveMegaMenu(menu);
-  };
-
-  const handleMenuLeave = () => {
-    closeTimeoutRef.current = setTimeout(() => {
-      setActiveMegaMenu(null);
-    }, 150);
-  };
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
-        scrolled ? "bg-white/95 backdrop-blur-md shadow-sm" : "bg-white"
+      className={`fixed top-0 z-50 w-full transition-all duration-300 ${
+        scrolled ? "bg-white/85 backdrop-blur-xl shadow-sm" : "bg-white/70 backdrop-blur-md"
       }`}
     >
-      <div className="container mx-auto flex h-[72px] items-center justify-between px-6">
+      <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src={everpayIcon} alt="MzzPay Logo" className="h-8 w-8 rounded-lg" />
-          <span
-            className="text-[22px] font-bold text-gray-900 tracking-tight"
-            style={{ fontFamily: "Manrope, sans-serif" }}
-          >
+          <img src={everpayIcon} alt="MzzPay" className="h-8 w-8 rounded-lg" />
+          <span className="text-xl font-extrabold tracking-tight text-slate-900" style={{ fontFamily: "Manrope, sans-serif" }}>
             MzzPay
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-1">
-          {/* Solutions */}
-          <div className="relative" onMouseEnter={() => handleMenuEnter("solutions")} onMouseLeave={handleMenuLeave}>
-            <button className="flex items-center gap-1 px-4 py-2 text-[15px] font-medium text-gray-700 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-colors">
-              Solutions
-              <ChevronDown
-                className={`h-3.5 w-3.5 opacity-50 transition-transform ${activeMegaMenu === "solutions" ? "rotate-180" : ""}`}
-              />
-            </button>
-            {activeMegaMenu === "solutions" && (
-              <div className="absolute left-1/2 -translate-x-1/2 top-full w-[520px]">
-                <div className="h-2" />
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-                  <div className="grid grid-cols-2 gap-1">
-                    <p className="col-span-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">
-                      By Business Type
-                    </p>
-                    {[
-                      { icon: ShoppingBag, label: "Retail" },
-                      { icon: UtensilsCrossed, label: "Restaurant" },
-                      { icon: ShoppingCart, label: "E-commerce" },
-                      { icon: Smartphone, label: "Mobile Payments" },
-                    ].map((item) => (
-                      <button
-                        key={item.label}
-                        className="flex items-center gap-3 rounded-xl p-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                        onClick={() => setActiveMegaMenu(null)}
-                      >
-                        <item.icon className="h-4 w-4 text-[#1aa478]" />
-                        <span className="font-medium">{item.label}</span>
-                      </button>
-                    ))}
-                    <div className="col-span-2 border-t border-gray-100 my-2" />
-                    <p className="col-span-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">
-                      By Platform
-                    </p>
-                    {[
-                      { icon: Laptop, label: "SaaS & Platforms" },
-                      { icon: Store, label: "Marketplaces" },
-                      { icon: Building2, label: "Enterprise" },
-                    ].map((item) => (
-                      <button
-                        key={item.label}
-                        className="flex items-center gap-3 rounded-xl p-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                        onClick={() => setActiveMegaMenu(null)}
-                      >
-                        <item.icon className="h-4 w-4 text-[#1aa478]" />
-                        <span className="font-medium">{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Products */}
-          <div className="relative" onMouseEnter={() => handleMenuEnter("products")} onMouseLeave={handleMenuLeave}>
-            <button className="flex items-center gap-1 px-4 py-2 text-[15px] font-medium text-gray-700 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-colors">
-              Products
-              <ChevronDown
-                className={`h-3.5 w-3.5 opacity-50 transition-transform ${activeMegaMenu === "products" ? "rotate-180" : ""}`}
-              />
-            </button>
-            {activeMegaMenu === "products" && (
-              <div className="absolute left-1/2 -translate-x-1/2 top-full w-[440px]">
-                <div className="h-2" />
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-                  <div className="grid grid-cols-2 gap-1">
-                    {[
-                      { icon: CreditCard, label: "Online Payments" },
-                      { icon: Plug, label: "Payment Gateway" },
-                      { icon: Store, label: "Point of Sale" },
-                      { icon: Shield, label: "Fraud Prevention" },
-                      { icon: Lock, label: "Security" },
-                      { icon: Globe, label: "Payment Methods" },
-                      { icon: DollarSign, label: "Funding" },
-                    ].map((item) => (
-                      <button
-                        key={item.label}
-                        className="flex items-center gap-3 rounded-xl p-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                        onClick={() => setActiveMegaMenu(null)}
-                      >
-                        <item.icon className="h-4 w-4 text-[#1aa478]" />
-                        <span className="font-medium">{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <button className="px-4 py-2 text-[15px] font-medium text-gray-700 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-colors">
+        <nav className="hidden md:flex items-center gap-8">
+          <a href="#solutions" className="text-sm font-semibold text-[#004BCA] border-b-2 border-[#004BCA] pb-1" style={{ fontFamily: "Manrope, sans-serif" }}>
+            Solutions
+          </a>
+          <a href="#developers" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors" style={{ fontFamily: "Manrope, sans-serif" }}>
+            Developers
+          </a>
+          <a href="#partners" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors" style={{ fontFamily: "Manrope, sans-serif" }}>
+            Partners
+          </a>
+          <a href="#pricing" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors" style={{ fontFamily: "Manrope, sans-serif" }}>
             Pricing
-          </button>
-          <button className="px-4 py-2 text-[15px] font-medium text-gray-700 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-colors">
-            About
-          </button>
-          <button className="px-4 py-2 text-[15px] font-medium text-gray-700 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-colors">
-            Blog
-          </button>
+          </a>
         </nav>
 
-        {/* Desktop CTA */}
-        <div className="hidden lg:flex items-center gap-3">
-          <Link
-            to="/docs"
-            className="text-[15px] font-medium text-gray-600 hover:text-gray-900 px-4 py-2 transition-colors"
-          >
-            Docs
+        <div className="hidden md:flex items-center gap-4">
+          <Link to="/login" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+            Sign In
           </Link>
-          <Link
-            to="/auth"
-            className="text-[15px] font-medium text-gray-600 hover:text-gray-900 px-4 py-2 transition-colors"
+          <Button
+            className="text-white rounded-full px-6 h-10 text-sm font-bold shadow-md shadow-blue-200/50"
+            style={{ backgroundColor: PRIMARY }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = PRIMARY_HOVER)}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = PRIMARY)}
           >
-            Login
-          </Link>
-          <Button className="bg-[#1aa478] hover:bg-[#158f68] text-white rounded-full px-6 h-10 text-[15px] font-semibold shadow-none">
-            Get a free demo
+            Contact Sales
           </Button>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button className="lg:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Toggle menu">
-          {isMenuOpen ? <X className="h-6 w-6 text-gray-900" /> : <Menu className="h-6 w-6 text-gray-900" />}
+        <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Toggle menu">
+          {isMenuOpen ? <X className="h-6 w-6 text-slate-900" /> : <Menu className="h-6 w-6 text-slate-900" />}
         </button>
       </div>
 
-      {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="lg:hidden border-t border-gray-100 bg-white max-h-[calc(100vh-72px)] overflow-y-auto">
-          <nav className="container mx-auto flex flex-col px-6 py-6">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Solutions</p>
-              {[
-                "Retail",
-                "Restaurant",
-                "E-commerce",
-                "Mobile Payments",
-                "SaaS & Platforms",
-                "Marketplaces",
-                "Enterprise",
-              ].map((item) => (
-                <button
-                  key={item}
-                  className="block py-2.5 text-[15px] text-gray-600 hover:text-gray-900 w-full text-left"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-            <div className="border-t border-gray-100 mt-4 pt-6 flex flex-col gap-3">
-              <Link
-                to="/auth"
-                className="text-center text-[15px] font-medium text-gray-600 py-2.5"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Login
-              </Link>
-              <Button className="w-full bg-[#1aa478] hover:bg-[#158f68] text-white rounded-full h-11 text-[15px] font-semibold">
-                Get a free demo
-              </Button>
-            </div>
-          </nav>
+        <div className="md:hidden bg-white border-t border-slate-100 px-6 py-4 space-y-3">
+          {["Solutions", "Developers", "Partners", "Pricing"].map((item) => (
+            <a key={item} href="#" className="block py-2 text-base font-semibold text-slate-700">
+              {item}
+            </a>
+          ))}
+          <Link to="/login" className="block py-2 text-base font-semibold text-slate-700">
+            Sign In
+          </Link>
+          <Button className="w-full text-white rounded-full font-bold" style={{ backgroundColor: PRIMARY }}>
+            Contact Sales
+          </Button>
         </div>
       )}
     </header>
   );
 }
 
-// ============= HERO SECTION =============
+// ============= HERO =============
 function HeroSection() {
-  const [videoLoaded, setVideoLoaded] = useState(false);
-
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-      {/* Poster fallback (always visible behind video) */}
-      <div
-        className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
-        style={{ backgroundImage: "url('/images/hero-payments.jpg')" }}
-      />
-      {/* Video Background */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        onLoadedData={() => setVideoLoaded(true)}
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? "opacity-100" : "opacity-0"}`}
-        poster="/images/hero-payments.jpg"
-      >
-        <source src="/video/everpay-intro.mp4" type="video/mp4" />
-      </video>
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
+    <section className="relative pt-32 pb-20 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/40">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 right-10 w-[480px] h-[480px] rounded-full bg-blue-100/40 blur-3xl" />
+        <div className="absolute bottom-0 left-10 w-[380px] h-[380px] rounded-full bg-blue-200/20 blur-3xl" />
+      </div>
 
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-[800px] mx-auto text-center">
-          {/* Trust badge */}
+      <div className="max-w-7xl mx-auto px-6 relative z-10 grid lg:grid-cols-12 gap-12 items-center">
+        <div className="lg:col-span-7">
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="inline-block px-4 py-1.5 rounded-full bg-blue-50 text-[#004BCA] text-xs font-bold uppercase tracking-widest mb-6 border border-blue-100"
+          >
+            Built for Scale
+          </motion.span>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tighter leading-[1.05] mb-8"
+            style={{ fontFamily: "Manrope, sans-serif" }}
+          >
+            The Global <span style={{ color: PRIMARY }}>Ledger</span> for Modern Commerce.
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-lg md:text-xl text-slate-500 max-w-xl mb-10 leading-relaxed"
+          >
+            Orchestrate complex money movement, unify international payments, and scale your financial infrastructure
+            with surgical precision.
+          </motion.p>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-1.5 mb-8"
-          >
-            <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <svg key={i} className="w-4 h-4 text-[#1aa478]" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
-            </div>
-            <span className="text-sm font-medium text-white/90">Trusted by 1,000+ merchants</span>
-          </motion.div>
-
-          {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="text-4xl md:text-[56px] lg:text-[64px] font-extrabold text-white leading-[1.08] tracking-tight mb-6"
-            style={{ fontFamily: "Manrope, sans-serif" }}
-          >
-            Accept payments everywhere. <span className="text-[#1aa478]">Grow faster.</span>
-          </motion.h1>
-
-          {/* Subtitle */}
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-lg md:text-xl text-white/70 max-w-[580px] mx-auto mb-10 leading-relaxed"
-            style={{ fontFamily: "Inter, sans-serif" }}
+            className="flex flex-wrap gap-4"
           >
-            MZZPay gives your business the same payment infrastructure as the biggest brands. One platform for cards,
-            wallets, and local payment methods worldwide.
-          </motion.p>
-
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.45 }}
-            className="flex flex-col sm:flex-row gap-3 justify-center items-center"
-          >
-            <Button
-              size="lg"
-              className="bg-[#1aa478] hover:bg-[#158f68] text-white rounded-full px-8 h-12 text-base font-semibold shadow-none min-w-[200px]"
-            >
-              Get a free demo
-            </Button>
-            <Link to="/auth">
+            <Link to="/signup">
+              <Button
+                size="lg"
+                className="text-white rounded-full px-8 h-14 text-base font-bold gap-2 group shadow-lg shadow-blue-200/50"
+                style={{ backgroundColor: PRIMARY }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = PRIMARY_HOVER)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = PRIMARY)}
+              >
+                Start Building
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+            <Link to="/docs">
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:border-white/50 rounded-full px-8 h-12 text-base font-semibold shadow-none min-w-[200px]"
+                className="bg-white/70 backdrop-blur-md text-slate-900 border-slate-200 hover:bg-white hover:border-slate-300 rounded-full px-8 h-14 text-base font-bold"
               >
-                Start accepting payments
+                View Documentation
               </Button>
             </Link>
           </motion.div>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="lg:col-span-5 relative"
+        >
+          <div className="relative bg-white p-4 rounded-2xl shadow-2xl border border-slate-100 rotate-2 hover:rotate-0 transition-transform duration-500">
+            <img
+              src={dashboardImg}
+              alt="MzzPay real-time financial dashboard"
+              className="rounded-xl w-full"
+              width={1024}
+              height={768}
+            />
+            <div
+              className="absolute -bottom-6 -left-6 p-4 rounded-2xl shadow-xl animate-pulse"
+              style={{ backgroundColor: PRIMARY }}
+            >
+              <CreditCard className="h-8 w-8 text-white" />
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
 }
 
-// ============= STATS SECTION =============
+// ============= PARTNERS =============
+function PartnersSection() {
+  return (
+    <section className="py-14 bg-white border-y border-slate-100">
+      <div className="max-w-7xl mx-auto px-6">
+        <p className="text-center text-xs font-bold uppercase tracking-[0.25em] text-slate-400 mb-8">
+          Powering the world's most ambitious teams
+        </p>
+        <div className="flex flex-wrap justify-center items-center gap-x-14 gap-y-6 opacity-60">
+          {["Amazon", "Slack", "Stripe", "Shopify", "Airbnb", "Zoom"].map((name) => (
+            <span
+              key={name}
+              className="text-xl font-extrabold text-slate-700 tracking-tight grayscale hover:grayscale-0 hover:opacity-100 transition-all"
+              style={{ fontFamily: "Manrope, sans-serif" }}
+            >
+              {name}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============= INFRASTRUCTURE =============
+function InfrastructureSection() {
+  return (
+    <section className="py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+        <div>
+          <h2 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-6" style={{ fontFamily: "Manrope, sans-serif" }}>
+            Reliable, extensible infrastructure
+          </h2>
+          <p className="text-lg text-slate-500 mb-8 leading-relaxed">
+            MzzPay's architecture is designed to handle every edge case of modern commerce. From unified identity
+            management to real-time reconciliation across 135+ currencies.
+          </p>
+          <div className="space-y-4">
+            <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50">
+              <div className="bg-blue-100 p-2.5 rounded-lg">
+                <Server className="h-5 w-5" style={{ color: PRIMARY }} />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 mb-1">Centralized Orchestration</h4>
+                <p className="text-sm text-slate-500">Connect ERPs, CRMs, and custom data pipelines through one API.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50">
+              <div className="bg-blue-100 p-2.5 rounded-lg">
+                <Repeat className="h-5 w-5" style={{ color: PRIMARY }} />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 mb-1">Fluid Liquidity</h4>
+                <p className="text-sm text-slate-500">Automate cross-border payouts with near-instant settlement.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative p-8 bg-slate-50 rounded-2xl shadow-inner border border-slate-100">
+          <div className="grid grid-cols-3 gap-3 items-center">
+            <div className="space-y-3">
+              {["ERP System", "Subscription", "Data Lake"].map((t) => (
+                <div key={t} className="p-3 bg-white shadow-sm rounded-lg text-xs font-mono border border-slate-200 text-slate-700">
+                  {t}
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-center">
+              <div
+                className="w-20 h-20 rounded-2xl flex items-center justify-center text-white shadow-2xl"
+                style={{ backgroundColor: PRIMARY }}
+              >
+                <Server className="h-9 w-9" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              {["Orchestration", "Risk Engine", "Settlement"].map((t) => (
+                <div
+                  key={t}
+                  className="p-3 rounded-lg text-xs font-mono border"
+                  style={{ backgroundColor: "rgba(0,75,202,0.08)", borderColor: "rgba(0,75,202,0.2)", color: PRIMARY }}
+                >
+                  {t}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============= STATS =============
 function StatsSection() {
   const stats = [
-    { value: "99.99%", label: "Uptime guarantee" },
-    { value: "135+", label: "Currencies supported" },
-    { value: "1K+", label: "Active merchants" },
-    { value: "<200ms", label: "Average response time" },
+    { value: "500M+", label: "API requests/day" },
+    { value: "10K+", label: "API requests/second" },
+    { value: "150K+", label: "transactions/minute" },
   ];
-
   return (
-    <section className="py-16 bg-white border-y border-gray-100">
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-4">
-          {stats.map((stat, index) => (
-            <div key={index} className="text-center">
-              <div
-                className="text-3xl lg:text-4xl font-extrabold text-gray-900 mb-1"
-                style={{ fontFamily: "Manrope, sans-serif" }}
-              >
-                {stat.value}
-              </div>
-              <div className="text-sm text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
-                {stat.label}
-              </div>
+    <section className="py-20 text-white relative overflow-hidden" style={{ backgroundColor: PRIMARY }}>
+      <div className="absolute inset-0 opacity-10">
+        <svg className="w-full h-full" viewBox="0 0 1000 200" preserveAspectRatio="none">
+          <path d="M0,100 C150,200 350,0 500,100 C650,200 850,0 1000,100 L1000,200 L0,200 Z" fill="white" />
+        </svg>
+      </div>
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <h2 className="text-center text-2xl font-bold mb-12 opacity-80" style={{ fontFamily: "Manrope, sans-serif" }}>
+          Built for massive volume
+        </h2>
+        <div className="grid md:grid-cols-3 gap-12 text-center">
+          {stats.map((s) => (
+            <div key={s.label} className="space-y-2">
+              <div className="text-5xl md:text-6xl font-black tracking-tighter">{s.value}</div>
+              <div className="text-blue-100 text-sm uppercase tracking-widest font-semibold">{s.label}</div>
             </div>
           ))}
         </div>
@@ -380,279 +333,37 @@ function StatsSection() {
   );
 }
 
-// ============= PAYMENT PARTNERS SECTION =============
-function PaymentPartnersSection() {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const paymentLogos = [
-    { name: "Visa", src: "/logos/visa.svg" },
-    { name: "Mastercard", src: "/logos/mastercard.svg" },
-    { name: "American Express", src: "/logos/amex.svg" },
-    { name: "PayPal", src: "/logos/paypal.svg" },
-    { name: "Apple Pay", src: "/logos/apple-pay.svg" },
-    { name: "Google Pay", src: "/logos/google-pay.svg" },
-    { name: "Klarna", src: "/logos/klarna.svg" },
-    { name: "Alipay", src: "/logos/alipay.svg" },
-    { name: "Bancontact", src: "/logos/bancontact.svg" },
-    { name: "iDEAL", src: "/logos/ideal.svg" },
+// ============= VERTICALS =============
+function VerticalsSection() {
+  const verticals = [
+    { img: diningImg, title: "Fine Dining", desc: "Complex split-bills and gratuity management automated." },
+    { img: retailImg, title: "High-End Retail", desc: "Omnichannel experiences that bridge digital and physical." },
+    { img: saasImg, title: "SaaS Platforms", desc: "Global subscription billing with built-in churn reduction." },
   ];
-
-  useEffect(() => {
-    const scrollContainer = scrollRef.current;
-    if (!scrollContainer) return;
-
-    let scrollPosition = 0;
-    const scrollSpeed = 0.5;
-
-    const scroll = () => {
-      scrollPosition += scrollSpeed;
-      if (scrollPosition >= scrollContainer.scrollWidth / 2) {
-        scrollPosition = 0;
-      }
-      scrollContainer.scrollLeft = scrollPosition;
-    };
-
-    const intervalId = setInterval(scroll, 20);
-    return () => clearInterval(intervalId);
-  }, []);
-
   return (
-    <section className="py-16 bg-white overflow-hidden">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-8">
-          <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-            Trusted Payment Methods Worldwide
-          </p>
-        </div>
-        <div ref={scrollRef} className="flex gap-12 overflow-x-hidden items-center" style={{ scrollBehavior: "auto" }}>
-          {[...paymentLogos, ...paymentLogos, ...paymentLogos].map((logo, index) => (
+    <section className="py-24 bg-slate-50/50">
+      <div className="max-w-7xl mx-auto px-6">
+        <h2 className="text-4xl font-extrabold tracking-tight text-center text-slate-900 mb-16" style={{ fontFamily: "Manrope, sans-serif" }}>
+          Customized for your vertical
+        </h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          {verticals.map((v) => (
             <div
-              key={`${logo.name}-${index}`}
-              className="flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform duration-300"
+              key={v.title}
+              className="group relative h-96 rounded-2xl overflow-hidden shadow-lg transition-transform hover:-translate-y-2 duration-300"
             >
               <img
-                src={logo.src}
-                alt={logo.name}
-                className="h-10 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity"
+                src={v.img}
+                alt={v.title}
                 loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               />
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ============= FEATURES SECTION =============
-function FeaturesSection() {
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  const features = [
-    {
-      number: "1",
-      tab: "Global Reach",
-      title: "Accept payments in 135+ currencies worldwide",
-      description:
-        "With MZZPay, your business instantly supports cards, wallets, bank transfers, and local payment methods across every major market. No extra integrations needed.",
-      icon: Globe,
-      highlights: ["Visa, Mastercard, Amex, Discover", "Apple Pay, Google Pay, PayPal", "PIX, OXXO, Boleto, Alipay"],
-    },
-    {
-      number: "2",
-      tab: "More Conversions",
-      title: "Increase checkout success rates by up to 20%",
-      description:
-        "Our smart routing engine and localized payment experiences help you capture more revenue from every transaction. Less friction, more sales.",
-      icon: Zap,
-      highlights: ["Smart payment routing", "Localized checkout experience", "One-click payments"],
-    },
-    {
-      number: "3",
-      tab: "Fraud Protection",
-      title: "AI-powered fraud prevention that protects your revenue",
-      description:
-        "Real-time transaction monitoring, machine learning risk scoring, and 3D Secure authentication keep your business safe without blocking good customers.",
-      icon: ShieldCheck,
-      highlights: ["Real-time monitoring", "ML-based risk scoring", "3D Secure 2.0"],
-    },
-    {
-      number: "4",
-      tab: "Repeat Business",
-      title: "Turn one-time buyers into repeat customers",
-      description:
-        "Tokenized cards, subscription billing, and smart retry logic ensure your recurring revenue flows smoothly and customers keep coming back.",
-      icon: Repeat,
-      highlights: ["Card tokenization", "Subscription management", "Smart retry logic"],
-    },
-  ];
-
-  const active = features[activeIndex];
-
-  return (
-    <section className="py-20 md:py-28 bg-white">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2
-            className="text-3xl md:text-[40px] font-extrabold text-gray-900 leading-tight mb-4"
-            style={{ fontFamily: "Manrope, sans-serif" }}
-          >
-            With MZZPay, you get more sales, <br className="hidden md:block" />
-            more reach, more repeat customers
-          </h2>
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-3 mb-14">
-          {features.map((feature, index) => (
-            <button
-              key={index}
-              onClick={() => setActiveIndex(index)}
-              className={`flex items-center gap-2.5 px-5 py-3 rounded-full text-sm font-semibold transition-all duration-200 ${
-                index === activeIndex
-                  ? "bg-[#1aa478] text-white shadow-md"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              <span
-                className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${index === activeIndex ? "bg-white/20 text-white" : "bg-white text-gray-500"}`}
-              >
-                {feature.number}
-              </span>
-              {feature.tab}
-            </button>
-          ))}
-        </div>
-
-        <div className="max-w-5xl mx-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeIndex}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.35 }}
-              className="grid md:grid-cols-2 gap-12 items-center"
-            >
-              <div>
-                <h3
-                  className="text-2xl md:text-3xl font-bold text-gray-900 mb-5 leading-snug"
-                  style={{ fontFamily: "Manrope, sans-serif" }}
-                >
-                  {active.title}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
+              <div className="absolute bottom-0 p-7">
+                <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "Manrope, sans-serif" }}>
+                  {v.title}
                 </h3>
-                <p className="text-gray-500 text-base leading-relaxed mb-8" style={{ fontFamily: "Inter, sans-serif" }}>
-                  {active.description}
-                </p>
-                <ul className="space-y-3">
-                  {active.highlights.map((item, i) => (
-                    <li key={i} className="flex items-center gap-3">
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#1aa478]/10 flex items-center justify-center">
-                        <svg className="w-3 h-3 text-[#1aa478]" fill="currentColor" viewBox="0 0 20 20">
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex items-center justify-center">
-                <div className="w-full max-w-sm rounded-3xl overflow-hidden shadow-lg">
-                  <img
-                    src={
-                      [
-                        "/images/feature-global.jpg",
-                        "/images/feature-analytics.jpg",
-                        "/images/feature-security.jpg",
-                        "/images/feature-dashboard.jpg",
-                      ][activeIndex]
-                    }
-                    alt={active.title}
-                    className="w-full h-64 object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ============= TESTIMONIALS SECTION =============
-function TestimonialsSection() {
-  const testimonials = [
-    {
-      quote:
-        "MZZPay transformed our payment operations. We've seen a 40% increase in successful transactions since switching.",
-      name: "Sarah Chen",
-      title: "CTO, UrbanMarket",
-    },
-    {
-      quote: "The fraud protection alone has saved us over $200K. And the integration was incredibly smooth.",
-      name: "Marcus Rivera",
-      title: "Head of Payments, FlowCommerce",
-    },
-    {
-      quote: "We went from 3 payment providers to just MZZPay. Simpler, cheaper, and our conversion rate is up 18%.",
-      name: "Aisha Patel",
-      title: "VP Operations, ShopWave",
-    },
-    {
-      quote:
-        "Their support team is incredible. Available 24/7 and deeply knowledgeable about global payment regulations.",
-      name: "James O'Brien",
-      title: "CEO, QuickShip Logistics",
-    },
-    {
-      quote: "Expanding into Latin America was seamless with MZZPay. PIX, Boleto, OXXO - all just worked from day one.",
-      name: "Lucia Fernandez",
-      title: "Growth Lead, Tienda Digital",
-    },
-    {
-      quote: "The dashboard gives us real-time visibility into every transaction across 12 countries. Game changer.",
-      name: "David Kim",
-      title: "CFO, NexGen Retail",
-    },
-  ];
-
-  return (
-    <section className="py-20 md:py-28 bg-gray-50">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-14">
-          <h2
-            className="text-3xl md:text-[40px] font-extrabold text-gray-900 leading-tight mb-4"
-            style={{ fontFamily: "Manrope, sans-serif" }}
-          >
-            See why businesses trust MZZPay
-          </h2>
-          <p className="text-gray-500 text-lg max-w-xl mx-auto" style={{ fontFamily: "Inter, sans-serif" }}>
-            Over 500 businesses have switched to MZZPay for faster, more reliable payment processing.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
-          {testimonials.map((t, i) => (
-            <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex gap-0.5 mb-4">
-                {[...Array(5)].map((_, j) => (
-                  <Star key={j} className="w-4 h-4 fill-[#1aa478] text-[#1aa478]" />
-                ))}
-              </div>
-              <p className="text-gray-700 text-[15px] leading-relaxed mb-5" style={{ fontFamily: "Inter, sans-serif" }}>
-                "{t.quote}"
-              </p>
-              <div>
-                <p className="text-sm font-semibold text-gray-900" style={{ fontFamily: "Manrope, sans-serif" }}>
-                  {t.name}
-                </p>
-                <p className="text-sm text-gray-400">{t.title}</p>
+                <p className="text-white/80 text-sm">{v.desc}</p>
               </div>
             </div>
           ))}
@@ -662,77 +373,40 @@ function TestimonialsSection() {
   );
 }
 
-// ============= PRODUCTS SECTION =============
-function ProductsSection() {
-  const products = [
-    {
-      icon: CreditCard,
-      title: "Online Payments",
-      description:
-        "Accept credit cards, debit cards, and digital wallets with a single integration. Optimized checkout that converts.",
-    },
-    {
-      icon: Globe,
-      title: "Global Payment Methods",
-      description: "Support 135+ currencies and local payment methods like PIX, Boleto, OXXO, Alipay, and more.",
-    },
-    {
-      icon: Smartphone,
-      title: "Mobile & In-App Payments",
-      description: "Apple Pay, Google Pay, and native SDKs for iOS and Android. Seamless mobile checkout experiences.",
-    },
-    {
-      icon: ShieldCheck,
-      title: "Fraud Prevention",
-      description:
-        "AI-powered fraud detection with real-time scoring. Block bad actors without slowing down good customers.",
-    },
-    {
-      icon: BarChart3,
-      title: "Analytics & Reporting",
-      description:
-        "Real-time dashboards, transaction insights, and settlement reports. Full visibility into your payment operations.",
-    },
-    {
-      icon: Repeat,
-      title: "Recurring Billing",
-      description: "Subscriptions, invoicing, and smart retry logic. Maximize recurring revenue and reduce churn.",
-    },
+// ============= INTEGRATION PATHS =============
+function IntegrationPathsSection() {
+  const paths = [
+    { icon: Zap, title: "No-code", desc: "Launch in hours using our pre-built checkout pages and dashboard management tools.", cta: "Explore No-code" },
+    { icon: LayoutGrid, title: "Pre-integrated", desc: "Connect MzzPay directly to your existing tech stack: Shopify, NetSuite, or SAP.", cta: "View Ecosystem" },
+    { icon: Terminal, title: "API-First", desc: "Full programmatic control. Build custom financial flows with our robust SDKs.", cta: "Read Docs" },
   ];
-
   return (
-    <section className="py-20 md:py-28 bg-white">
-      <div className="container mx-auto px-6">
+    <section id="developers" className="py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2
-            className="text-3xl md:text-[40px] font-extrabold text-gray-900 leading-tight mb-4"
-            style={{ fontFamily: "Manrope, sans-serif" }}
-          >
-            Everything you need to get paid
+          <h2 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-4" style={{ fontFamily: "Manrope, sans-serif" }}>
+            Choose your integration path
           </h2>
-          <p className="text-gray-500 text-lg max-w-xl mx-auto" style={{ fontFamily: "Inter, sans-serif" }}>
-            One platform with all the tools to accept payments, prevent fraud, and grow your business globally.
+          <p className="text-slate-500 max-w-2xl mx-auto text-lg">
+            Whether you're a lean startup or a global enterprise, we have the right entry point for your team.
           </p>
         </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {products.map((product, index) => (
+        <div className="grid md:grid-cols-3 gap-6">
+          {paths.map((p) => (
             <div
-              key={index}
-              className="group block rounded-2xl border border-gray-100 bg-white p-7 hover:shadow-lg hover:border-[#1aa478]/20 transition-all duration-200"
+              key={p.title}
+              className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-2xl hover:shadow-blue-100 transition-all border border-slate-100 hover:border-blue-200 group"
             >
-              <div className="w-11 h-11 rounded-xl bg-[#1aa478]/10 flex items-center justify-center mb-5">
-                <product.icon className="w-5 h-5 text-[#1aa478]" />
+              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-6">
+                <p.icon className="h-6 w-6" style={{ color: PRIMARY }} />
               </div>
-              <h3
-                className="text-lg font-bold text-gray-900 mb-2 group-hover:text-[#1aa478] transition-colors"
-                style={{ fontFamily: "Manrope, sans-serif" }}
-              >
-                {product.title}
+              <h3 className="text-xl font-bold text-slate-900 mb-3" style={{ fontFamily: "Manrope, sans-serif" }}>
+                {p.title}
               </h3>
-              <p className="text-sm text-gray-500 leading-relaxed" style={{ fontFamily: "Inter, sans-serif" }}>
-                {product.description}
-              </p>
+              <p className="text-slate-500 mb-6 text-sm leading-relaxed">{p.desc}</p>
+              <a href="#" className="inline-flex items-center gap-2 font-bold text-sm group-hover:translate-x-1 transition-transform" style={{ color: PRIMARY }}>
+                {p.cta} <ArrowRight className="h-4 w-4" />
+              </a>
             </div>
           ))}
         </div>
@@ -741,36 +415,227 @@ function ProductsSection() {
   );
 }
 
-// ============= CTA SECTION =============
-function CTASection() {
+// ============= BENTO GRID =============
+function BentoSection() {
   return (
-    <section className="py-20 md:py-28 bg-[#0A2F2F]">
-      <div className="container mx-auto px-6 text-center">
-        <h2
-          className="text-3xl md:text-[44px] font-extrabold text-white leading-tight mb-5"
-          style={{ fontFamily: "Manrope, sans-serif" }}
-        >
-          Ready to grow your business?
+    <section id="solutions" className="py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-4">
+        {/* Globe payments — wide */}
+        <div className="md:col-span-2 bg-slate-50 p-10 rounded-2xl flex flex-col justify-between min-h-[340px] group overflow-hidden">
+          <div>
+            <h3 className="text-3xl font-bold tracking-tight text-slate-900 mb-3" style={{ fontFamily: "Manrope, sans-serif" }}>
+              Accept and optimize payments globally
+            </h3>
+            <p className="text-slate-500 max-w-md">
+              Increase conversion with 100+ local payment methods and smart routing.
+            </p>
+          </div>
+          <div className="flex justify-end mt-6">
+            <Globe className="h-32 w-32 text-blue-200 group-hover:scale-110 group-hover:text-blue-300 transition-all duration-500" />
+          </div>
+        </div>
+
+        {/* Billing — small primary */}
+        <div className="text-white p-10 rounded-2xl flex flex-col justify-between min-h-[340px]" style={{ backgroundColor: PRIMARY }}>
+          <CreditCard className="h-12 w-12" />
+          <div>
+            <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: "Manrope, sans-serif" }}>
+              Enable any billing model
+            </h3>
+            <p className="text-white/70">From monthly subs to usage-based fees.</p>
+          </div>
+        </div>
+
+        {/* Agentic Commerce — small */}
+        <div className="bg-slate-100 p-10 rounded-2xl flex flex-col justify-between min-h-[280px]">
+          <div>
+            <h3 className="text-2xl font-bold mb-2 text-slate-900" style={{ fontFamily: "Manrope, sans-serif" }}>
+              Monetize Agentic Commerce
+            </h3>
+            <p className="text-slate-500">Embedded payments for AI agents and autonomous platforms.</p>
+          </div>
+          <div className="flex gap-2 mt-6">
+            <div className="w-10 h-10 rounded-full" style={{ backgroundColor: "rgba(0,75,202,0.2)" }} />
+            <div className="w-10 h-10 rounded-full" style={{ backgroundColor: "rgba(0,75,202,0.4)" }} />
+            <div className="w-10 h-10 rounded-full" style={{ backgroundColor: "rgba(0,75,202,0.6)" }} />
+          </div>
+        </div>
+
+        {/* Borderless — wide dark */}
+        <div className="md:col-span-2 bg-slate-900 text-white p-10 rounded-2xl relative overflow-hidden min-h-[280px]">
+          <div className="relative z-10 flex flex-col h-full justify-between">
+            <h3 className="text-3xl font-bold mb-3" style={{ fontFamily: "Manrope, sans-serif" }}>
+              Access borderless money movement
+            </h3>
+            <p className="text-white/60 max-w-sm mb-6">
+              Move funds instantly across markets without the traditional 3-day wait.
+            </p>
+            <button className="w-fit px-6 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-all text-sm font-semibold">
+              Learn more
+            </button>
+          </div>
+          <Globe className="absolute -right-10 -bottom-10 h-72 w-72 text-blue-500/20" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============= PARTNERS SEGMENT (ISO/ISV) =============
+function SegmentsSection() {
+  return (
+    <section id="partners" className="py-24 bg-slate-50/50">
+      <div className="max-w-7xl mx-auto px-6">
+        <h2 className="text-4xl font-extrabold tracking-tight text-center text-slate-900 mb-16" style={{ fontFamily: "Manrope, sans-serif" }}>
+          Delivering Payments Support You Need
         </h2>
-        <p
-          className="text-lg text-white/60 mb-10 max-w-lg mx-auto leading-relaxed"
-          style={{ fontFamily: "Inter, sans-serif" }}
-        >
-          Get a free demo and see how MZZPay can help you accept payments globally, prevent fraud, and increase revenue.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button
-            size="lg"
-            className="bg-[#1aa478] hover:bg-[#158f68] text-white rounded-full px-8 h-12 text-base font-semibold shadow-none min-w-[200px]"
-          >
-            Get a free demo
-          </Button>
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12">
+          <div className="bg-white p-10 rounded-2xl border border-slate-100 shadow-sm">
+            <h3 className="text-2xl font-bold mb-4 flex items-center gap-3 text-slate-900" style={{ fontFamily: "Manrope, sans-serif" }}>
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: PRIMARY }} />
+              Independent Sales Organizations
+            </h3>
+            <p className="text-slate-500 leading-relaxed">
+              Scale your merchant portfolio with industry-leading residuals and high-conversion payment tech that
+              merchants actually want.
+            </p>
+          </div>
+          <div className="bg-white p-10 rounded-2xl border border-slate-100 shadow-sm">
+            <h3 className="text-2xl font-bold mb-4 flex items-center gap-3 text-slate-900" style={{ fontFamily: "Manrope, sans-serif" }}>
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "rgba(0,75,202,0.4)" }} />
+              Software Vendors (ISVs)
+            </h3>
+            <p className="text-slate-500 leading-relaxed">
+              Embed payments directly into your platform and turn a cost center into a major revenue driver with
+              white-labeled solutions.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============= DEVELOPER CODE =============
+function DeveloperSection() {
+  return (
+    <section className="py-24 text-white" style={{ backgroundColor: "#001A4D" }}>
+      <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+        <div>
+          <span className="text-blue-300 font-bold tracking-widest text-xs uppercase mb-4 block">Developer First</span>
+          <h2 className="text-4xl font-extrabold mb-6" style={{ fontFamily: "Manrope, sans-serif" }}>
+            Built for those who build the future.
+          </h2>
+          <p className="text-white/70 text-lg mb-8 leading-relaxed">
+            Clear documentation, SDKs for every language, and a robust sandbox environment to test your most complex
+            flows.
+          </p>
+          <ul className="space-y-3">
+            {["GraphQL & REST APIs", "Real-time Webhook Events", "Certified PCI-DSS Level 1"].map((item) => (
+              <li key={item} className="flex items-center gap-3">
+                <CheckCircle2 className="h-5 w-5 text-blue-300" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="bg-slate-950 rounded-2xl p-6 shadow-2xl border border-white/10 font-mono text-sm leading-relaxed overflow-hidden">
+          <div className="flex gap-2 mb-4">
+            <div className="w-3 h-3 rounded-full bg-red-500/60" />
+            <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+            <div className="w-3 h-3 rounded-full bg-green-500/60" />
+          </div>
+          <pre className="text-blue-300 overflow-x-auto">
+            <code>{`const payment = await mzzpay.payments.create({
+  amount: 25000,
+  currency: 'usd',
+  payment_method_types: ['card', 'ach'],
+  metadata: { order_id: 'AZ-99' }
+});
+
+// Handle the response
+if (payment.status === 'succeeded') {
+  console.log('Precision achieved.');
+}`}</code>
+          </pre>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============= FAQ =============
+function FAQSection() {
+  const [open, setOpen] = useState<number | null>(0);
+  const faqs = [
+    {
+      q: "How does MzzPay handle cross-border reconciliation?",
+      a: "Our proprietary ledger system syncs in real-time across 135+ currencies, automatically calculating FX spread and fees at the moment of capture.",
+    },
+    {
+      q: "What is the typical integration timeline?",
+      a: "Using our standard SDKs, most teams go from sandbox to production in under 48 hours. Enterprise migrations typically take 2-4 weeks.",
+    },
+    {
+      q: "Does MzzPay support multi-vendor split payments?",
+      a: "Yes. You can split a single charge across many connected accounts with per-leg fees, holds, and rolling reserves.",
+    },
+  ];
+  return (
+    <section className="py-24 bg-white">
+      <div className="max-w-3xl mx-auto px-6">
+        <h2 className="text-4xl font-extrabold tracking-tight text-center text-slate-900 mb-12" style={{ fontFamily: "Manrope, sans-serif" }}>
+          Frequently Asked
+        </h2>
+        <div className="space-y-3">
+          {faqs.map((f, i) => (
+            <div key={i} className="bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
+              <button
+                onClick={() => setOpen(open === i ? null : i)}
+                className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-slate-100 transition-colors"
+              >
+                <span className="font-bold text-slate-900">{f.q}</span>
+                <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${open === i ? "rotate-180" : ""}`} />
+              </button>
+              {open === i && (
+                <div className="px-6 pb-5 text-slate-500 text-sm leading-relaxed">{f.a}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============= FINAL CTA =============
+function FinalCTASection() {
+  return (
+    <section className="py-24 relative overflow-hidden" style={{ backgroundColor: PRIMARY }}>
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-white/10 blur-3xl" />
+      </div>
+      <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
+        <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-10 tracking-tighter" style={{ fontFamily: "Manrope, sans-serif" }}>
+          Ready to orchestrate your growth?
+        </h2>
+        <div className="flex flex-col md:flex-row justify-center gap-4">
+          <Link to="/signup">
+            <Button
+              size="lg"
+              className="bg-white hover:bg-blue-50 rounded-full px-10 h-14 text-lg font-bold shadow-xl"
+              style={{ color: PRIMARY }}
+            >
+              Create Free Account
+            </Button>
+          </Link>
           <Button
             size="lg"
             variant="outline"
-            className="border-2 border-white/20 bg-transparent text-white hover:bg-white/10 rounded-full px-8 h-12 text-base font-semibold shadow-none min-w-[200px]"
+            className="bg-transparent text-white border-2 border-white/30 hover:bg-white/10 rounded-full px-10 h-14 text-lg font-bold"
           >
-            Contact sales
+            Contact Our Experts
           </Button>
         </div>
       </div>
@@ -778,7 +643,7 @@ function CTASection() {
   );
 }
 
-// ============= SITE FOOTER =============
+// ============= SITE FOOTER (kept from previous design) =============
 function SiteFooter() {
   return (
     <footer className="border-t border-gray-200 bg-gray-50 relative">
@@ -789,19 +654,9 @@ function SiteFooter() {
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Solutions</h3>
             <ul className="space-y-3">
-              {[
-                "Retail",
-                "Restaurant",
-                "E-commerce",
-                "Mobile Payments",
-                "SaaS & Platforms",
-                "Marketplaces",
-                "Enterprise",
-              ].map((item) => (
+              {["Retail", "Restaurant", "E-commerce", "Mobile Payments", "SaaS & Platforms", "Marketplaces", "Enterprise"].map((item) => (
                 <li key={item}>
-                  <span className="text-sm text-gray-600 hover:text-[#1aa478] transition-colors cursor-pointer">
-                    {item}
-                  </span>
+                  <span className="text-sm text-gray-600 hover:text-[#004BCA] transition-colors cursor-pointer">{item}</span>
                 </li>
               ))}
             </ul>
@@ -810,19 +665,9 @@ function SiteFooter() {
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Products</h3>
             <ul className="space-y-3">
-              {[
-                "Online Payments",
-                "Payment Gateway",
-                "POS & Kiosks",
-                "Omni-Commerce",
-                "Payment Methods",
-                "Fraud Prevention",
-                "Funding",
-              ].map((item) => (
+              {["Online Payments", "Payment Gateway", "POS & Kiosks", "Omni-Commerce", "Payment Methods", "Fraud Prevention", "Funding"].map((item) => (
                 <li key={item}>
-                  <span className="text-sm text-gray-600 hover:text-[#1aa478] transition-colors cursor-pointer">
-                    {item}
-                  </span>
+                  <span className="text-sm text-gray-600 hover:text-[#004BCA] transition-colors cursor-pointer">{item}</span>
                 </li>
               ))}
             </ul>
@@ -833,9 +678,7 @@ function SiteFooter() {
             <ul className="space-y-3">
               {["Blog", "API Documentation", "Request Demo", "Help & Support", "Plans & Pricing"].map((item) => (
                 <li key={item}>
-                  <span className="text-sm text-gray-600 hover:text-[#1aa478] transition-colors cursor-pointer">
-                    {item}
-                  </span>
+                  <span className="text-sm text-gray-600 hover:text-[#004BCA] transition-colors cursor-pointer">{item}</span>
                 </li>
               ))}
             </ul>
@@ -846,9 +689,7 @@ function SiteFooter() {
             <ul className="space-y-3">
               {["About Us", "Careers", "Contact Us", "Partners"].map((item) => (
                 <li key={item}>
-                  <span className="text-sm text-gray-600 hover:text-[#1aa478] transition-colors cursor-pointer">
-                    {item}
-                  </span>
+                  <span className="text-sm text-gray-600 hover:text-[#004BCA] transition-colors cursor-pointer">{item}</span>
                 </li>
               ))}
             </ul>
@@ -862,10 +703,10 @@ function SiteFooter() {
               <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-full">Subscribe</Button>
             </form>
             <div className="flex items-center gap-4 mt-4">
-              <Facebook className="w-5 h-5 text-gray-400 hover:text-[#1aa478] cursor-pointer transition-colors" />
-              <Twitter className="w-5 h-5 text-gray-400 hover:text-[#1aa478] cursor-pointer transition-colors" />
-              <Linkedin className="w-5 h-5 text-gray-400 hover:text-[#1aa478] cursor-pointer transition-colors" />
-              <Github className="w-5 h-5 text-gray-400 hover:text-[#1aa478] cursor-pointer transition-colors" />
+              <Facebook className="w-5 h-5 text-gray-400 hover:text-[#004BCA] cursor-pointer transition-colors" />
+              <Twitter className="w-5 h-5 text-gray-400 hover:text-[#004BCA] cursor-pointer transition-colors" />
+              <Linkedin className="w-5 h-5 text-gray-400 hover:text-[#004BCA] cursor-pointer transition-colors" />
+              <Github className="w-5 h-5 text-gray-400 hover:text-[#004BCA] cursor-pointer transition-colors" />
             </div>
           </div>
         </div>
@@ -875,16 +716,11 @@ function SiteFooter() {
             © {new Date().getFullYear()} MzzPay Technologies Inc. All rights reserved.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-10">
-            {["Privacy Policy", "Terms of Service", "Cookie Policy", "Security & Trust", "System Status"].map(
-              (item) => (
-                <span
-                  key={item}
-                  className="text-sm text-gray-500 hover:text-[#1aa478] transition-colors cursor-pointer text-center"
-                >
-                  {item}
-                </span>
-              ),
-            )}
+            {["Privacy Policy", "Terms of Service", "Cookie Policy", "Security & Trust", "System Status"].map((item) => (
+              <span key={item} className="text-sm text-gray-500 hover:text-[#004BCA] transition-colors cursor-pointer text-center">
+                {item}
+              </span>
+            ))}
           </div>
           <div className="pt-6">
             <p className="text-xs text-gray-500 leading-relaxed">
@@ -901,19 +737,23 @@ function SiteFooter() {
   );
 }
 
-// ============= LANDING PAGE =============
+// ============= LANDING =============
 export default function Landing() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
       <main>
         <HeroSection />
+        <PartnersSection />
+        <InfrastructureSection />
         <StatsSection />
-        <PaymentPartnersSection />
-        <FeaturesSection />
-        <TestimonialsSection />
-        <ProductsSection />
-        <CTASection />
+        <VerticalsSection />
+        <IntegrationPathsSection />
+        <BentoSection />
+        <SegmentsSection />
+        <DeveloperSection />
+        <FAQSection />
+        <FinalCTASection />
       </main>
       <SiteFooter />
     </div>
