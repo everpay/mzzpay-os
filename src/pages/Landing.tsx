@@ -209,21 +209,79 @@ function HeroSection() {
 
 // ============= PARTNERS =============
 function PartnersSection() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const paymentMethods = [
+    { name: "Visa", image: "/logos/visa.svg" },
+    { name: "Mastercard", image: "/logos/mastercard.svg" },
+    { name: "American Express", image: "/logos/american-express.svg" },
+    { name: "Discover", image: "/logos/discover.svg" },
+    { name: "PayPal", image: "/logos/paypal.svg" },
+    { name: "Apple Pay", image: "/logos/apple-pay.svg" },
+    { name: "Google Pay", image: "/logos/google-pay.svg" },
+    { name: "JCB", image: "/logos/jcb.svg" },
+    { name: "UnionPay", image: "/logos/unionpay.svg" },
+    { name: "Stripe", image: "/logos/stripe.jpg" },
+    { name: "Square", image: "/logos/square.jpg" },
+    { name: "Alipay", image: "/logos/alipay.jpg" },
+    { name: "WeChat Pay", image: "/logos/wechat-pay.jpg" },
+    { name: "PIX", image: "/logos/pix.jpg" },
+    { name: "Mercado Pago", image: "/logos/mercado-pago.jpg" },
+    { name: "PagSeguro", image: "/logos/pagseguro.jpg" },
+    { name: "PayU", image: "/logos/payu.jpg" },
+    { name: "Boleto", image: "/logos/boleto.jpg" },
+    { name: "OXXO", image: "/logos/oxxo.jpg" },
+    { name: "Klarna", image: "/logos/klarna.jpg" },
+    { name: "Affirm", image: "/logos/affirm.jpg" },
+    { name: "Afterpay", image: "/logos/afterpay.jpg" },
+    { name: "Venmo", image: "/logos/venmo.jpg" },
+    { name: "Cash App", image: "/logos/cashapp.jpg" },
+    { name: "Zelle", image: "/logos/zelle.jpg" },
+    { name: "Samsung Pay", image: "/logos/samsung-pay.jpg" },
+    { name: "Crypto", image: "/logos/crypto.svg" },
+  ];
+
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+    let scrollPosition = 0;
+    const scrollSpeed = 0.5;
+    const scroll = () => {
+      scrollPosition += scrollSpeed;
+      if (scrollPosition >= scrollContainer.scrollWidth / 2) {
+        scrollPosition = 0;
+      }
+      scrollContainer.scrollLeft = scrollPosition;
+    };
+    const intervalId = setInterval(scroll, 20);
+    return () => clearInterval(intervalId);
+  }, []);
+
   return (
-    <section className="py-14 bg-white border-y border-slate-100">
+    <section className="py-16 bg-white border-y border-slate-100 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <p className="text-center text-xs font-bold uppercase tracking-[0.25em] text-slate-400 mb-8">
-          Powering the world's most ambitious teams
+          Trusted Payment Methods Worldwide
         </p>
-        <div className="flex flex-wrap justify-center items-center gap-x-14 gap-y-6 opacity-60">
-          {["Amazon", "Slack", "Stripe", "Shopify", "Airbnb", "Zoom"].map((name) => (
-            <span
-              key={name}
-              className="text-xl font-extrabold text-slate-700 tracking-tight grayscale hover:grayscale-0 hover:opacity-100 transition-all"
-              style={{ fontFamily: "Manrope, sans-serif" }}
+        <div
+          ref={scrollRef}
+          className="flex gap-12 overflow-x-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]"
+          style={{ scrollBehavior: "auto" }}
+        >
+          {[...paymentMethods, ...paymentMethods].map((method, index) => (
+            <div
+              key={`${method.name}-${index}`}
+              className="flex-shrink-0 flex items-center justify-center hover:scale-110 transition-transform duration-300"
             >
-              {name}
-            </span>
+              <div className="relative w-28 h-14">
+                <img
+                  src={method.image}
+                  alt={method.name}
+                  className="absolute inset-0 w-full h-full object-contain"
+                  loading="lazy"
+                />
+              </div>
+            </div>
           ))}
         </div>
       </div>
