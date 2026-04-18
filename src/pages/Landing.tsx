@@ -13,7 +13,6 @@ import {
   ChevronDown,
   Menu,
   X,
-  Hub,
   Zap,
   Terminal,
   LayoutGrid,
