@@ -36,7 +36,7 @@ import BankAccounts from "./pages/BankAccounts";
 import Recipients from "./pages/Recipients";
 import Treasury from "./pages/Treasury";
 import AuditTrail from "./pages/AuditTrail";
-import Webhooks from "./pages/Webhooks";
+
 import Products from "./pages/Products";
 import KYCOnboarding from "./pages/KYCOnboarding";
 import RiskProfile from "./pages/RiskProfile";
