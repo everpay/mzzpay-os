@@ -209,6 +209,119 @@ export type Database = {
           },
         ]
       }
+      gateway_countries: {
+        Row: {
+          country_code: string
+          country_name: string
+          created_at: string | null
+          gateway_code: string
+          id: string
+        }
+        Insert: {
+          country_code: string
+          country_name: string
+          created_at?: string | null
+          gateway_code: string
+          id?: string
+        }
+        Update: {
+          country_code?: string
+          country_name?: string
+          created_at?: string | null
+          gateway_code?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      gateway_currencies: {
+        Row: {
+          created_at: string | null
+          currency_code: string
+          currency_symbol: string | null
+          gateway_country_id: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          currency_code: string
+          currency_symbol?: string | null
+          gateway_country_id?: string | null
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          currency_code?: string
+          currency_symbol?: string | null
+          gateway_country_id?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gateway_currencies_gateway_country_id_fkey"
+            columns: ["gateway_country_id"]
+            isOneToOne: false
+            referencedRelation: "gateway_countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gateway_processor_routes: {
+        Row: {
+          created_at: string | null
+          currency_code: string | null
+          enabled: boolean | null
+          gateway_country_id: string | null
+          id: string
+          priority: number | null
+          processor_config: Json | null
+          processor_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency_code?: string | null
+          enabled?: boolean | null
+          gateway_country_id?: string | null
+          id?: string
+          priority?: number | null
+          processor_config?: Json | null
+          processor_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency_code?: string | null
+          enabled?: boolean | null
+          gateway_country_id?: string | null
+          id?: string
+          priority?: number | null
+          processor_config?: Json | null
+          processor_name?: string | null
+        }
+        Relationships: []
+      }
+      gateways: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          name: string
+          status: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          name: string
+          status?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
       idempotency_keys: {
         Row: {
           created_at: string
@@ -326,6 +439,89 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          ai_email: string | null
+          company_name: string | null
+          contact_email: string | null
+          created_at: string | null
+          domain: string | null
+          estimated_revenue: number | null
+          id: string
+          notes: string | null
+          payments: string[] | null
+          scanned_at: string | null
+          score: number | null
+          status: string | null
+          url: string | null
+        }
+        Insert: {
+          ai_email?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          created_at?: string | null
+          domain?: string | null
+          estimated_revenue?: number | null
+          id?: string
+          notes?: string | null
+          payments?: string[] | null
+          scanned_at?: string | null
+          score?: number | null
+          status?: string | null
+          url?: string | null
+        }
+        Update: {
+          ai_email?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          created_at?: string | null
+          domain?: string | null
+          estimated_revenue?: number | null
+          id?: string
+          notes?: string | null
+          payments?: string[] | null
+          scanned_at?: string | null
+          score?: number | null
+          status?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
+      ledger_accounts: {
+        Row: {
+          account_type: string | null
+          balance: number | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          merchant_id: string | null
+        }
+        Insert: {
+          account_type?: string | null
+          balance?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          merchant_id?: string | null
+        }
+        Update: {
+          account_type?: string | null
+          balance?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          merchant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_accounts_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ledger_entries: {
         Row: {
           account_id: string
@@ -412,6 +608,45 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "payment_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_processor_routes: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          merchant_id: string
+          processor_route_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          merchant_id: string
+          processor_route_id: string
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          merchant_id?: string
+          processor_route_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_processor_routes_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merchant_processor_routes_processor_route_id_fkey"
+            columns: ["processor_route_id"]
+            isOneToOne: false
+            referencedRelation: "processor_routes"
             referencedColumns: ["id"]
           },
         ]
@@ -714,6 +949,54 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      processor_routes: {
+        Row: {
+          created_at: string | null
+          currency_code: string
+          enabled: boolean | null
+          gateway_country_id: string
+          gateway_id: string
+          id: string
+          priority: number | null
+          processor_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          currency_code: string
+          enabled?: boolean | null
+          gateway_country_id: string
+          gateway_id: string
+          id?: string
+          priority?: number | null
+          processor_name: string
+        }
+        Update: {
+          created_at?: string | null
+          currency_code?: string
+          enabled?: boolean | null
+          gateway_country_id?: string
+          gateway_id?: string
+          id?: string
+          priority?: number | null
+          processor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processor_routes_gateway_country_id_fkey"
+            columns: ["gateway_country_id"]
+            isOneToOne: false
+            referencedRelation: "gateway_countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processor_routes_gateway_id_fkey"
+            columns: ["gateway_id"]
+            isOneToOne: false
+            referencedRelation: "gateways"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
