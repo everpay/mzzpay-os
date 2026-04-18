@@ -105,9 +105,12 @@ const navItems: NavItem[] = [
       { to: "/chargebacks", icon: Eye, label: "Overview" },
       { to: "/chargebacks/disputes", icon: AlertTriangle, label: "Disputes" },
       { to: "/chargebacks/evidence", icon: Archive, label: "Evidence" },
+      { to: "/chargeflow", icon: Activity, label: "Chargeflow" },
     ],
   },
   { to: "/analytics", icon: BarChart3, label: "Analytics", hiddenFromRoles: ["agent", "employee"] },
+  { to: "/reports", icon: FileText, label: "Reports", hiddenFromRoles: ["agent", "employee"] },
+  { to: "/webhooks", icon: Webhook, label: "Webhooks", hiddenFromRoles: ["agent", "employee"] },
   { to: "/settings", icon: Settings, label: "Settings", hiddenFromRoles: ["agent", "employee"] },
   { to: "/reseller", icon: Users, label: "Reseller Portal", requiredRole: "reseller" },
 ];
