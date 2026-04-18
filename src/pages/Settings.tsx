@@ -163,6 +163,17 @@ export default function Settings() {
     },
   });
 
+  const { data: profile } = useQuery({
+    queryKey: ["profile-settings"],
+    queryFn: async () => {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (!u) throw new Error("Not authenticated");
+      const { data, error } = await supabase.from("profiles").select("*").eq("user_id", u.id).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: savedBankAccounts = [] } = useQuery({
     queryKey: ["saved-bank-accounts"],
     queryFn: async () => {
@@ -183,7 +194,9 @@ export default function Settings() {
   useEffect(() => {
     if (merchant) {
       setBusinessName(merchant.name || "");
-      setContactEmail(user?.email || "");
+      setContactEmail((merchant as any).contact_email || user?.email || "");
+      setContactName((merchant as any).contact_name || "");
+      setBusinessCurrency((merchant as any).business_currency || "USD");
       setWebhookUrl(merchant.webhook_url || "");
       if (merchant.id) {
         setLivePublicKey(`mzz_pk_live_${merchant.id.replace(/-/g, "").slice(0, 24)}`);
@@ -194,17 +207,40 @@ export default function Settings() {
     }
   }, [merchant, user]);
 
+  useEffect(() => {
+    if (profile) {
+      setPhoneNumber((profile as any).phone_number || "");
+    }
+  }, [profile]);
+
   const saveAccount = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
+      const { error: mErr } = await supabase
         .from("merchants")
-        .update({ name: contactName } as any)
+        .update({
+          contact_name: contactName,
+          contact_email: contactEmail,
+          phone_number: phoneNumber,
+          business_currency: businessCurrency,
+        } as any)
         .eq("user_id", user!.id);
-      if (error) throw error;
+      if (mErr) throw mErr;
+
+      const { error: pErr } = await supabase
+        .from("profiles")
+        .update({ phone_number: phoneNumber, display_name: contactName } as any)
+        .eq("user_id", user!.id);
+      if (pErr) throw pErr;
+
+      if (contactEmail && contactEmail !== user?.email) {
+        const { error: eErr } = await supabase.auth.updateUser({ email: contactEmail });
+        if (eErr) throw eErr;
+      }
     },
     onSuccess: () => {
       toast.success("Account details saved");
       queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["profile-settings"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to save"),
   });
