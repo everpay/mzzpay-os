@@ -906,6 +906,68 @@ export type Database = {
           },
         ]
       }
+      merchant_profiles: {
+        Row: {
+          address: Json | null
+          business_name: string | null
+          business_type: string | null
+          country: string | null
+          created_at: string
+          id: string
+          industry: string | null
+          kyb_verified_at: string | null
+          mcc_code: string | null
+          merchant_id: string
+          onboarding_status: string
+          registration_number: string | null
+          tax_id: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: Json | null
+          business_name?: string | null
+          business_type?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          kyb_verified_at?: string | null
+          mcc_code?: string | null
+          merchant_id: string
+          onboarding_status?: string
+          registration_number?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: Json | null
+          business_name?: string | null
+          business_type?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          kyb_verified_at?: string | null
+          mcc_code?: string | null
+          merchant_id?: string
+          onboarding_status?: string
+          registration_number?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_profiles_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: true
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_risk_scores: {
         Row: {
           factors: Json | null

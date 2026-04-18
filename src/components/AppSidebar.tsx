@@ -90,7 +90,6 @@ const navSections: NavSection[] = [
   {
     title: "Risk & Disputes",
     items: [
-      { to: "/kyc", icon: BadgeCheck, label: "KYC / Onboarding" },
       { to: "/chargebacks", icon: Shield, label: "Chargebacks" },
       { to: "/chargebacks/disputes", icon: AlertTriangle, label: "Disputes" },
       { to: "/chargebacks/evidence", icon: Archive, label: "Evidence" },
