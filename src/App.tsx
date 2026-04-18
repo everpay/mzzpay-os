@@ -36,11 +36,10 @@ import BankAccounts from "./pages/BankAccounts";
 import Recipients from "./pages/Recipients";
 import Treasury from "./pages/Treasury";
 import AuditTrail from "./pages/AuditTrail";
-import Webhooks from "./pages/Webhooks";
+
 import Products from "./pages/Products";
 import KYCOnboarding from "./pages/KYCOnboarding";
 import RiskProfile from "./pages/RiskProfile";
-import ChargeflowDashboard from "./pages/ChargeflowDashboard";
 import ThreeDSecureSettings from "./pages/ThreeDSecureSettings";
 import SmartRetry from "./pages/SmartRetry";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
@@ -97,11 +96,11 @@ const AppRoutes = () => (
     <Route path="/recipients" element={<ProtectedRoute><Recipients /></ProtectedRoute>} />
     <Route path="/treasury" element={<ProtectedRoute><Treasury /></ProtectedRoute>} />
     <Route path="/audit-trail" element={<ProtectedRoute><AuditTrail /></ProtectedRoute>} />
-    <Route path="/webhooks" element={<ProtectedRoute><Webhooks /></ProtectedRoute>} />
+    <Route path="/webhooks" element={<Navigate to="/settings" replace />} />
     <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
     <Route path="/kyc" element={<ProtectedRoute><KYCOnboarding /></ProtectedRoute>} />
     <Route path="/risk" element={<ProtectedRoute><RiskProfile /></ProtectedRoute>} />
-    <Route path="/chargeflow" element={<ProtectedRoute><ChargeflowDashboard /></ProtectedRoute>} />
+    <Route path="/chargeflow" element={<Navigate to="/chargebacks" replace />} />
     <Route path="/3ds-settings" element={<ProtectedRoute><ThreeDSecureSettings /></ProtectedRoute>} />
     <Route path="/smart-retry" element={<ProtectedRoute><SmartRetry /></ProtectedRoute>} />
     {/* Redirect old routes */}

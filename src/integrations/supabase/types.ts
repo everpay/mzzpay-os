@@ -2248,14 +2248,20 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          card_bin: string | null
+          card_brand: string | null
+          card_last4: string | null
           created_at: string
           currency: string
+          customer_country: string | null
           customer_email: string | null
+          customer_ip: unknown
           description: string | null
           fx_rate: number | null
           id: string
           idempotency_key: string | null
           merchant_id: string
+          payment_method_type: string | null
           provider: string
           provider_ref: string | null
           settlement_amount: number | null
@@ -2264,17 +2270,24 @@ export type Database = {
           surcharge_amount: number
           total_amount: number | null
           updated_at: string
+          user_agent: string | null
         }
         Insert: {
           amount: number
+          card_bin?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
           created_at?: string
           currency: string
+          customer_country?: string | null
           customer_email?: string | null
+          customer_ip?: unknown
           description?: string | null
           fx_rate?: number | null
           id?: string
           idempotency_key?: string | null
           merchant_id: string
+          payment_method_type?: string | null
           provider: string
           provider_ref?: string | null
           settlement_amount?: number | null
@@ -2283,17 +2296,24 @@ export type Database = {
           surcharge_amount?: number
           total_amount?: number | null
           updated_at?: string
+          user_agent?: string | null
         }
         Update: {
           amount?: number
+          card_bin?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
           created_at?: string
           currency?: string
+          customer_country?: string | null
           customer_email?: string | null
+          customer_ip?: unknown
           description?: string | null
           fx_rate?: number | null
           id?: string
           idempotency_key?: string | null
           merchant_id?: string
+          payment_method_type?: string | null
           provider?: string
           provider_ref?: string | null
           settlement_amount?: number | null
@@ -2302,6 +2322,7 @@ export type Database = {
           surcharge_amount?: number
           total_amount?: number | null
           updated_at?: string
+          user_agent?: string | null
         }
         Relationships: [
           {

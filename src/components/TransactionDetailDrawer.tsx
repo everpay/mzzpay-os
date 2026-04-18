@@ -3,8 +3,9 @@ import { useProviderEvents } from '@/hooks/useProviderEvents';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield, Wifi } from 'lucide-react';
+import { ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield, Wifi, Globe, Monitor } from 'lucide-react';
 import { CardBrandBadge } from '@/components/CardBrandBadge';
+import { PaymentMethodIcon } from '@/components/PaymentMethodIcon';
 
 interface TransactionDetailDrawerProps {
   transaction: Transaction | null;
@@ -24,8 +25,11 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
   const vaultEvent = relatedEvents.find((e) => e.event_type === 'vault.completed');
 
   const vgsAlias = (vaultEvent?.payload as any)?.vgs_alias || (tapixEvent?.payload as any)?.vgs_alias || null;
-  const cardBrand = (tapixEvent?.payload as any)?.card_brand || (vaultEvent?.payload as any)?.card_brand || null;
-  const cardLast4 = (tapixEvent?.payload as any)?.card_last4 || (vaultEvent?.payload as any)?.card_last4 || null;
+  // Prefer columns on the transaction (real data) and fall back to enrichment events
+  const cardBrand = transaction.card_brand || (tapixEvent?.payload as any)?.card_brand || (vaultEvent?.payload as any)?.card_brand || null;
+  const cardLast4 = transaction.card_last4 || (tapixEvent?.payload as any)?.card_last4 || (vaultEvent?.payload as any)?.card_last4 || null;
+  const cardBin = transaction.card_bin || (tapixEvent?.payload as any)?.card_bin || (vaultEvent?.payload as any)?.card_bin || null;
+  const paymentMethodType = transaction.payment_method_type || null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -57,22 +61,58 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
             </div>
           </div>
 
-          {/* Vault Section */}
-          {(vgsAlias || cardBrand || cardLast4) && (
+          {/* Payment Method / Vault Section */}
+          {(vgsAlias || cardBrand || cardLast4 || paymentMethodType) && (
             <div className="space-y-3">
               <h4 className="font-heading text-sm font-semibold text-foreground flex items-center gap-2">
                 <Shield className="h-4 w-4 text-primary" />
-                Vault
+                Payment Method
               </h4>
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-                {(cardBrand || cardLast4) && (
-                  <div className="flex items-center gap-2">
-                    <CardBrandBadge brand={cardBrand} last4={cardLast4} size="md" />
-                  </div>
+                {(cardBrand || cardLast4 || cardBin) && (
+                  <CardBrandBadge brand={cardBrand} last4={cardLast4} first4={cardBin?.slice(0, 6)} size="md" />
+                )}
+                {!cardBrand && paymentMethodType && (
+                  <PaymentMethodIcon brand={null} paymentMethodType={paymentMethodType} showMask={false} />
+                )}
+                {paymentMethodType && (
+                  <DetailRow icon={CreditCard} label="Type" value={
+                    <span className="text-xs capitalize">{paymentMethodType.replace(/_/g, ' ')}</span>
+                  } />
                 )}
                 {vgsAlias && (
                   <DetailRow icon={Shield} label="VGS Alias" value={
                     <span className="font-mono text-[10px] text-primary break-all">{vgsAlias}</span>
+                  } />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Customer Section */}
+          {(transaction.customer_email || transaction.customer_ip || transaction.user_agent || transaction.customer_country) && (
+            <div className="space-y-3">
+              <h4 className="font-heading text-sm font-semibold text-foreground flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary" />
+                Customer
+              </h4>
+              <div className="grid gap-2">
+                {transaction.customer_email && (
+                  <DetailRow icon={Mail} label="Email" value={transaction.customer_email} />
+                )}
+                {transaction.customer_ip && (
+                  <DetailRow icon={Wifi} label="IP Address" value={
+                    <span className="font-mono text-xs">{transaction.customer_ip}</span>
+                  } />
+                )}
+                {transaction.customer_country && (
+                  <DetailRow icon={Globe} label="Country" value={
+                    <span className="text-xs">{transaction.customer_country}</span>
+                  } />
+                )}
+                {transaction.user_agent && (
+                  <DetailRow icon={Monitor} label="User Agent" value={
+                    <span className="text-[10px] text-muted-foreground break-all max-w-[260px] inline-block text-right">{transaction.user_agent}</span>
                   } />
                 )}
               </div>
@@ -86,14 +126,11 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
               <DetailRow icon={Hash} label="Provider" value={
                 <Badge variant="provider">{transaction.provider}</Badge>
               } />
-              {transaction.customer_email && (
-                <DetailRow icon={Mail} label="Customer" value={transaction.customer_email} />
-              )}
               {transaction.description && (
                 <DetailRow icon={FileText} label="Description" value={transaction.description} />
               )}
               {transaction.provider_ref && (
-                <DetailRow icon={Wifi} label="Provider Ref" value={
+                <DetailRow icon={Hash} label="Provider Ref" value={
                   <span className="font-mono text-xs">{transaction.provider_ref}</span>
                 } />
               )}

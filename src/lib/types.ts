@@ -35,6 +35,13 @@ export interface Transaction {
   fx_rate?: number;
   settlement_currency?: Currency;
   settlement_amount?: number;
+  card_bin?: string | null;
+  card_last4?: string | null;
+  card_brand?: string | null;
+  payment_method_type?: string | null;
+  customer_ip?: string | null;
+  user_agent?: string | null;
+  customer_country?: string | null;
   created_at: string;
   updated_at: string;
 }
