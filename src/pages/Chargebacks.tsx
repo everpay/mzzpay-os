@@ -148,25 +148,51 @@ export default function Chargebacks() {
           </Tabs>
         )}
 
-        <div className="rounded-xl border border-border bg-card/50 p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 rounded-lg bg-primary/10">
-              <Shield className="h-6 w-6 text-primary" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-heading font-semibold text-foreground mb-1">Powered by Chargeflow</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Chargeflow automatically fights chargebacks using AI-generated evidence and representment.
-                Disputes are synced in real-time via webhooks.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">AI Evidence Generation</Badge>
-                <Badge variant="outline">Automated Representment</Badge>
-                <Badge variant="outline">Real-time Webhooks</Badge>
-                <Badge variant="outline">85%+ Win Rate</Badge>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-border bg-card/50 p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-lg bg-primary/10">
+                <Shield className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-heading font-semibold text-foreground mb-1">Powered by Chargeflow</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Chargeflow automatically fights chargebacks using AI-generated evidence and representment.
+                  Disputes are synced in real-time via webhooks.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">AI Evidence Generation</Badge>
+                  <Badge variant="outline">Automated Representment</Badge>
+                  <Badge variant="outline">Real-time Webhooks</Badge>
+                  <Badge variant="outline">85%+ Win Rate</Badge>
+                </div>
               </div>
             </div>
           </div>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Activity className="h-4 w-4 text-primary" /> Automation Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <span className="text-sm">Chargeflow integration</span>
+                  <Badge className="bg-success/10 text-success border-success/20">Active</Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <span className="text-sm">Webhook sync</span>
+                  <Badge className="bg-success/10 text-success border-success/20">Connected</Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <span className="text-sm">Auto-response</span>
+                  <Badge variant="secondary">Enabled</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </AppLayout>
