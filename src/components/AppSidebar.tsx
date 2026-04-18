@@ -30,7 +30,7 @@ import {
   Lock,
   Repeat,
   ShieldCheck,
-  Globe,
+  BookOpen,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -105,7 +105,7 @@ const navSections: NavSection[] = [
   {
     title: "Company",
     items: [
-      { to: "/docs", icon: Globe, label: "API Docs" },
+      { to: "/docs", icon: BookOpen, label: "API Docs" },
     ],
   },
   {
@@ -134,14 +134,14 @@ function SidebarNavItem({ item, onNavigate }: { item: NavItem; onNavigate?: () =
     <NavLink
       to={item.to}
       onClick={onNavigate}
-      className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 ${
+      className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] font-medium transition-all duration-150 ${
         isActive
           ? "bg-primary/10 text-primary border-l-[3px] border-primary -ml-px"
           : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
       }`}
     >
       <item.icon
-        className={`h-[18px] w-[18px] shrink-0 transition-colors ${
+        className={`h-[19px] w-[19px] shrink-0 transition-colors ${
           isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
         }`}
       />
@@ -205,7 +205,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
           return (
             <div key={section.title || `section-${idx}`} className={idx > 0 ? "mt-5" : ""}>
               {section.title && (
-                <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                   {section.title}
                 </p>
               )}
@@ -237,9 +237,9 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
             signOut();
             onNavigate?.();
           }}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[14px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
         >
-          <LogOut className="h-[18px] w-[18px]" />
+          <LogOut className="h-[19px] w-[19px]" />
           Sign Out
         </button>
       </div>

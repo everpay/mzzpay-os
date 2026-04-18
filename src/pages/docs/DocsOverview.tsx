@@ -88,7 +88,7 @@ export default function DocsOverview() {
             ))}
           </div>
           <div className="bg-muted/30 p-5 border-l border-border font-mono text-xs leading-relaxed text-foreground">
-            <pre>{`$ curl https://api.mzzpay.com/v1/payments \\
+            <pre>{`$ curl https://api.mzzpay.io/v1/payments \\
   -H "Authorization: Bearer sk_test_..." \\
   -d amount=5000 \\
   -d currency=usd
@@ -107,7 +107,7 @@ export default function DocsOverview() {
       <div className="border border-border rounded-lg p-5 bg-card">
         <h4 className="text-sm font-semibold mb-2">Base URL</h4>
         <code className="inline-block bg-muted px-3 py-1.5 rounded text-sm font-mono">
-          https://api.mzzpay.com/v1
+          https://api.mzzpay.io/v1
         </code>
         <p className="text-sm text-muted-foreground mt-3">
           All API requests require a Bearer token in the{" "}

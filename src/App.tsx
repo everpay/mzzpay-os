@@ -29,6 +29,8 @@ import DocsCustomers from "./pages/docs/DocsCustomers";
 import DocsWebhooks from "./pages/docs/DocsWebhooks";
 import DocsApiKeys from "./pages/docs/DocsApiKeys";
 import DocsSdks from "./pages/docs/DocsSdks";
+import DocsInvoices from "./pages/docs/DocsInvoices";
+import DocsProducts from "./pages/docs/DocsProducts";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
 import ResellerPortal from "./pages/ResellerPortal";
@@ -80,6 +82,8 @@ const AppRoutes = () => (
       <Route path="api/authentication" element={<DocsAuthentication />} />
       <Route path="api/payments" element={<DocsPayments />} />
       <Route path="api/customers" element={<DocsCustomers />} />
+      <Route path="api/invoices" element={<DocsInvoices />} />
+      <Route path="api/products" element={<DocsProducts />} />
       <Route path="webhooks" element={<DocsWebhooks />} />
       <Route path="api-keys" element={<DocsApiKeys />} />
       <Route path="sdks" element={<DocsSdks />} />

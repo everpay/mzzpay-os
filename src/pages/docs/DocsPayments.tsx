@@ -53,7 +53,7 @@ export default function DocsPayments() {
           { name: "capture", type: "boolean", required: false, desc: "Auto-capture. Defaults to true" },
         ]}
         code={{
-          curl: `curl -X POST https://api.mzzpay.com/v1/payments \\
+          curl: `curl -X POST https://api.mzzpay.io/v1/payments \\
   -H "Authorization: Bearer sk_test_your_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -98,7 +98,7 @@ export default function DocsPayments() {
           { name: "status", type: "string", required: false, desc: "Filter by status" },
         ]}
         code={{
-          curl: `curl https://api.mzzpay.com/v1/payments?limit=10 \\
+          curl: `curl https://api.mzzpay.io/v1/payments?limit=10 \\
   -H "Authorization: Bearer sk_test_your_key"`,
           node: `const payments = await mzzpay.payments.list({
   limit: 10,
@@ -126,7 +126,7 @@ export default function DocsPayments() {
           { name: "amount", type: "integer", required: false, desc: "Partial capture amount (defaults to full)" },
         ]}
         code={{
-          curl: `curl -X POST https://api.mzzpay.com/v1/payments/pay_abc123/capture \\
+          curl: `curl -X POST https://api.mzzpay.io/v1/payments/pay_abc123/capture \\
   -H "Authorization: Bearer sk_test_your_key" \\
   -d '{"amount": 3000}'`,
           node: `const captured = await mzzpay.payments.capture('pay_abc123', {
@@ -155,7 +155,7 @@ export default function DocsPayments() {
           { name: "reason", type: "string", required: false, desc: "duplicate, fraudulent, requested_by_customer" },
         ]}
         code={{
-          curl: `curl -X POST https://api.mzzpay.com/v1/payments/pay_abc123/refund \\
+          curl: `curl -X POST https://api.mzzpay.io/v1/payments/pay_abc123/refund \\
   -H "Authorization: Bearer sk_test_your_key" \\
   -d '{"amount": 2500, "reason": "requested_by_customer"}'`,
           node: `const refund = await mzzpay.payments.refund('pay_abc123', {

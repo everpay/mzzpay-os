@@ -47,7 +47,7 @@ export default function DocsCustomers() {
           { name: "metadata", type: "object", required: false, desc: "Custom key-value metadata" },
         ]}
         code={{
-          curl: `curl -X POST https://api.mzzpay.com/v1/customers \\
+          curl: `curl -X POST https://api.mzzpay.io/v1/customers \\
   -H "Authorization: Bearer sk_test_your_key" \\
   -d '{
     "name": "Jane Doe",
@@ -81,7 +81,7 @@ export default function DocsCustomers() {
         description="Get details of a specific customer."
         params={[]}
         code={{
-          curl: `curl https://api.mzzpay.com/v1/customers/cus_abc123 \\
+          curl: `curl https://api.mzzpay.io/v1/customers/cus_abc123 \\
   -H "Authorization: Bearer sk_test_your_key"`,
           node: `const customer = await mzzpay.customers.retrieve('cus_abc123');`,
           python: `customer = mzzpay.Customer.retrieve("cus_abc123")`,
@@ -105,7 +105,7 @@ export default function DocsCustomers() {
           { name: "metadata", type: "object", required: false, desc: "Updated metadata" },
         ]}
         code={{
-          curl: `curl -X PATCH https://api.mzzpay.com/v1/customers/cus_abc123 \\
+          curl: `curl -X PATCH https://api.mzzpay.io/v1/customers/cus_abc123 \\
   -H "Authorization: Bearer sk_test_your_key" \\
   -d '{"name": "Jane Smith"}'`,
           node: `const customer = await mzzpay.customers.update('cus_abc123', {
@@ -130,7 +130,7 @@ export default function DocsCustomers() {
         description="Permanently delete a customer and all associated data."
         params={[]}
         code={{
-          curl: `curl -X DELETE https://api.mzzpay.com/v1/customers/cus_abc123 \\
+          curl: `curl -X DELETE https://api.mzzpay.io/v1/customers/cus_abc123 \\
   -H "Authorization: Bearer sk_test_your_key"`,
           node: `await mzzpay.customers.delete('cus_abc123');`,
           python: `mzzpay.Customer.delete("cus_abc123")`,
