@@ -68,6 +68,7 @@ type SettingsSection =
   | "team"
   | "webhooks"
   | "verification"
+  | "surcharging"
   | "deactivation";
 
 type TeamRole = "admin" | "reseller" | "developer" | "compliance_officer" | "support" | "agent" | "employee";
@@ -323,6 +324,7 @@ export default function Settings() {
     { key: "verification", label: "Business Verification", icon: Shield },
     { key: "webhooks", label: "Webhooks", icon: Webhook },
     { key: "team", label: "Members", icon: Users },
+    { key: "surcharging", label: "Surcharging", icon: Hash },
     { key: "developers", label: "Developers & Activity", icon: Code },
     { key: "processor-routing" as any, label: "Processor Routing", icon: Globe, link: "/processor-transparency" },
     { key: "multi-acquirer" as any, label: "Multi-Acquirer", icon: Globe, link: "/multi-acquirer" },
@@ -874,6 +876,8 @@ export default function Settings() {
       {section === "webhooks" && <WebhooksSectionComponent />}
 
       {section === "verification" && <BusinessVerificationSectionComponent />}
+
+      {section === "surcharging" && <SurchargeSettingsSection merchantId={merchant?.id} />}
 
       {section === "deactivation" && (
         <div className="max-w-2xl">
