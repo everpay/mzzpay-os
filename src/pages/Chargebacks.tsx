@@ -1,8 +1,8 @@
 import { AppLayout } from '@/components/AppLayout';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, formatDate } from '@/lib/format';
-import { Shield, AlertTriangle, CheckCircle2, XCircle, TrendingUp, DollarSign } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle2, XCircle, TrendingUp, DollarSign, Activity } from 'lucide-react';
 import { useDisputes, useDisputeStats } from '@/hooks/useDisputes';
 import { DisputeStatCard } from '@/components/dispute/DisputeStatCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
