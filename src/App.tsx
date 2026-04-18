@@ -71,11 +71,11 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 
 const AppRoutes = () => (
   <Routes>
-    <Route path="/" element={<AuthRoute><Auth defaultMode="login" /></AuthRoute>} />
+    <Route path="/" element={<Landing />} />
     <Route path="/login" element={<AuthRoute><Auth defaultMode="login" /></AuthRoute>} />
     <Route path="/signup" element={<AuthRoute><Auth defaultMode="signup" /></AuthRoute>} />
     <Route path="/auth" element={<Navigate to="/login" replace />} />
-    <Route path="/landing" element={<Landing />} />
+    <Route path="/landing" element={<Navigate to="/" replace />} />
     <Route path="/docs" element={<DocsLayout />}>
       <Route index element={<DocsOverview />} />
       <Route path="quick-start" element={<DocsQuickStart />} />
