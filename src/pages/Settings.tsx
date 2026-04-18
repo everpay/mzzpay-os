@@ -290,7 +290,7 @@ export default function Settings() {
   };
 
   const generateApiKey = async (type: "public" | "secret") => {
-    const prefix = type === "public" ? "evp_pk_live_" : "evp_sk_live_";
+    const prefix = type === "public" ? "mzz_pk_live_" : "mzz_sk_live_";
     const newKey = `${prefix}${crypto.randomUUID().replace(/-/g, "")}`;
     if (type === "secret") {
       const { error } = await supabase
