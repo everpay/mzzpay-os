@@ -1,133 +1,146 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─── MzzPay Design System (Material You inspired) ─────── */
 @layer base {
-  :root {
-    --background: 220 25% 6%;
-    --foreground: 210 20% 92%;
-
-    --card: 220 22% 10%;
-    --card-foreground: 210 20% 92%;
-
-    --popover: 220 22% 10%;
-    --popover-foreground: 210 20% 92%;
-
-    --primary: 172 72% 48%;
-    --primary-foreground: 220 25% 6%;
-
-    --secondary: 220 20% 16%;
-    --secondary-foreground: 210 20% 82%;
-
-    --muted: 220 18% 14%;
-    --muted-foreground: 215 15% 52%;
-
-    --accent: 38 92% 60%;
-    --accent-foreground: 220 25% 6%;
-
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 220 18% 18%;
-    --input: 220 18% 18%;
-    --ring: 172 72% 48%;
-
-    --radius: 0.5rem;
-
-    --success: 152 60% 48%;
-    --success-foreground: 220 25% 6%;
-    --warning: 38 92% 60%;
-    --warning-foreground: 220 25% 6%;
-
-    --sidebar-background: 220 25% 8%;
-    --sidebar-foreground: 210 15% 65%;
-    --sidebar-primary: 172 72% 48%;
-    --sidebar-primary-foreground: 220 25% 6%;
-    --sidebar-accent: 220 20% 14%;
-    --sidebar-accent-foreground: 210 20% 92%;
-    --sidebar-border: 220 18% 14%;
-    --sidebar-ring: 172 72% 48%;
-
-    --chart-1: 172 72% 48%;
-    --chart-2: 38 92% 60%;
-    --chart-3: 262 60% 58%;
-    --chart-4: 152 60% 48%;
-    --chart-5: 0 72% 55%;
-
-    --info: 200 80% 50%;
-    --info-foreground: 0 0% 100%;
-
-    --gradient-primary: linear-gradient(135deg, hsl(172 72% 48%), hsl(172 72% 38%));
-    --gradient-card: linear-gradient(135deg, hsl(220 22% 12%), hsl(220 22% 9%));
-    --gradient-glow: radial-gradient(ellipse at top, hsl(172 72% 48% / 0.08), transparent 60%);
-    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.3), 0 1px 2px hsl(0 0% 0% / 0.2);
-    --shadow-elevated: 0 4px 20px hsl(0 0% 0% / 0.4);
-
-    --font-heading: 'Space Grotesk', system-ui, sans-serif;
-    --font-body: 'Inter', system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  }
-
-
+  :root,
   .light {
-    --background: 210 20% 98%;
-    --foreground: 220 25% 12%;
+    /* Surfaces */
+    --background: 210 33% 98%;            /* #F7F9FB */
+    --foreground: 210 11% 11%;            /* #191C1E */
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 25% 12%;
+    --card: 0 0% 100%;                    /* #FFFFFF */
+    --card-foreground: 210 11% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 12%;
+    --popover-foreground: 210 11% 11%;
 
-    --primary: 172 72% 38%;
+    /* Brand: MzzPay Blue */
+    --primary: 219 100% 40%;              /* #004BCA */
     --primary-foreground: 0 0% 100%;
+    --primary-container: 219 100% 50%;    /* #0061FF */
+    --primary-fixed: 226 100% 93%;        /* #DBE1FF */
+    --primary-fixed-dim: 222 100% 85%;    /* #B4C5FF */
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 20% 25%;
+    --secondary: 224 60% 92%;             /* #DAE2FD secondary-container */
+    --secondary-foreground: 226 41% 13%;  /* #131B2E */
 
-    --muted: 220 16% 96%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 210 11% 92%;                 /* surface-container */
+    --muted-foreground: 226 14% 30%;      /* #424656 on-surface-variant */
 
-    --accent: 38 92% 55%;
-    --accent-foreground: 220 25% 12%;
+    --accent: 224 60% 92%;                /* same as secondary container */
+    --accent-foreground: 219 100% 40%;
 
-    --destructive: 0 72% 50%;
+    --destructive: 0 84% 42%;             /* #BA1A1A */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 14% 91%;
-    --input: 220 14% 91%;
-    --ring: 172 72% 38%;
+    --border: 226 23% 80%;                /* #C2C6D9 outline-variant */
+    --input: 226 23% 80%;
+    --ring: 219 100% 40%;
+
+    --radius: 0.75rem;
 
     --success: 152 60% 38%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
-    --warning-foreground: 220 25% 12%;
-
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 12% 40%;
-    --sidebar-primary: 172 72% 38%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 16% 96%;
-    --sidebar-accent-foreground: 220 25% 12%;
-    --sidebar-border: 220 14% 92%;
-    --sidebar-ring: 172 72% 38%;
-
-    --chart-1: 172 72% 38%;
-    --chart-2: 38 92% 55%;
-    --chart-3: 262 60% 50%;
-    --chart-4: 152 60% 40%;
-    --chart-5: 0 72% 50%;
-
+    --warning-foreground: 210 11% 11%;
     --info: 200 80% 45%;
     --info-foreground: 0 0% 100%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(172 72% 38%), hsl(172 72% 30%));
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(220 14% 99%));
-    --gradient-glow: radial-gradient(ellipse at top, hsl(172 72% 40% / 0.04), transparent 70%);
-    --shadow-card: 0 1px 2px hsl(220 25% 12% / 0.04), 0 1px 3px hsl(220 25% 12% / 0.06);
-    --shadow-elevated: 0 8px 24px hsl(220 25% 12% / 0.08);
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 226 14% 30%;
+    --sidebar-primary: 219 100% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 210 11% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 219 100% 40%;
+
+    /* Charts */
+    --chart-1: 219 100% 40%;
+    --chart-2: 200 80% 45%;
+    --chart-3: 262 60% 50%;
+    --chart-4: 152 60% 40%;
+    --chart-5: 38 92% 55%;
+
+    /* Effects */
+    --gradient-primary: linear-gradient(135deg, hsl(219 100% 40%), hsl(219 100% 50%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 33% 99%));
+    --gradient-glow: radial-gradient(ellipse at top, hsl(219 100% 40% / 0.05), transparent 65%);
+    --shadow-card: 0 1px 2px hsl(210 11% 11% / 0.04), 0 0 0 1px hsl(226 23% 80% / 0.4);
+    --shadow-elevated: 0 8px 30px hsl(210 11% 11% / 0.08), 0 0 0 1px hsl(226 23% 80% / 0.3);
+    --shadow-soft: 0 2px 8px hsl(210 11% 11% / 0.04);
+
+    /* Typography */
+    --font-heading: 'Manrope', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  .dark {
+    --background: 224 30% 6%;
+    --foreground: 210 20% 95%;
+
+    --card: 224 25% 10%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 224 25% 10%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 222 100% 75%;              /* primary-fixed-dim #B4C5FF */
+    --primary-foreground: 224 30% 6%;
+    --primary-container: 219 100% 50%;
+    --primary-fixed: 226 100% 93%;
+    --primary-fixed-dim: 222 100% 85%;
+
+    --secondary: 224 20% 16%;
+    --secondary-foreground: 210 20% 88%;
+
+    --muted: 224 18% 14%;
+    --muted-foreground: 220 12% 60%;
+
+    --accent: 224 25% 18%;
+    --accent-foreground: 222 100% 85%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 224 18% 18%;
+    --input: 224 18% 18%;
+    --ring: 222 100% 75%;
+
+    --success: 152 60% 48%;
+    --success-foreground: 224 30% 6%;
+    --warning: 38 92% 60%;
+    --warning-foreground: 224 30% 6%;
+    --info: 200 80% 55%;
+    --info-foreground: 224 30% 6%;
+
+    --sidebar-background: 224 30% 8%;
+    --sidebar-foreground: 220 12% 65%;
+    --sidebar-primary: 222 100% 75%;
+    --sidebar-primary-foreground: 224 30% 6%;
+    --sidebar-accent: 224 20% 14%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 224 18% 14%;
+    --sidebar-ring: 222 100% 75%;
+
+    --chart-1: 222 100% 75%;
+    --chart-2: 200 80% 55%;
+    --chart-3: 262 60% 58%;
+    --chart-4: 152 60% 48%;
+    --chart-5: 38 92% 60%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(219 100% 50%), hsl(222 100% 75%));
+    --gradient-card: linear-gradient(180deg, hsl(224 25% 11%), hsl(224 25% 9%));
+    --gradient-glow: radial-gradient(ellipse at top, hsl(222 100% 75% / 0.06), transparent 60%);
+    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.25), 0 0 0 1px hsl(224 18% 18% / 0.6);
+    --shadow-elevated: 0 8px 30px hsl(0 0% 0% / 0.35), 0 0 0 1px hsl(224 18% 18% / 0.5);
+    --shadow-soft: 0 2px 8px hsl(0 0% 0% / 0.2);
   }
 }
 
@@ -136,36 +149,34 @@
     @apply border-border;
   }
 
+  html {
+    font-size: 16px;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
+    letter-spacing: -0.025em;
+    line-height: 1.2;
   }
 }
 
 @layer utilities {
-  .gradient-primary {
-    background: var(--gradient-primary);
-  }
-  .gradient-card {
-    background: var(--gradient-card);
-  }
-  .gradient-glow {
-    background: var(--gradient-glow);
-  }
-  .shadow-card {
-    box-shadow: var(--shadow-card);
-  }
-  .shadow-elevated {
-    box-shadow: var(--shadow-elevated);
-  }
-  .font-heading {
-    font-family: var(--font-heading);
-  }
-  .font-mono {
-    font-family: var(--font-mono);
-  }
+  .gradient-primary { background: var(--gradient-primary); }
+  .gradient-card { background: var(--gradient-card); }
+  .gradient-glow { background: var(--gradient-glow); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .font-heading { font-family: var(--font-heading); }
+  .font-mono { font-family: var(--font-mono); }
 }

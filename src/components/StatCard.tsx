@@ -11,16 +11,16 @@ interface StatCardProps {
 
 export function StatCard({ title, value, change, changeType = 'neutral', icon: Icon, subtitle }: StatCardProps) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card animate-fade-in">
+    <div className="group rounded-2xl border border-border bg-card p-6 shadow-card hover:shadow-elevated hover:border-primary/30 transition-all duration-300 animate-fade-in">
       <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="font-heading text-2xl font-bold tracking-tight text-foreground">{value}</p>
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+          <p className="font-heading text-3xl font-extrabold tracking-tight text-foreground">{value}</p>
           {subtitle && (
             <p className="text-xs text-muted-foreground">{subtitle}</p>
           )}
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/15 group-hover:bg-primary/15 transition-colors">
           <Icon className="h-5 w-5 text-primary" />
         </div>
       </div>
