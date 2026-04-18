@@ -119,8 +119,13 @@ export default function Settings() {
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteFullName, setInviteFullName] = useState("");
-  const [inviteRole, setInviteRole] = useState<"admin" | "moderator">("admin");
+  const [inviteRole, setInviteRole] = useState<TeamRole>("admin");
   const [isInviting, setIsInviting] = useState(false);
+
+  const [testPublicKey, setTestPublicKey] = useState("");
+  const [testSecretKey, setTestSecretKey] = useState("");
+  const [showTestPublicKey, setShowTestPublicKey] = useState(false);
+  const [showTestSecretKey, setShowTestSecretKey] = useState(false);
 
   const { data: merchant } = useQuery({
     queryKey: ["merchant-settings"],
@@ -291,7 +296,7 @@ export default function Settings() {
     { key: "bank-accounts", label: "Bank Accounts", icon: Building2 },
     { key: "verification", label: "Business Verification", icon: Shield },
     { key: "webhooks", label: "Webhooks", icon: Webhook },
-    { key: "team", label: "Team", icon: Users },
+    { key: "team", label: "Members", icon: Users },
     { key: "developers", label: "Developers & Activity", icon: Code },
     { key: "processor-routing" as any, label: "Processor Routing", icon: Globe, link: "/processor-transparency" },
     { key: "multi-acquirer" as any, label: "Multi-Acquirer", icon: Globe, link: "/multi-acquirer" },
