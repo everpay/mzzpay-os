@@ -157,6 +157,26 @@ serve(async (req) => {
       settlementCurrency = 'USD';
     }
 
+    // --- Surcharging: pass merchant-defined fees to the customer ---
+    let surchargeAmount = 0;
+    try {
+      const { data: ss } = await supabase
+        .from('surcharge_settings')
+        .select('*')
+        .eq('merchant_id', merchant.id)
+        .maybeSingle();
+      if (ss?.enabled) {
+        const pct = Number(ss.percentage_fee || 0);
+        const flat = Number(ss.fixed_fee || 0);
+        let calc = (amount * pct) / 100 + flat;
+        if (ss.max_fee_cap && calc > Number(ss.max_fee_cap)) calc = Number(ss.max_fee_cap);
+        surchargeAmount = parseFloat(calc.toFixed(2));
+      }
+    } catch (e) {
+      console.error('Surcharge lookup failed:', e);
+    }
+    const totalAmount = parseFloat((amount + surchargeAmount).toFixed(2));
+
     // Map provider status to our status
     let txStatus = 'pending';
     const ps = (providerResponse.status || providerResponse.transaction_status || '').toUpperCase();
@@ -169,6 +189,8 @@ serve(async (req) => {
       .insert({
         merchant_id: merchant.id,
         amount,
+        surcharge_amount: surchargeAmount,
+        total_amount: totalAmount,
         currency,
         provider,
         status: txStatus,
