@@ -20,7 +20,15 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Landing from "./pages/Landing";
-import Docs from "./pages/Docs";
+import DocsLayout from "@/components/docs/DocsLayout";
+import DocsOverview from "./pages/docs/DocsOverview";
+import DocsQuickStart from "./pages/docs/DocsQuickStart";
+import DocsAuthentication from "./pages/docs/DocsAuthentication";
+import DocsPayments from "./pages/docs/DocsPayments";
+import DocsCustomers from "./pages/docs/DocsCustomers";
+import DocsWebhooks from "./pages/docs/DocsWebhooks";
+import DocsApiKeys from "./pages/docs/DocsApiKeys";
+import DocsSdks from "./pages/docs/DocsSdks";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
 import ResellerPortal from "./pages/ResellerPortal";
@@ -66,7 +74,16 @@ const AppRoutes = () => (
     <Route path="/signup" element={<AuthRoute><Auth defaultMode="signup" /></AuthRoute>} />
     <Route path="/auth" element={<Navigate to="/login" replace />} />
     <Route path="/landing" element={<Landing />} />
-    <Route path="/docs" element={<Docs />} />
+    <Route path="/docs" element={<DocsLayout />}>
+      <Route index element={<DocsOverview />} />
+      <Route path="quick-start" element={<DocsQuickStart />} />
+      <Route path="api/authentication" element={<DocsAuthentication />} />
+      <Route path="api/payments" element={<DocsPayments />} />
+      <Route path="api/customers" element={<DocsCustomers />} />
+      <Route path="webhooks" element={<DocsWebhooks />} />
+      <Route path="api-keys" element={<DocsApiKeys />} />
+      <Route path="sdks" element={<DocsSdks />} />
+    </Route>
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
