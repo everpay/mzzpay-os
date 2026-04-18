@@ -39,10 +39,24 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
   },
   moneto: {
     name: 'moneto',
-    displayName: 'Moneto',
+    displayName: 'Moneto Wallet',
     supportedCurrencies: ['CAD'],
     regions: ['CA'],
     methods: ['Wallet', 'Bank Transfer'],
+  },
+  moneto_mpg: {
+    name: 'moneto_mpg',
+    displayName: 'Moneto Payment Gateway',
+    supportedCurrencies: ['CAD', 'USD'],
+    regions: ['CA', 'US'],
+    methods: ['Card'],
+  },
+  matrix: {
+    name: 'matrix',
+    displayName: 'Matrix Pay',
+    supportedCurrencies: ['EUR', 'USD', 'GBP'],
+    regions: ['EU', 'UK', 'GLOBAL'],
+    methods: ['Card', 'APM', 'Subscription', 'Oneclick'],
   },
 };
 
@@ -58,6 +72,8 @@ export function getProviderColor(provider: Provider): string {
     case 'stripe': return 'hsl(var(--chart-1))';
     case 'mzzpay': return 'hsl(var(--chart-2))';
     case 'moneto': return 'hsl(var(--chart-5))';
+    case 'moneto_mpg': return 'hsl(var(--chart-5))';
+    case 'matrix': return 'hsl(var(--chart-4))';
     default: return 'hsl(var(--chart-1))';
   }
 }
