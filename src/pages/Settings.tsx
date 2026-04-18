@@ -976,3 +976,138 @@ function DevelopersSection() {
     </Card>
   );
 }
+
+function TeamInvitationsList({ merchantId }: { merchantId?: string }) {
+  const queryClient = useQueryClient();
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { data: invitations = [], isLoading } = useQuery({
+    queryKey: ["team-invitations", merchantId],
+    enabled: !!merchantId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("team_invitations" as any)
+        .select("*")
+        .eq("merchant_id", merchantId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as TeamInvitation[];
+    },
+  });
+
+  const handleResend = async (inv: TeamInvitation) => {
+    const sinceLast = Date.now() - new Date(inv.last_sent_at).getTime();
+    if (sinceLast < RESEND_COOLDOWN_MS) {
+      const minsLeft = Math.ceil((RESEND_COOLDOWN_MS - sinceLast) / 60000);
+      toast.error(`Please wait ${minsLeft} more minute(s) before resending.`);
+      return;
+    }
+    setResendingId(inv.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("invite-admin", {
+        body: { email: inv.email, fullName: inv.full_name, role: inv.role },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      await supabase
+        .from("team_invitations" as any)
+        .update({ last_sent_at: new Date().toISOString() } as any)
+        .eq("id", inv.id);
+      toast.success(`Invitation resent to ${inv.email}`);
+      queryClient.invalidateQueries({ queryKey: ["team-invitations"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to resend invitation");
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleDelete = async (inv: TeamInvitation) => {
+    setDeletingId(inv.id);
+    try {
+      const { error } = await supabase.from("team_invitations" as any).delete().eq("id", inv.id);
+      if (error) throw error;
+      toast.success("Invitation deleted");
+      queryClient.invalidateQueries({ queryKey: ["team-invitations"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const cooldownLeft = (inv: TeamInvitation) => {
+    const sinceLast = Date.now() - new Date(inv.last_sent_at).getTime();
+    return Math.max(0, RESEND_COOLDOWN_MS - sinceLast);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" /> Invited Members
+        </CardTitle>
+        <CardDescription>Pending and recent invitations. Resend after 1 hour or remove.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground p-4 text-center">Loading invitations…</p>
+        ) : invitations.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center">
+            <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">No invitations yet.</p>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border divide-y divide-border">
+            {invitations.map((inv) => {
+              const left = cooldownLeft(inv);
+              const canResend = inv.status === "pending" && left === 0;
+              const minsLeft = Math.ceil(left / 60000);
+              return (
+                <div key={inv.id} className="flex items-center gap-3 p-3 hover:bg-muted/30">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+                    <Mail className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium truncate">{inv.full_name || inv.email}</span>
+                      <Badge variant="outline" className="text-[10px]">{inv.role.replace("_", " ")}</Badge>
+                      <Badge
+                        variant={inv.status === "accepted" ? "default" : inv.status === "revoked" ? "destructive" : "secondary"}
+                        className="text-[10px]"
+                      >
+                        {inv.status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{inv.email} · sent {formatDate(inv.last_sent_at)}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!canResend || resendingId === inv.id}
+                    onClick={() => handleResend(inv)}
+                    title={!canResend && inv.status === "pending" ? `Wait ${minsLeft}m to resend` : "Resend invitation"}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                    {resendingId === inv.id ? "Sending…" : !canResend && inv.status === "pending" ? `${minsLeft}m` : "Resend"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive"
+                    disabled={deletingId === inv.id}
+                    onClick={() => handleDelete(inv)}
+                    title="Delete invitation"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
