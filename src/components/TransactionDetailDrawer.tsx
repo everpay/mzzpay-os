@@ -61,22 +61,58 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
             </div>
           </div>
 
-          {/* Vault Section */}
-          {(vgsAlias || cardBrand || cardLast4) && (
+          {/* Payment Method / Vault Section */}
+          {(vgsAlias || cardBrand || cardLast4 || paymentMethodType) && (
             <div className="space-y-3">
               <h4 className="font-heading text-sm font-semibold text-foreground flex items-center gap-2">
                 <Shield className="h-4 w-4 text-primary" />
-                Vault
+                Payment Method
               </h4>
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-                {(cardBrand || cardLast4) && (
-                  <div className="flex items-center gap-2">
-                    <CardBrandBadge brand={cardBrand} last4={cardLast4} size="md" />
-                  </div>
+                {(cardBrand || cardLast4 || cardBin) && (
+                  <CardBrandBadge brand={cardBrand} last4={cardLast4} first4={cardBin?.slice(0, 6)} size="md" />
+                )}
+                {!cardBrand && paymentMethodType && (
+                  <PaymentMethodIcon brand={null} paymentMethodType={paymentMethodType} showMask={false} />
+                )}
+                {paymentMethodType && (
+                  <DetailRow icon={CreditCard} label="Type" value={
+                    <span className="text-xs capitalize">{paymentMethodType.replace(/_/g, ' ')}</span>
+                  } />
                 )}
                 {vgsAlias && (
                   <DetailRow icon={Shield} label="VGS Alias" value={
                     <span className="font-mono text-[10px] text-primary break-all">{vgsAlias}</span>
+                  } />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Customer Section */}
+          {(transaction.customer_email || transaction.customer_ip || transaction.user_agent || transaction.customer_country) && (
+            <div className="space-y-3">
+              <h4 className="font-heading text-sm font-semibold text-foreground flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary" />
+                Customer
+              </h4>
+              <div className="grid gap-2">
+                {transaction.customer_email && (
+                  <DetailRow icon={Mail} label="Email" value={transaction.customer_email} />
+                )}
+                {transaction.customer_ip && (
+                  <DetailRow icon={Wifi} label="IP Address" value={
+                    <span className="font-mono text-xs">{transaction.customer_ip}</span>
+                  } />
+                )}
+                {transaction.customer_country && (
+                  <DetailRow icon={Globe} label="Country" value={
+                    <span className="text-xs">{transaction.customer_country}</span>
+                  } />
+                )}
+                {transaction.user_agent && (
+                  <DetailRow icon={Monitor} label="User Agent" value={
+                    <span className="text-[10px] text-muted-foreground break-all max-w-[260px] inline-block text-right">{transaction.user_agent}</span>
                   } />
                 )}
               </div>
@@ -90,14 +126,11 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
               <DetailRow icon={Hash} label="Provider" value={
                 <Badge variant="provider">{transaction.provider}</Badge>
               } />
-              {transaction.customer_email && (
-                <DetailRow icon={Mail} label="Customer" value={transaction.customer_email} />
-              )}
               {transaction.description && (
                 <DetailRow icon={FileText} label="Description" value={transaction.description} />
               )}
               {transaction.provider_ref && (
-                <DetailRow icon={Wifi} label="Provider Ref" value={
+                <DetailRow icon={Hash} label="Provider Ref" value={
                   <span className="font-mono text-xs">{transaction.provider_ref}</span>
                 } />
               )}
