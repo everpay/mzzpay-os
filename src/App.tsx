@@ -40,7 +40,6 @@ import Webhooks from "./pages/Webhooks";
 import Products from "./pages/Products";
 import KYCOnboarding from "./pages/KYCOnboarding";
 import RiskProfile from "./pages/RiskProfile";
-import ChargeflowDashboard from "./pages/ChargeflowDashboard";
 import ThreeDSecureSettings from "./pages/ThreeDSecureSettings";
 import SmartRetry from "./pages/SmartRetry";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
