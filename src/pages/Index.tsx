@@ -107,16 +107,7 @@ const Index = () => {
             <TabsTrigger value="providers">Provider Analytics</TabsTrigger>
           </TabsList>
           <TabsContent value="volume" className="mt-4">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <VolumeChart />
-              </div>
-              <div className="space-y-4">
-                <ActivityFeed />
-                <RollingReserveCard />
-                <CardVelocityCard />
-              </div>
-            </div>
+            <VolumeChart />
           </TabsContent>
           <TabsContent value="providers" className="mt-4">
             <ProviderAnalytics />
