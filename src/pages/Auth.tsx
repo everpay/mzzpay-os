@@ -126,8 +126,8 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
         {isLogin ? (
           /* ── LOGIN ── */
           <div className="rounded-xl border border-border bg-card p-6 shadow-card">
-            <h2 className="font-heading text-xl font-bold text-foreground mb-1">Welcome back</h2>
-            <p className="text-sm text-muted-foreground mb-6">Sign in to your merchant dashboard</p>
+            <h2 className="font-heading text-xl font-bold text-foreground mb-1 text-center">Welcome back</h2>
+            <p className="text-sm text-muted-foreground mb-6 text-center">Sign in to your merchant dashboard</p>
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
