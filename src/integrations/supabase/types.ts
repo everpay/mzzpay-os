@@ -1456,7 +1456,10 @@ export type Database = {
       }
       surcharge_settings: {
         Row: {
+          apply_to_credit: boolean | null
+          apply_to_debit: boolean | null
           created_at: string | null
+          disclosure_text: string | null
           enabled: boolean | null
           fixed_fee: number | null
           id: string
@@ -1466,7 +1469,10 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          apply_to_credit?: boolean | null
+          apply_to_debit?: boolean | null
           created_at?: string | null
+          disclosure_text?: string | null
           enabled?: boolean | null
           fixed_fee?: number | null
           id?: string
@@ -1476,7 +1482,10 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          apply_to_credit?: boolean | null
+          apply_to_debit?: boolean | null
           created_at?: string | null
+          disclosure_text?: string | null
           enabled?: boolean | null
           fixed_fee?: number | null
           id?: string
