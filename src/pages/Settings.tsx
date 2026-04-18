@@ -185,8 +185,10 @@ export default function Settings() {
       setContactEmail(user?.email || "");
       setWebhookUrl(merchant.webhook_url || "");
       if (merchant.id) {
-        setLivePublicKey(`evp_pk_live_${merchant.id.replace(/-/g, "").slice(0, 24)}`);
+        setLivePublicKey(`mzz_pk_live_${merchant.id.replace(/-/g, "").slice(0, 24)}`);
         setLiveSecretKey(merchant.api_key_hash || "");
+        setTestPublicKey(localStorage.getItem(`mzz_test_pk_${merchant.id}`) || "");
+        setTestSecretKey(localStorage.getItem(`mzz_test_sk_${merchant.id}`) || "");
       }
     }
   }, [merchant, user]);
@@ -689,6 +691,63 @@ export default function Settings() {
                 </div>
                 <p className="text-xs text-muted-foreground">Keep your secret key secure. Do not share it in public repositories.</p>
               </div>
+
+              <Separator />
+
+              <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-[10px]">TEST MODE</Badge>
+                  <p className="text-xs text-muted-foreground">Use these keys in sandbox/test environments. They never charge real cards.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">Test Publishable Key</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <Input type={showTestPublicKey ? "text" : "password"} value={testPublicKey || "No test key generated"} readOnly className="pr-10 font-mono text-xs" />
+                      <button type="button" onClick={() => setShowTestPublicKey(!showTestPublicKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        {showTestPublicKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(testPublicKey); toast.success("Copied"); }}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => {
+                      const k = `mzz_pk_test_${crypto.randomUUID().replace(/-/g, "")}`;
+                      setTestPublicKey(k);
+                      localStorage.setItem(`mzz_test_pk_${merchant?.id}`, k);
+                      navigator.clipboard.writeText(k);
+                      toast.success("Test publishable key generated and copied");
+                    }} className="gap-1.5">
+                      <RefreshCw className="h-3.5 w-3.5" /> {testPublicKey ? "Rotate" : "Generate"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">Test Secret Key</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <Input type={showTestSecretKey ? "text" : "password"} value={testSecretKey || "No test key generated"} readOnly className="pr-10 font-mono text-xs" />
+                      <button type="button" onClick={() => setShowTestSecretKey(!showTestSecretKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        {showTestSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(testSecretKey); toast.success("Copied"); }}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => {
+                      const k = `mzz_sk_test_${crypto.randomUUID().replace(/-/g, "")}`;
+                      setTestSecretKey(k);
+                      localStorage.setItem(`mzz_test_sk_${merchant?.id}`, k);
+                      navigator.clipboard.writeText(k);
+                      toast.success("Test secret key generated and copied");
+                    }} className="gap-1.5">
+                      <RefreshCw className="h-3.5 w-3.5" /> {testSecretKey ? "Rotate" : "Generate"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -731,13 +790,13 @@ export default function Settings() {
       )}
 
       {section === "team" && (
-        <div className="space-y-6 max-w-2xl">
+        <div className="space-y-6 max-w-3xl">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5" /> Invite Team Member
+                <UserPlus className="h-5 w-5" /> Invite Member
               </CardTitle>
-              <CardDescription>Send an invitation to add a new team member to your account.</CardDescription>
+              <CardDescription>Send an invitation to add a new member to your account.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="space-y-2">
@@ -756,7 +815,7 @@ export default function Settings() {
               </div>
               <div className="space-y-2">
                 <Label>Role</Label>
-                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "admin" | "moderator")}>
+                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as TeamRole)}>
                   <SelectTrigger>
                     <div className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-muted-foreground" />
@@ -764,14 +823,16 @@ export default function Settings() {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin — Full dashboard access</SelectItem>
-                    <SelectItem value="moderator">Moderator — Limited access</SelectItem>
+                    {TEAM_ROLES.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <Button
                 onClick={async () => {
                   if (!inviteEmail) { toast.error("Email is required"); return; }
+                  if (!merchant?.id) { toast.error("Merchant not loaded"); return; }
                   setIsInviting(true);
                   try {
                     const { data, error } = await supabase.functions.invoke("invite-admin", {
@@ -779,10 +840,20 @@ export default function Settings() {
                     });
                     if (error) throw error;
                     if (data?.error) throw new Error(data.error);
+                    await supabase.from("team_invitations" as any).upsert({
+                      merchant_id: merchant.id,
+                      invited_by: user!.id,
+                      email: inviteEmail.toLowerCase(),
+                      full_name: inviteFullName || null,
+                      role: inviteRole,
+                      status: "pending",
+                      last_sent_at: new Date().toISOString(),
+                    }, { onConflict: "merchant_id,email" } as any);
                     toast.success(`Invitation sent to ${inviteEmail}`);
                     setInviteEmail("");
                     setInviteFullName("");
                     setInviteRole("admin");
+                    queryClient.invalidateQueries({ queryKey: ["team-invitations"] });
                   } catch (err: any) {
                     toast.error(err.message || "Failed to send invitation");
                   } finally {
@@ -795,6 +866,8 @@ export default function Settings() {
               </Button>
             </CardContent>
           </Card>
+
+          <TeamInvitationsList merchantId={merchant?.id} />
         </div>
       )}
 
