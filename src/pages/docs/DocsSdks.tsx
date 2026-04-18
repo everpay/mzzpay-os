@@ -59,7 +59,7 @@ export default function DocsSdks() {
         <CardContent>
           <CodeBlock
             code={`<!-- Add to your HTML -->
-<script src="https://js.mzzpay.com/v1/checkout.js"></script>
+<script src="https://js.mzzpay.io/v1/checkout.js"></script>
 
 <script>
   const checkout = MzzPay.checkout({

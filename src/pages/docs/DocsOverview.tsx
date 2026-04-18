@@ -7,6 +7,8 @@ const categories = [
     links: [
       { label: "Accept payments online", to: "/docs/api/payments" },
       { label: "Manage customers", to: "/docs/api/customers" },
+      { label: "Send invoices", to: "/docs/api/invoices" },
+      { label: "Manage products", to: "/docs/api/products" },
       { label: "Listen for webhooks", to: "/docs/webhooks" },
     ],
   },
