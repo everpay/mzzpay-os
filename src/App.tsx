@@ -28,6 +28,21 @@ import Customers from "./pages/Customers";
 import MerchantDisputes from "./pages/merchant/MerchantDisputes";
 import MerchantEvidence from "./pages/merchant/MerchantEvidence";
 import MerchantAnalytics from "./pages/merchant/MerchantAnalytics";
+import Refunds from "./pages/Refunds";
+import Settlements from "./pages/Settlements";
+import Reconciliation from "./pages/Reconciliation";
+import Reports from "./pages/Reports";
+import BankAccounts from "./pages/BankAccounts";
+import Recipients from "./pages/Recipients";
+import Treasury from "./pages/Treasury";
+import AuditTrail from "./pages/AuditTrail";
+import Webhooks from "./pages/Webhooks";
+import Products from "./pages/Products";
+import KYCOnboarding from "./pages/KYCOnboarding";
+import RiskProfile from "./pages/RiskProfile";
+import ChargeflowDashboard from "./pages/ChargeflowDashboard";
+import ThreeDSecureSettings from "./pages/ThreeDSecureSettings";
+import SmartRetry from "./pages/SmartRetry";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -74,6 +89,21 @@ const AppRoutes = () => (
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/reseller" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['reseller']}><ResellerPortal /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+    <Route path="/refunds" element={<ProtectedRoute><Refunds /></ProtectedRoute>} />
+    <Route path="/settlements" element={<ProtectedRoute><Settlements /></ProtectedRoute>} />
+    <Route path="/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
+    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+    <Route path="/bank-accounts" element={<ProtectedRoute><BankAccounts /></ProtectedRoute>} />
+    <Route path="/recipients" element={<ProtectedRoute><Recipients /></ProtectedRoute>} />
+    <Route path="/treasury" element={<ProtectedRoute><Treasury /></ProtectedRoute>} />
+    <Route path="/audit-trail" element={<ProtectedRoute><AuditTrail /></ProtectedRoute>} />
+    <Route path="/webhooks" element={<ProtectedRoute><Webhooks /></ProtectedRoute>} />
+    <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+    <Route path="/kyc" element={<ProtectedRoute><KYCOnboarding /></ProtectedRoute>} />
+    <Route path="/risk" element={<ProtectedRoute><RiskProfile /></ProtectedRoute>} />
+    <Route path="/chargeflow" element={<ProtectedRoute><ChargeflowDashboard /></ProtectedRoute>} />
+    <Route path="/3ds-settings" element={<ProtectedRoute><ThreeDSecureSettings /></ProtectedRoute>} />
+    <Route path="/smart-retry" element={<ProtectedRoute><SmartRetry /></ProtectedRoute>} />
     {/* Redirect old routes */}
     <Route path="/new-payment" element={<Navigate to="/payments/new" replace />} />
     <Route path="/merchant" element={<Navigate to="/chargebacks" replace />} />
