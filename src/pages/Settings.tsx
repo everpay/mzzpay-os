@@ -70,6 +70,30 @@ type SettingsSection =
   | "verification"
   | "deactivation";
 
+type TeamRole = "admin" | "reseller" | "developer" | "compliance_officer" | "support" | "agent" | "employee";
+
+const TEAM_ROLES: { value: TeamRole; label: string }[] = [
+  { value: "admin", label: "Admin — Full dashboard access" },
+  { value: "reseller", label: "Reseller — Partner portal access" },
+  { value: "developer", label: "Developer — API & integrations" },
+  { value: "compliance_officer", label: "Compliance Officer — KYB & disputes" },
+  { value: "support", label: "Support — Customer assistance" },
+  { value: "agent", label: "Agent — Limited operational access" },
+  { value: "employee", label: "Employee — Read-only baseline" },
+];
+
+const RESEND_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
+interface TeamInvitation {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: TeamRole;
+  status: "pending" | "accepted" | "revoked";
+  last_sent_at: string;
+  created_at: string;
+}
+
 interface SavedBankAccount {
   id: string;
   nickname: string | null;
@@ -119,8 +143,13 @@ export default function Settings() {
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteFullName, setInviteFullName] = useState("");
-  const [inviteRole, setInviteRole] = useState<"admin" | "moderator">("admin");
+  const [inviteRole, setInviteRole] = useState<TeamRole>("admin");
   const [isInviting, setIsInviting] = useState(false);
+
+  const [testPublicKey, setTestPublicKey] = useState("");
+  const [testSecretKey, setTestSecretKey] = useState("");
+  const [showTestPublicKey, setShowTestPublicKey] = useState(false);
+  const [showTestSecretKey, setShowTestSecretKey] = useState(false);
 
   const { data: merchant } = useQuery({
     queryKey: ["merchant-settings"],
@@ -156,8 +185,10 @@ export default function Settings() {
       setContactEmail(user?.email || "");
       setWebhookUrl(merchant.webhook_url || "");
       if (merchant.id) {
-        setLivePublicKey(`evp_pk_live_${merchant.id.replace(/-/g, "").slice(0, 24)}`);
+        setLivePublicKey(`mzz_pk_live_${merchant.id.replace(/-/g, "").slice(0, 24)}`);
         setLiveSecretKey(merchant.api_key_hash || "");
+        setTestPublicKey(localStorage.getItem(`mzz_test_pk_${merchant.id}`) || "");
+        setTestSecretKey(localStorage.getItem(`mzz_test_sk_${merchant.id}`) || "");
       }
     }
   }, [merchant, user]);
@@ -259,7 +290,7 @@ export default function Settings() {
   };
 
   const generateApiKey = async (type: "public" | "secret") => {
-    const prefix = type === "public" ? "evp_pk_live_" : "evp_sk_live_";
+    const prefix = type === "public" ? "mzz_pk_live_" : "mzz_sk_live_";
     const newKey = `${prefix}${crypto.randomUUID().replace(/-/g, "")}`;
     if (type === "secret") {
       const { error } = await supabase
@@ -291,7 +322,7 @@ export default function Settings() {
     { key: "bank-accounts", label: "Bank Accounts", icon: Building2 },
     { key: "verification", label: "Business Verification", icon: Shield },
     { key: "webhooks", label: "Webhooks", icon: Webhook },
-    { key: "team", label: "Team", icon: Users },
+    { key: "team", label: "Members", icon: Users },
     { key: "developers", label: "Developers & Activity", icon: Code },
     { key: "processor-routing" as any, label: "Processor Routing", icon: Globe, link: "/processor-transparency" },
     { key: "multi-acquirer" as any, label: "Multi-Acquirer", icon: Globe, link: "/multi-acquirer" },
@@ -660,6 +691,63 @@ export default function Settings() {
                 </div>
                 <p className="text-xs text-muted-foreground">Keep your secret key secure. Do not share it in public repositories.</p>
               </div>
+
+              <Separator />
+
+              <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-[10px]">TEST MODE</Badge>
+                  <p className="text-xs text-muted-foreground">Use these keys in sandbox/test environments. They never charge real cards.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">Test Publishable Key</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <Input type={showTestPublicKey ? "text" : "password"} value={testPublicKey || "No test key generated"} readOnly className="pr-10 font-mono text-xs" />
+                      <button type="button" onClick={() => setShowTestPublicKey(!showTestPublicKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        {showTestPublicKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(testPublicKey); toast.success("Copied"); }}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => {
+                      const k = `mzz_pk_test_${crypto.randomUUID().replace(/-/g, "")}`;
+                      setTestPublicKey(k);
+                      localStorage.setItem(`mzz_test_pk_${merchant?.id}`, k);
+                      navigator.clipboard.writeText(k);
+                      toast.success("Test publishable key generated and copied");
+                    }} className="gap-1.5">
+                      <RefreshCw className="h-3.5 w-3.5" /> {testPublicKey ? "Rotate" : "Generate"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">Test Secret Key</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <Input type={showTestSecretKey ? "text" : "password"} value={testSecretKey || "No test key generated"} readOnly className="pr-10 font-mono text-xs" />
+                      <button type="button" onClick={() => setShowTestSecretKey(!showTestSecretKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        {showTestSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(testSecretKey); toast.success("Copied"); }}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => {
+                      const k = `mzz_sk_test_${crypto.randomUUID().replace(/-/g, "")}`;
+                      setTestSecretKey(k);
+                      localStorage.setItem(`mzz_test_sk_${merchant?.id}`, k);
+                      navigator.clipboard.writeText(k);
+                      toast.success("Test secret key generated and copied");
+                    }} className="gap-1.5">
+                      <RefreshCw className="h-3.5 w-3.5" /> {testSecretKey ? "Rotate" : "Generate"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -702,13 +790,13 @@ export default function Settings() {
       )}
 
       {section === "team" && (
-        <div className="space-y-6 max-w-2xl">
+        <div className="space-y-6 max-w-3xl">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5" /> Invite Team Member
+                <UserPlus className="h-5 w-5" /> Invite Member
               </CardTitle>
-              <CardDescription>Send an invitation to add a new team member to your account.</CardDescription>
+              <CardDescription>Send an invitation to add a new member to your account.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="space-y-2">
@@ -727,7 +815,7 @@ export default function Settings() {
               </div>
               <div className="space-y-2">
                 <Label>Role</Label>
-                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "admin" | "moderator")}>
+                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as TeamRole)}>
                   <SelectTrigger>
                     <div className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-muted-foreground" />
@@ -735,14 +823,16 @@ export default function Settings() {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin — Full dashboard access</SelectItem>
-                    <SelectItem value="moderator">Moderator — Limited access</SelectItem>
+                    {TEAM_ROLES.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <Button
                 onClick={async () => {
                   if (!inviteEmail) { toast.error("Email is required"); return; }
+                  if (!merchant?.id) { toast.error("Merchant not loaded"); return; }
                   setIsInviting(true);
                   try {
                     const { data, error } = await supabase.functions.invoke("invite-admin", {
@@ -750,10 +840,20 @@ export default function Settings() {
                     });
                     if (error) throw error;
                     if (data?.error) throw new Error(data.error);
+                    await supabase.from("team_invitations" as any).upsert({
+                      merchant_id: merchant.id,
+                      invited_by: user!.id,
+                      email: inviteEmail.toLowerCase(),
+                      full_name: inviteFullName || null,
+                      role: inviteRole,
+                      status: "pending",
+                      last_sent_at: new Date().toISOString(),
+                    }, { onConflict: "merchant_id,email" } as any);
                     toast.success(`Invitation sent to ${inviteEmail}`);
                     setInviteEmail("");
                     setInviteFullName("");
                     setInviteRole("admin");
+                    queryClient.invalidateQueries({ queryKey: ["team-invitations"] });
                   } catch (err: any) {
                     toast.error(err.message || "Failed to send invitation");
                   } finally {
@@ -766,6 +866,8 @@ export default function Settings() {
               </Button>
             </CardContent>
           </Card>
+
+          <TeamInvitationsList merchantId={merchant?.id} />
         </div>
       )}
 
@@ -868,6 +970,141 @@ function DevelopersSection() {
                 <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(event.created_at)}</span>
               </div>
             ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TeamInvitationsList({ merchantId }: { merchantId?: string }) {
+  const queryClient = useQueryClient();
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { data: invitations = [], isLoading } = useQuery({
+    queryKey: ["team-invitations", merchantId],
+    enabled: !!merchantId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("team_invitations" as any)
+        .select("*")
+        .eq("merchant_id", merchantId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as TeamInvitation[];
+    },
+  });
+
+  const handleResend = async (inv: TeamInvitation) => {
+    const sinceLast = Date.now() - new Date(inv.last_sent_at).getTime();
+    if (sinceLast < RESEND_COOLDOWN_MS) {
+      const minsLeft = Math.ceil((RESEND_COOLDOWN_MS - sinceLast) / 60000);
+      toast.error(`Please wait ${minsLeft} more minute(s) before resending.`);
+      return;
+    }
+    setResendingId(inv.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("invite-admin", {
+        body: { email: inv.email, fullName: inv.full_name, role: inv.role },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      await supabase
+        .from("team_invitations" as any)
+        .update({ last_sent_at: new Date().toISOString() } as any)
+        .eq("id", inv.id);
+      toast.success(`Invitation resent to ${inv.email}`);
+      queryClient.invalidateQueries({ queryKey: ["team-invitations"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to resend invitation");
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleDelete = async (inv: TeamInvitation) => {
+    setDeletingId(inv.id);
+    try {
+      const { error } = await supabase.from("team_invitations" as any).delete().eq("id", inv.id);
+      if (error) throw error;
+      toast.success("Invitation deleted");
+      queryClient.invalidateQueries({ queryKey: ["team-invitations"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const cooldownLeft = (inv: TeamInvitation) => {
+    const sinceLast = Date.now() - new Date(inv.last_sent_at).getTime();
+    return Math.max(0, RESEND_COOLDOWN_MS - sinceLast);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" /> Invited Members
+        </CardTitle>
+        <CardDescription>Pending and recent invitations. Resend after 1 hour or remove.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground p-4 text-center">Loading invitations…</p>
+        ) : invitations.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center">
+            <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">No invitations yet.</p>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border divide-y divide-border">
+            {invitations.map((inv) => {
+              const left = cooldownLeft(inv);
+              const canResend = inv.status === "pending" && left === 0;
+              const minsLeft = Math.ceil(left / 60000);
+              return (
+                <div key={inv.id} className="flex items-center gap-3 p-3 hover:bg-muted/30">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+                    <Mail className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium truncate">{inv.full_name || inv.email}</span>
+                      <Badge variant="outline" className="text-[10px]">{inv.role.replace("_", " ")}</Badge>
+                      <Badge
+                        variant={inv.status === "accepted" ? "default" : inv.status === "revoked" ? "destructive" : "secondary"}
+                        className="text-[10px]"
+                      >
+                        {inv.status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{inv.email} · sent {formatDate(inv.last_sent_at)}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!canResend || resendingId === inv.id}
+                    onClick={() => handleResend(inv)}
+                    title={!canResend && inv.status === "pending" ? `Wait ${minsLeft}m to resend` : "Resend invitation"}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                    {resendingId === inv.id ? "Sending…" : !canResend && inv.status === "pending" ? `${minsLeft}m` : "Resend"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive"
+                    disabled={deletingId === inv.id}
+                    onClick={() => handleDelete(inv)}
+                    title="Delete invitation"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>

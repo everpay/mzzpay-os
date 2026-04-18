@@ -9,6 +9,14 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/merchant-chat`;
 
+const SUGGESTION_CHIPS = [
+  "How do I create an invoice?",
+  "Check my chargeback status",
+  "How do I issue a refund?",
+  "Set up a payment link",
+  "Configure surcharging",
+];
+
 async function streamChat({
   messages,
   onDelta,
@@ -171,10 +179,22 @@ export function MerchantChat() {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.length === 0 && (
-          <div className="text-center text-muted-foreground text-sm py-8">
+          <div className="text-center text-muted-foreground text-sm py-6">
             <Bot className="h-10 w-10 mx-auto mb-3 text-primary/40" />
             <p className="font-medium">How can I help?</p>
-            <p className="text-xs mt-1">Ask about payments, transactions, settings, or any MzzPay feature.</p>
+            <p className="text-xs mt-1 mb-4">Ask about payments, transactions, settings, or any MzzPay feature.</p>
+            <div className="flex flex-col gap-2 px-2 text-left">
+              {SUGGESTION_CHIPS.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => { setInput(chip); }}
+                  className="text-xs rounded-lg border border-border bg-muted/40 hover:bg-muted px-3 py-2 transition-colors text-foreground"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {messages.map((msg, i) => (
