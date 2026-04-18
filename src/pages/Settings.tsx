@@ -1114,7 +1114,7 @@ function TeamInvitationsList({ merchantId }: { merchantId?: string }) {
       </CardContent>
     </Card>
   );
-
+}
 
 function SurchargeSettingsSection({ merchantId }: { merchantId?: string }) {
   const queryClient = useQueryClient();
