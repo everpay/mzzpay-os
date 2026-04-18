@@ -38,7 +38,6 @@ import Treasury from "./pages/Treasury";
 import AuditTrail from "./pages/AuditTrail";
 
 import Products from "./pages/Products";
-import KYCOnboarding from "./pages/KYCOnboarding";
 import RiskProfile from "./pages/RiskProfile";
 import ThreeDSecureSettings from "./pages/ThreeDSecureSettings";
 import SmartRetry from "./pages/SmartRetry";
@@ -98,7 +97,7 @@ const AppRoutes = () => (
     <Route path="/audit-trail" element={<ProtectedRoute><AuditTrail /></ProtectedRoute>} />
     <Route path="/webhooks" element={<Navigate to="/settings" replace />} />
     <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
-    <Route path="/kyc" element={<ProtectedRoute><KYCOnboarding /></ProtectedRoute>} />
+    <Route path="/kyc" element={<Navigate to="/settings" replace />} />
     <Route path="/risk" element={<ProtectedRoute><RiskProfile /></ProtectedRoute>} />
     <Route path="/chargeflow" element={<Navigate to="/chargebacks" replace />} />
     <Route path="/3ds-settings" element={<ProtectedRoute><ThreeDSecureSettings /></ProtectedRoute>} />
