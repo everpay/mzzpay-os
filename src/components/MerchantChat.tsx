@@ -9,6 +9,14 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/merchant-chat`;
 
+const SUGGESTION_CHIPS = [
+  "How do I create an invoice?",
+  "Check my chargeback status",
+  "How do I issue a refund?",
+  "Set up a payment link",
+  "Configure surcharging",
+];
+
 async function streamChat({
   messages,
   onDelta,
