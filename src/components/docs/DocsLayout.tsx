@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import {
   BookOpen, Code2, Key, Webhook, Download, Compass,
   CreditCard, UserCircle, Zap, ChevronLeft, Menu,
-  ArrowLeft, Search,
+  ArrowLeft, Search, FileText, Package,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,8 @@ const navSections = [
       { label: "Authentication", icon: Key, to: "/docs/api/authentication" },
       { label: "Payments", icon: CreditCard, to: "/docs/api/payments" },
       { label: "Customers", icon: UserCircle, to: "/docs/api/customers" },
+      { label: "Invoices", icon: FileText, to: "/docs/api/invoices" },
+      { label: "Products", icon: Package, to: "/docs/api/products" },
     ],
   },
   {

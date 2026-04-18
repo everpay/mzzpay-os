@@ -25,7 +25,7 @@ export default function DocsAuthentication() {
           </p>
           <CodeBlock
             code={{
-              curl: `curl https://api.mzzpay.com/v1/payments \\
+              curl: `curl https://api.mzzpay.io/v1/payments \\
   -H "Authorization: Bearer sk_test_your_api_key"`,
               node: `const MzzPay = require('@mzzpay/node');
 const mzzpay = new MzzPay('sk_test_your_api_key');
