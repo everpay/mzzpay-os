@@ -20,7 +20,15 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Landing from "./pages/Landing";
-import Docs from "./pages/Docs";
+import DocsLayout from "@/components/docs/DocsLayout";
+import DocsOverview from "./pages/docs/DocsOverview";
+import DocsQuickStart from "./pages/docs/DocsQuickStart";
+import DocsAuthentication from "./pages/docs/DocsAuthentication";
+import DocsPayments from "./pages/docs/DocsPayments";
+import DocsCustomers from "./pages/docs/DocsCustomers";
+import DocsWebhooks from "./pages/docs/DocsWebhooks";
+import DocsApiKeys from "./pages/docs/DocsApiKeys";
+import DocsSdks from "./pages/docs/DocsSdks";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
 import ResellerPortal from "./pages/ResellerPortal";
@@ -66,18 +74,27 @@ const AppRoutes = () => (
     <Route path="/signup" element={<AuthRoute><Auth defaultMode="signup" /></AuthRoute>} />
     <Route path="/auth" element={<Navigate to="/login" replace />} />
     <Route path="/landing" element={<Landing />} />
-    <Route path="/docs" element={<Docs />} />
+    <Route path="/docs" element={<DocsLayout />}>
+      <Route index element={<DocsOverview />} />
+      <Route path="quick-start" element={<DocsQuickStart />} />
+      <Route path="api/authentication" element={<DocsAuthentication />} />
+      <Route path="api/payments" element={<DocsPayments />} />
+      <Route path="api/customers" element={<DocsCustomers />} />
+      <Route path="webhooks" element={<DocsWebhooks />} />
+      <Route path="api-keys" element={<DocsApiKeys />} />
+      <Route path="sdks" element={<DocsSdks />} />
+    </Route>
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
     <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
-    <Route path="/wallets" element={<ProtectedRoute><Wallets /></ProtectedRoute>} />
-    <Route path="/payouts" element={<ProtectedRoute><Payouts /></ProtectedRoute>} />
-    <Route path="/payments/new" element={<ProtectedRoute><NewPayment /></ProtectedRoute>} />
+    <Route path="/wallets" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Wallets /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/payouts" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Payouts /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/payments/new" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><NewPayment /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/payment-links" element={<ProtectedRoute><PaymentLinks /></ProtectedRoute>} />
     <Route path="/checkout" element={<Checkout />} />
     <Route path="/pay/:invoiceId" element={<PayInvoice />} />
-    <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
+    <Route path="/subscriptions" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Subscriptions /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/portal" element={<ProtectedRoute><CustomerPortal /></ProtectedRoute>} />
     <Route path="/chargebacks" element={<ProtectedRoute><Chargebacks /></ProtectedRoute>} />
     <Route path="/chargebacks/disputes" element={<ProtectedRoute><MerchantDisputes /></ProtectedRoute>} />
@@ -85,23 +102,23 @@ const AppRoutes = () => (
     <Route path="/chargebacks/analytics" element={<ProtectedRoute><MerchantAnalytics /></ProtectedRoute>} />
     <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-    <Route path="/reseller" element={<ProtectedRoute><RoleProtectedRoute allowedRoles={['reseller']}><ResellerPortal /></RoleProtectedRoute></ProtectedRoute>} />
-    <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+    <Route path="/reseller" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['reseller']}><ResellerPortal /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/analytics" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Analytics /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/refunds" element={<ProtectedRoute><Refunds /></ProtectedRoute>} />
-    <Route path="/settlements" element={<ProtectedRoute><Settlements /></ProtectedRoute>} />
-    <Route path="/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
-    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-    <Route path="/bank-accounts" element={<ProtectedRoute><BankAccounts /></ProtectedRoute>} />
-    <Route path="/recipients" element={<ProtectedRoute><Recipients /></ProtectedRoute>} />
-    <Route path="/treasury" element={<ProtectedRoute><Treasury /></ProtectedRoute>} />
-    <Route path="/audit-trail" element={<ProtectedRoute><AuditTrail /></ProtectedRoute>} />
+    <Route path="/settlements" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Settlements /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/reconciliation" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><Reconciliation /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/reports" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Reports /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/bank-accounts" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><BankAccounts /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/recipients" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Recipients /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/treasury" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><Treasury /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/audit-trail" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><AuditTrail /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/webhooks" element={<Navigate to="/settings" replace />} />
-    <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+    <Route path="/products" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Products /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/kyc" element={<Navigate to="/settings" replace />} />
-    <Route path="/risk" element={<ProtectedRoute><RiskProfile /></ProtectedRoute>} />
+    <Route path="/risk" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><RiskProfile /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/chargeflow" element={<Navigate to="/chargebacks" replace />} />
-    <Route path="/3ds-settings" element={<ProtectedRoute><ThreeDSecureSettings /></ProtectedRoute>} />
-    <Route path="/smart-retry" element={<ProtectedRoute><SmartRetry /></ProtectedRoute>} />
+    <Route path="/3ds-settings" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><ThreeDSecureSettings /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/smart-retry" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><SmartRetry /></RoleProtectedRoute></ProtectedRoute>} />
     {/* Redirect old routes */}
     <Route path="/new-payment" element={<Navigate to="/payments/new" replace />} />
     <Route path="/merchant" element={<Navigate to="/chargebacks" replace />} />

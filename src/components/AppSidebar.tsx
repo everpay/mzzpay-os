@@ -154,12 +154,34 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   const { signOut, user } = useAuth();
   const { data: userRole } = useUserRole();
 
+  const roles: string[] = (userRole as any)?.roles || [];
+  const isSuperAdmin = !!(userRole as any)?.isSuperAdmin;
+  const isAdmin = !!(userRole as any)?.isAdmin;
+  const isReseller = !!(userRole as any)?.isReseller;
+  const isSupport = !!(userRole as any)?.isSupport && !isAdmin && !isSuperAdmin;
+
   const isItemVisible = (item: NavItem) => {
     if (!item.visibleTo) return true;
     if (!userRole) return false;
-    const roles = (userRole as any).roles || [];
-    if ((userRole as any).isSuperAdmin) return true;
+    // Strict gates: only the listed role can see these items.
+    if (item.visibleTo.includes('super_admin') && !isSuperAdmin) return false;
+    if (item.visibleTo.includes('reseller') && !isReseller) return false;
     return item.visibleTo.some((r) => roles.includes(r));
+  };
+
+  const isSectionVisible = (title?: string) => {
+    if (!isSupport) return true;
+    if (title === 'Treasury' || title === 'Insights' || title === 'Company' || title === 'Super Admin') return false;
+    return true;
+  };
+
+  const isItemAllowedForSupport = (item: NavItem) => {
+    if (!isSupport) return true;
+    const supportAllowed = [
+      '/dashboard', '/customers', '/transactions', '/refunds',
+      '/chargebacks', '/chargebacks/disputes', '/chargebacks/evidence', '/settings',
+    ];
+    return supportAllowed.includes(item.to);
   };
 
   return (
@@ -177,7 +199,8 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-3">
         {navSections.map((section, idx) => {
-          const visibleItems = section.items.filter(isItemVisible);
+          if (!isSectionVisible(section.title)) return null;
+          const visibleItems = section.items.filter(isItemVisible).filter(isItemAllowedForSupport);
           if (visibleItems.length === 0) return null;
           return (
             <div key={section.title || `section-${idx}`} className={idx > 0 ? "mt-5" : ""}>
