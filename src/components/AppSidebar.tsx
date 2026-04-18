@@ -19,6 +19,19 @@ import {
   AlertTriangle,
   Archive,
   UserCircle,
+  Receipt,
+  Landmark,
+  Scale,
+  Building2,
+  Send,
+  ScrollText,
+  Webhook,
+  Package,
+  BadgeCheck,
+  Activity,
+  Lock,
+  Repeat,
+  ShieldCheck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
