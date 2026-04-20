@@ -180,4 +180,5 @@
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .font-heading { font-family: var(--font-heading); }
   .font-mono { font-family: var(--font-mono); }
+  .font-logo { font-family: var(--font-logo); }
 }
