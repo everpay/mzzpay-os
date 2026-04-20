@@ -17,6 +17,7 @@ export default {
         heading: ['Manrope', 'system-ui', 'sans-serif'],
         body: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        logo: ['"Bodoni Moda"', 'Bodoni', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
