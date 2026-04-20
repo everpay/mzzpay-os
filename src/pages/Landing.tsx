@@ -528,9 +528,9 @@ function BentoSection() {
             <p className="text-white/60 max-w-sm mb-6">
               Move funds instantly across markets without the traditional 3-day wait.
             </p>
-            <button className="w-fit px-6 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-all text-sm font-semibold">
+            <Button variant="outline" size="default" className="w-fit border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white">
               Learn more
-            </button>
+            </Button>
           </div>
           <Globe className="absolute -right-10 -bottom-10 h-72 w-72 text-blue-500/20" />
         </div>

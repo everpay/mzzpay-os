@@ -71,9 +71,9 @@
     --gradient-primary: linear-gradient(135deg, hsl(219 100% 40%), hsl(219 100% 50%));
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 33% 99%));
     --gradient-glow: radial-gradient(ellipse at top, hsl(219 100% 40% / 0.05), transparent 65%);
-    --shadow-card: 0 1px 2px hsl(210 11% 11% / 0.04), 0 0 0 1px hsl(226 23% 80% / 0.4);
-    --shadow-elevated: 0 8px 30px hsl(210 11% 11% / 0.08), 0 0 0 1px hsl(226 23% 80% / 0.3);
-    --shadow-soft: 0 2px 8px hsl(210 11% 11% / 0.04);
+    --shadow-card: 0 4px 12px hsl(210 11% 11% / 0.06), 0 0 0 1px hsl(226 23% 80% / 0.4);
+    --shadow-elevated: 0 16px 40px hsl(210 11% 11% / 0.12), 0 0 0 1px hsl(226 23% 80% / 0.3);
+    --shadow-soft: 0 4px 14px hsl(210 11% 11% / 0.06);
 
     /* Typography */
     --font-heading: 'Manrope', system-ui, sans-serif;
@@ -138,9 +138,9 @@
     --gradient-primary: linear-gradient(135deg, hsl(219 100% 50%), hsl(222 100% 75%));
     --gradient-card: linear-gradient(180deg, hsl(224 25% 11%), hsl(224 25% 9%));
     --gradient-glow: radial-gradient(ellipse at top, hsl(222 100% 75% / 0.06), transparent 60%);
-    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.25), 0 0 0 1px hsl(224 18% 18% / 0.6);
-    --shadow-elevated: 0 8px 30px hsl(0 0% 0% / 0.35), 0 0 0 1px hsl(224 18% 18% / 0.5);
-    --shadow-soft: 0 2px 8px hsl(0 0% 0% / 0.2);
+    --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.35), 0 0 0 1px hsl(224 18% 18% / 0.6);
+    --shadow-elevated: 0 16px 40px hsl(0 0% 0% / 0.5), 0 0 0 1px hsl(224 18% 18% / 0.5);
+    --shadow-soft: 0 4px 14px hsl(0 0% 0% / 0.3);
   }
 }
 
@@ -150,13 +150,13 @@
   }
 
   html {
-    font-size: 16px;
+    font-size: 17px;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
-    font-size: 0.9375rem;
+    font-size: 1rem;
     line-height: 1.6;
     letter-spacing: -0.01em;
     -webkit-font-smoothing: antialiased;
