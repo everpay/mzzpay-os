@@ -76,20 +76,6 @@ export default function Demo() {
                       </div>
                     ))}
                   </div>
-                  <div className="border-t border-gray-200 pt-8">
-                    <p className="text-sm text-gray-500 mb-4 font-body">Trusted by thousands of businesses worldwide</p>
-                    <div className="flex flex-wrap gap-6 items-center">
-                      {[
-                        ["99.99%", "Uptime"], ["$2B+", "Processed"],
-                        ["50K+", "Merchants"], ["150+", "Countries"],
-                      ].map(([n, l]) => (
-                        <div key={l} className="text-center">
-                          <div className="text-2xl font-bold font-heading" style={{ color: PRIMARY }}>{n}</div>
-                          <div className="text-xs text-gray-600 font-body">{l}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </motion.div>
 
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
