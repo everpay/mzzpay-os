@@ -30,20 +30,20 @@ export function FrontHeader() {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 font-body">
-          <Link to="/pricing" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">Pricing</Link>
-          <Link to="/about" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">About</Link>
-          <Link to="/partners" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">Partners</Link>
-          <Link to="/docs" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">Developers</Link>
+        <nav className="hidden md:flex items-center gap-9 font-body">
+          <Link to="/pricing" className="text-base font-semibold text-slate-600 hover:text-slate-900 transition-colors">Pricing</Link>
+          <Link to="/about" className="text-base font-semibold text-slate-600 hover:text-slate-900 transition-colors">About</Link>
+          <Link to="/partners" className="text-base font-semibold text-slate-600 hover:text-slate-900 transition-colors">Partners</Link>
+          <Link to="/docs" className="text-base font-semibold text-slate-600 hover:text-slate-900 transition-colors">Developers</Link>
         </nav>
 
-        <div className="hidden md:flex items-center gap-4">
-          <Link to="/login" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+        <div className="hidden md:flex items-center gap-5">
+          <Link to="/login" className="text-base font-semibold text-slate-600 hover:text-slate-900 transition-colors">
             Sign In
           </Link>
           <Link to="/demo">
             <Button
-              className="text-white rounded-full px-6 h-10 text-sm font-bold shadow-md"
+              className="text-white rounded-full px-6 h-11 text-base font-bold shadow-md"
               style={{ backgroundColor: PRIMARY }}
             >
               Request Demo
@@ -62,13 +62,13 @@ export function FrontHeader() {
 
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-slate-200 px-6 py-4 space-y-3">
-          <Link to="/pricing" className="block text-sm font-semibold text-slate-700 py-2" onClick={() => setIsMenuOpen(false)}>Pricing</Link>
-          <Link to="/about" className="block text-sm font-semibold text-slate-700 py-2" onClick={() => setIsMenuOpen(false)}>About</Link>
-          <Link to="/partners" className="block text-sm font-semibold text-slate-700 py-2" onClick={() => setIsMenuOpen(false)}>Partners</Link>
-          <Link to="/docs" className="block text-sm font-semibold text-slate-700 py-2" onClick={() => setIsMenuOpen(false)}>Developers</Link>
-          <Link to="/login" className="block text-sm font-semibold text-slate-700 py-2" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
+          <Link to="/pricing" className="block text-base font-semibold text-slate-700 py-2" onClick={() => setIsMenuOpen(false)}>Pricing</Link>
+          <Link to="/about" className="block text-base font-semibold text-slate-700 py-2" onClick={() => setIsMenuOpen(false)}>About</Link>
+          <Link to="/partners" className="block text-base font-semibold text-slate-700 py-2" onClick={() => setIsMenuOpen(false)}>Partners</Link>
+          <Link to="/docs" className="block text-base font-semibold text-slate-700 py-2" onClick={() => setIsMenuOpen(false)}>Developers</Link>
+          <Link to="/login" className="block text-base font-semibold text-slate-700 py-2" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
           <Link to="/demo" onClick={() => setIsMenuOpen(false)}>
-            <Button className="w-full text-white rounded-full h-11 font-bold" style={{ backgroundColor: PRIMARY }}>
+            <Button className="w-full text-white rounded-full h-12 text-base font-bold" style={{ backgroundColor: PRIMARY }}>
               Request Demo
             </Button>
           </Link>
