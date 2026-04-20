@@ -45,10 +45,7 @@ export function FrontFooter() {
             <h3 className="text-sm font-semibold text-gray-900 mb-4 font-heading">Solutions</h3>
             <ul className="space-y-3 font-body">
               {[
-                { label: "Retail", to: "/pricing" },
-                { label: "Restaurant", to: "/pricing" },
                 { label: "E-commerce", to: "/pricing" },
-                { label: "Mobile Payments", to: "/pricing" },
                 { label: "SaaS & Platforms", to: "/pricing" },
                 { label: "Marketplaces", to: "/pricing" },
                 { label: "Enterprise", to: "/pricing" },
@@ -68,11 +65,8 @@ export function FrontFooter() {
               {[
                 { label: "Online Payments", to: "/pricing" },
                 { label: "Payment Gateway", to: "/pricing" },
-                { label: "POS & Kiosks", to: "/pricing" },
-                { label: "Omni-Commerce", to: "/pricing" },
                 { label: "Payment Methods", to: "/pricing" },
                 { label: "Fraud Prevention", to: "/pricing" },
-                { label: "Funding", to: "/pricing" },
               ].map((item) => (
                 <li key={item.label}>
                   <Link to={item.to} className="text-sm text-gray-600 hover:text-foreground transition-colors">
@@ -125,8 +119,7 @@ export function FrontFooter() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="w-full text-white rounded-full font-bold"
-                  style={{ backgroundColor: PRIMARY }}
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-bold"
                 >
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Subscribe"}
                 </Button>
@@ -145,12 +138,13 @@ export function FrontFooter() {
           <p className="text-sm text-gray-500 text-center mb-6 font-body">
             © {new Date().getFullYear()} MzzPay Technologies Inc. All rights reserved.
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-10 font-body">
-            <Link to="/cookie-policy" className="text-sm text-gray-500 hover:text-foreground transition-colors text-center">Cookie Policy</Link>
-            <Link to="/about" className="text-sm text-gray-500 hover:text-foreground transition-colors text-center">About</Link>
-            <Link to="/partners" className="text-sm text-gray-500 hover:text-foreground transition-colors text-center">Partners</Link>
-            <Link to="/pricing" className="text-sm text-gray-500 hover:text-foreground transition-colors text-center">Pricing</Link>
-            <Link to="/docs" className="text-sm text-gray-500 hover:text-foreground transition-colors text-center">Docs</Link>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 mb-10 font-body">
+            <Link to="/terms" className="text-sm text-gray-500 hover:text-foreground transition-colors">Terms</Link>
+            <Link to="/privacy-policy" className="text-sm text-gray-500 hover:text-foreground transition-colors">Privacy</Link>
+            <Link to="/security" className="text-sm text-gray-500 hover:text-foreground transition-colors">Security</Link>
+            <Link to="/cookie-policy" className="text-sm text-gray-500 hover:text-foreground transition-colors">Cookie Policy</Link>
+            <a href="https://status.mzzpay.com" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-foreground transition-colors">Status</a>
+            <Link to="/docs" className="text-sm text-gray-500 hover:text-foreground transition-colors">Docs</Link>
           </div>
           <div className="pt-6">
             <p className="text-xs text-gray-500 leading-relaxed font-body">

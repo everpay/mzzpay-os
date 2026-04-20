@@ -153,6 +153,28 @@ export default function Demo() {
             </div>
           </div>
         </section>
+
+        {/* Full-width trust stats band */}
+        <section className="border-t border-b border-gray-200 bg-white py-10">
+          <div className="container mx-auto px-4">
+            <p className="text-center text-sm text-gray-500 mb-6 font-body">
+              Trusted by thousands of businesses worldwide
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+              {[
+                ["99.99%", "Uptime"],
+                ["$2B+", "Processed"],
+                ["50K+", "Merchants"],
+                ["150+", "Countries"],
+              ].map(([n, l]) => (
+                <div key={l} className="text-center">
+                  <div className="text-3xl md:text-4xl font-extrabold font-heading mb-1" style={{ color: PRIMARY }}>{n}</div>
+                  <div className="text-sm text-gray-600 font-body">{l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
       <FrontFooter />
     </div>
