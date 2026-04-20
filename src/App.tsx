@@ -78,6 +78,11 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Landing />} />
+    <Route path="/pricing" element={<FrontPricing />} />
+    <Route path="/demo" element={<FrontDemo />} />
+    <Route path="/about" element={<FrontAbout />} />
+    <Route path="/partners" element={<FrontPartners />} />
+    <Route path="/cookie-policy" element={<FrontCookiePolicy />} />
     <Route path="/login" element={<AuthRoute><Auth defaultMode="login" /></AuthRoute>} />
     <Route path="/signup" element={<AuthRoute><Auth defaultMode="signup" /></AuthRoute>} />
     <Route path="/auth" element={<Navigate to="/login" replace />} />
@@ -147,6 +152,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
+          <CookieNotice />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
