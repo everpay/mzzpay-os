@@ -52,6 +52,12 @@ import RiskProfile from "./pages/RiskProfile";
 import ThreeDSecureSettings from "./pages/ThreeDSecureSettings";
 import SmartRetry from "./pages/SmartRetry";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
+import FrontPricing from "./pages/front/Pricing";
+import FrontDemo from "./pages/front/Demo";
+import FrontAbout from "./pages/front/About";
+import FrontPartners from "./pages/front/Partners";
+import FrontCookiePolicy from "./pages/front/CookiePolicy";
+import { CookieNotice } from "@/components/front/CookieNotice";
 
 const queryClient = new QueryClient();
 
