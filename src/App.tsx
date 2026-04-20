@@ -52,6 +52,12 @@ import RiskProfile from "./pages/RiskProfile";
 import ThreeDSecureSettings from "./pages/ThreeDSecureSettings";
 import SmartRetry from "./pages/SmartRetry";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
+import FrontPricing from "./pages/front/Pricing";
+import FrontDemo from "./pages/front/Demo";
+import FrontAbout from "./pages/front/About";
+import FrontPartners from "./pages/front/Partners";
+import FrontCookiePolicy from "./pages/front/CookiePolicy";
+import { CookieNotice } from "@/components/front/CookieNotice";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +78,11 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Landing />} />
+    <Route path="/pricing" element={<FrontPricing />} />
+    <Route path="/demo" element={<FrontDemo />} />
+    <Route path="/about" element={<FrontAbout />} />
+    <Route path="/partners" element={<FrontPartners />} />
+    <Route path="/cookie-policy" element={<FrontCookiePolicy />} />
     <Route path="/login" element={<AuthRoute><Auth defaultMode="login" /></AuthRoute>} />
     <Route path="/signup" element={<AuthRoute><Auth defaultMode="signup" /></AuthRoute>} />
     <Route path="/auth" element={<Navigate to="/login" replace />} />
@@ -141,6 +152,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
+          <CookieNotice />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
