@@ -57,6 +57,9 @@ import FrontDemo from "./pages/front/Demo";
 import FrontAbout from "./pages/front/About";
 import FrontPartners from "./pages/front/Partners";
 import FrontCookiePolicy from "./pages/front/CookiePolicy";
+import FrontTerms from "./pages/front/Terms";
+import FrontPrivacyPolicy from "./pages/front/PrivacyPolicy";
+import FrontSecurity from "./pages/front/Security";
 import { CookieNotice } from "@/components/front/CookieNotice";
 
 const queryClient = new QueryClient();
@@ -83,6 +86,9 @@ const AppRoutes = () => (
     <Route path="/about" element={<FrontAbout />} />
     <Route path="/partners" element={<FrontPartners />} />
     <Route path="/cookie-policy" element={<FrontCookiePolicy />} />
+    <Route path="/terms" element={<FrontTerms />} />
+    <Route path="/privacy-policy" element={<FrontPrivacyPolicy />} />
+    <Route path="/security" element={<FrontSecurity />} />
     <Route path="/login" element={<AuthRoute><Auth defaultMode="login" /></AuthRoute>} />
     <Route path="/signup" element={<AuthRoute><Auth defaultMode="signup" /></AuthRoute>} />
     <Route path="/auth" element={<Navigate to="/login" replace />} />
