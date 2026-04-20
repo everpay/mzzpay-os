@@ -27,6 +27,7 @@ import {
   Linkedin,
   Github,
 } from "lucide-react";
+import { FrontFooter } from "@/components/front/FrontFooter";
 
 // MzzPay brand palette (primary #004BCA / #0061FF)
 const PRIMARY = "#004BCA";
@@ -812,7 +813,7 @@ export default function Landing() {
         <FAQSection />
         <FinalCTASection />
       </main>
-      <SiteFooter />
+      <FrontFooter />
     </div>
   );
 }
