@@ -117,6 +117,12 @@ export function BusinessVerificationSection() {
         const { error } = await supabase.from('merchant_profiles' as any).insert(profileData);
         if (error) throw error;
       }
+
+      // Keep merchants.name in sync with the legal business name from signup/onboarding
+      if (businessName && businessName !== merchant?.name) {
+        await supabase.from('merchants').update({ name: businessName }).eq('id', merchantId);
+      }
+
       toast.success('Business profile saved');
       refetch();
     } catch (err: any) {
