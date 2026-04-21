@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CountrySelect } from '@/components/CountrySelect';
-import { Mail, Lock, User, ArrowRight, Building2, Phone, Globe, Zap, CreditCard, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Building2, Phone, Globe, Zap, CreditCard, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import mzzpayIcon from '@/assets/mzzpay-icon.png';
 
@@ -25,6 +25,7 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
 
   // Signup multi-step
   const [signupStep, setSignupStep] = useState(1);
+  const [signupComplete, setSignupComplete] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [businessName, setBusinessName] = useState('');
@@ -34,6 +35,7 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
   useEffect(() => {
     setIsLogin(defaultMode === 'login');
     setSignupStep(1);
+    setSignupComplete(false);
   }, [defaultMode]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -87,9 +89,17 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
         },
       });
       if (error) throw error;
+      setSignupComplete(true);
       toast.success('Account created! Check your email to confirm.');
     } catch (error: any) {
-      toast.error(error.message);
+      const msg = error?.message ?? 'Could not create account';
+      if (msg.toLowerCase().includes('already') || error?.code === 'user_already_exists') {
+        toast.error('An account with this email already exists. Try signing in instead.');
+      } else if (msg.toLowerCase().includes('rate') || error?.status === 429) {
+        toast.error('Too many attempts. Please wait a minute and try again.');
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -166,6 +176,29 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
         ) : (
           /* ── SIGNUP ── */
           <div className="rounded-3xl border border-border bg-card p-8 shadow-elevated">
+            {signupComplete ? (
+              <div className="text-center py-4">
+                <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <CheckCircle2 className="h-9 w-9 text-primary" />
+                </div>
+                <h2 className="font-display text-2xl font-bold text-foreground mb-2 tracking-tight">Check your email</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>.
+                  Click it to activate your account, then sign in.
+                </p>
+                <Button onClick={() => navigate('/login')} className="w-full gap-2" size="lg">
+                  Go to Sign In <ArrowRight className="h-4 w-4" />
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => { setSignupComplete(false); setSignupStep(1); }}
+                  className="mt-4 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Used the wrong email? Start over
+                </button>
+              </div>
+            ) : (
+              <>
             <h2 className="font-display text-3xl font-bold text-foreground mb-2 tracking-tight">Let's create your account.</h2>
             <p className="text-sm text-muted-foreground mb-6">
               Signing up is fast and free — no commitments or long-term contracts required.
@@ -280,6 +313,8 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
                 Already have an account? <span className="text-primary font-medium">Sign in</span>
               </Link>
             </div>
+              </>
+            )}
           </div>
         )}
       </div>
