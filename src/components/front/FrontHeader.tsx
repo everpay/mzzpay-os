@@ -99,20 +99,20 @@ export function FrontHeader({
         className={`fixed top-0 z-50 w-full transition-all duration-300 ${headerClass}`}
       >
         <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-5" onClick={closeMenu}>
+          <Link to="/" className="flex items-center" onClick={closeMenu}>
             <img
               src={mzzpayIcon}
               alt="MzzPay"
               className="h-20 w-20 rotate-[33deg] drop-shadow-lg"
               style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
             />
-            <span className={`font-logo text-2xl tracking-wide transition-colors ${logoTextClass}`}>
+            <span className={`font-logo text-2xl tracking-wide transition-colors -ml-[2px] ${logoTextClass}`}>
               MzzPay
             </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-9 font-body">
-            {desktopLinks.map((l) => (
+            {desktopLinks.filter((l) => l.label !== "Resources").map((l) => (
               <Link key={l.to} to={l.to} className={linkClass}>
                 {l.label}
               </Link>
