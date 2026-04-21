@@ -227,7 +227,7 @@ function InfrastructureSection() {
           </p>
           <div className="space-y-4">
             <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50">
-              <div className="bg-blue-100 p-2.5 rounded-lg">
+              <div className="p-2.5 rounded-lg bg-[hsl(172_72%_48%_/_0.12)]">
                 <Server className="h-5 w-5" style={{ color: PRIMARY }} />
               </div>
               <div>
@@ -236,7 +236,7 @@ function InfrastructureSection() {
               </div>
             </div>
             <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50">
-              <div className="bg-blue-100 p-2.5 rounded-lg">
+              <div className="p-2.5 rounded-lg bg-[hsl(172_72%_48%_/_0.12)]">
                 <Repeat className="h-5 w-5" style={{ color: PRIMARY }} />
               </div>
               <div>
@@ -269,7 +269,7 @@ function InfrastructureSection() {
                 <div
                   key={t}
                   className="p-3 rounded-lg text-xs font-mono border"
-                  style={{ backgroundColor: "rgba(0,75,202,0.08)", borderColor: "rgba(0,75,202,0.2)", color: PRIMARY }}
+                  style={{ backgroundColor: "hsl(172 72% 48% / 0.1)", borderColor: "hsl(172 72% 48% / 0.25)", color: PRIMARY }}
                 >
                   {t}
                 </div>
@@ -304,7 +304,7 @@ function StatsSection() {
           {stats.map((s) => (
             <div key={s.label} className="space-y-2">
               <div className="text-5xl md:text-6xl font-black tracking-tighter">{s.value}</div>
-              <div className="text-blue-100 text-sm uppercase tracking-widest font-semibold">{s.label}</div>
+              <div className="text-white/70 text-sm uppercase tracking-widest font-semibold">{s.label}</div>
             </div>
           ))}
         </div>
@@ -377,7 +377,7 @@ function IntegrationPathsSection() {
               key={p.title}
               className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-2xl hover:shadow-blue-100 transition-all border border-slate-100 hover:border-blue-200 group"
             >
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-6">
+              <div className="w-12 h-12 rounded-xl bg-[hsl(172_72%_48%_/_0.1)] flex items-center justify-center mb-6">
                 <p.icon className="h-6 w-6" style={{ color: PRIMARY }} />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3" style={{ fontFamily: "Manrope, sans-serif" }}>
@@ -411,7 +411,7 @@ function BentoSection() {
             </p>
           </div>
           <div className="flex justify-end mt-6">
-            <Globe className="h-32 w-32 text-blue-200 group-hover:scale-110 group-hover:text-blue-300 transition-all duration-500" />
+            <Globe className="h-32 w-32 text-white/15 group-hover:scale-110 group-hover:text-[hsl(172_72%_70%)] transition-all duration-500" />
           </div>
         </div>
 
@@ -435,9 +435,9 @@ function BentoSection() {
             <p className="text-slate-500">Embedded payments for AI agents and autonomous platforms.</p>
           </div>
           <div className="flex gap-2 mt-6">
-            <div className="w-10 h-10 rounded-full" style={{ backgroundColor: "rgba(0,75,202,0.2)" }} />
-            <div className="w-10 h-10 rounded-full" style={{ backgroundColor: "rgba(0,75,202,0.4)" }} />
-            <div className="w-10 h-10 rounded-full" style={{ backgroundColor: "rgba(0,75,202,0.6)" }} />
+            <div className="w-10 h-10 rounded-full" style={{ backgroundColor: "hsl(172 72% 48% / 0.25)" }} />
+            <div className="w-10 h-10 rounded-full" style={{ backgroundColor: "hsl(172 72% 48% / 0.5)" }} />
+            <div className="w-10 h-10 rounded-full" style={{ backgroundColor: "hsl(172 72% 48% / 0.75)" }} />
           </div>
         </div>
 
@@ -454,7 +454,7 @@ function BentoSection() {
               Learn more
             </Button>
           </div>
-          <Globe className="absolute -right-10 -bottom-10 h-72 w-72 text-blue-500/20" />
+          <Globe className="absolute -right-10 -bottom-10 h-72 w-72 text-white/10" />
         </div>
       </div>
     </section>
@@ -482,7 +482,7 @@ function SegmentsSection() {
           </div>
           <div className="bg-white p-10 rounded-2xl border border-slate-100 shadow-sm">
             <h3 className="text-2xl font-bold mb-4 flex items-center gap-3 text-slate-900" style={{ fontFamily: "Manrope, sans-serif" }}>
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "rgba(0,75,202,0.4)" }} />
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "hsl(172 72% 48% / 0.5)" }} />
               Software Vendors (ISVs)
             </h3>
             <p className="text-slate-500 leading-relaxed">
@@ -499,10 +499,10 @@ function SegmentsSection() {
 // ============= DEVELOPER CODE =============
 function DeveloperSection() {
   return (
-    <section className="py-24 text-white" style={{ backgroundColor: "#001A4D" }}>
+    <section className="py-24 text-white" style={{ backgroundColor: "hsl(220 47% 7%)" }}>
       <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
         <div>
-          <span className="text-blue-300 font-bold tracking-widest text-xs uppercase mb-4 block">Developer First</span>
+          <span className="text-[hsl(172_72%_70%)] font-bold tracking-widest text-xs uppercase mb-4 block">Developer First</span>
           <h2 className="text-4xl font-extrabold mb-6" style={{ fontFamily: "Manrope, sans-serif" }}>
             Built for those who build the future.
           </h2>
@@ -513,7 +513,7 @@ function DeveloperSection() {
           <ul className="space-y-3">
             {["GraphQL & REST APIs", "Real-time Webhook Events", "Certified PCI-DSS Level 1"].map((item) => (
               <li key={item} className="flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-blue-300" />
+                <CheckCircle2 className="h-5 w-5 text-[hsl(172_72%_70%)]" />
                 {item}
               </li>
             ))}
@@ -525,7 +525,7 @@ function DeveloperSection() {
             <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
             <div className="w-3 h-3 rounded-full bg-green-500/60" />
           </div>
-          <pre className="text-blue-300 overflow-x-auto">
+          <pre className="text-[hsl(172_72%_70%)] overflow-x-auto">
             <code>{`const payment = await mzzpay.payments.create({
   amount: 25000,
   currency: 'usd',
@@ -604,7 +604,7 @@ function FinalCTASection() {
           <Link to="/signup">
             <Button
               size="lg"
-              className="bg-white hover:bg-blue-50 rounded-full px-10 h-14 text-lg font-bold shadow-xl"
+              className="bg-white hover:bg-[hsl(172_72%_48%_/_0.1)] rounded-full px-10 h-14 text-lg font-bold shadow-xl"
               style={{ color: PRIMARY }}
             >
               Create Free Account
@@ -636,7 +636,7 @@ function SiteFooter() {
             <ul className="space-y-3">
               {["Retail", "Restaurant", "E-commerce", "Mobile Payments", "SaaS & Platforms", "Marketplaces", "Enterprise"].map((item) => (
                 <li key={item}>
-                  <span className="text-sm text-gray-600 hover:text-[#004BCA] transition-colors cursor-pointer">{item}</span>
+                  <span className="text-sm text-gray-600 hover:text-[hsl(172 72% 48%)] transition-colors cursor-pointer">{item}</span>
                 </li>
               ))}
             </ul>
@@ -647,7 +647,7 @@ function SiteFooter() {
             <ul className="space-y-3">
               {["Online Payments", "Payment Gateway", "POS & Kiosks", "Omni-Commerce", "Payment Methods", "Fraud Prevention", "Funding"].map((item) => (
                 <li key={item}>
-                  <span className="text-sm text-gray-600 hover:text-[#004BCA] transition-colors cursor-pointer">{item}</span>
+                  <span className="text-sm text-gray-600 hover:text-[hsl(172 72% 48%)] transition-colors cursor-pointer">{item}</span>
                 </li>
               ))}
             </ul>
@@ -658,7 +658,7 @@ function SiteFooter() {
             <ul className="space-y-3">
               {["Blog", "API Documentation", "Request Demo", "Help & Support", "Plans & Pricing"].map((item) => (
                 <li key={item}>
-                  <span className="text-sm text-gray-600 hover:text-[#004BCA] transition-colors cursor-pointer">{item}</span>
+                  <span className="text-sm text-gray-600 hover:text-[hsl(172 72% 48%)] transition-colors cursor-pointer">{item}</span>
                 </li>
               ))}
             </ul>
@@ -669,7 +669,7 @@ function SiteFooter() {
             <ul className="space-y-3">
               {["About Us", "Careers", "Contact Us", "Partners"].map((item) => (
                 <li key={item}>
-                  <span className="text-sm text-gray-600 hover:text-[#004BCA] transition-colors cursor-pointer">{item}</span>
+                  <span className="text-sm text-gray-600 hover:text-[hsl(172 72% 48%)] transition-colors cursor-pointer">{item}</span>
                 </li>
               ))}
             </ul>
@@ -683,10 +683,10 @@ function SiteFooter() {
               <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-full">Subscribe</Button>
             </form>
             <div className="flex items-center gap-4 mt-4">
-              <Facebook className="w-5 h-5 text-gray-400 hover:text-[#004BCA] cursor-pointer transition-colors" />
-              <Twitter className="w-5 h-5 text-gray-400 hover:text-[#004BCA] cursor-pointer transition-colors" />
-              <Linkedin className="w-5 h-5 text-gray-400 hover:text-[#004BCA] cursor-pointer transition-colors" />
-              <Github className="w-5 h-5 text-gray-400 hover:text-[#004BCA] cursor-pointer transition-colors" />
+              <Facebook className="w-5 h-5 text-gray-400 hover:text-[hsl(172 72% 48%)] cursor-pointer transition-colors" />
+              <Twitter className="w-5 h-5 text-gray-400 hover:text-[hsl(172 72% 48%)] cursor-pointer transition-colors" />
+              <Linkedin className="w-5 h-5 text-gray-400 hover:text-[hsl(172 72% 48%)] cursor-pointer transition-colors" />
+              <Github className="w-5 h-5 text-gray-400 hover:text-[hsl(172 72% 48%)] cursor-pointer transition-colors" />
             </div>
           </div>
         </div>
@@ -697,7 +697,7 @@ function SiteFooter() {
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-10">
             {["Privacy Policy", "Terms of Service", "Cookie Policy", "Security & Trust", "System Status"].map((item) => (
-              <span key={item} className="text-sm text-gray-500 hover:text-[#004BCA] transition-colors cursor-pointer text-center">
+              <span key={item} className="text-sm text-gray-500 hover:text-[hsl(172 72% 48%)] transition-colors cursor-pointer text-center">
                 {item}
               </span>
             ))}
