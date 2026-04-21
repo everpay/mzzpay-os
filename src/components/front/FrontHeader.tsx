@@ -5,7 +5,7 @@ import { Menu, X, ChevronRight, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import mzzpayIcon from "@/assets/mzzpay-icon.png";
 
-const PRIMARY = "hsl(172 72% 48%)";
+const PRIMARY = "hsl(var(--brand-teal))";
 
 interface FrontHeaderProps {
   transparentUntilScroll?: boolean;

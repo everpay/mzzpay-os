@@ -6,7 +6,7 @@ import { Facebook, Twitter, Linkedin, Github, Loader2, CheckCircle2 } from "luci
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const PRIMARY = "hsl(172 72% 48%)";
+const PRIMARY = "hsl(var(--brand-teal))";
 
 export function FrontFooter() {
   const [email, setEmail] = useState("");

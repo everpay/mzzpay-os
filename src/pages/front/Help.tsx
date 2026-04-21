@@ -29,7 +29,7 @@ const faqs = [
 export default function Help() {
   return (
     <div className="min-h-screen bg-white">
-      <FrontHeader />
+      <FrontHeader transparentUntilScroll={false} />
       <main className="pt-[68px]">
         {/* Hero */}
         <section className="py-20 md:py-28 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">

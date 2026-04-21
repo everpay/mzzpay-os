@@ -34,7 +34,7 @@ const compliance = [
 export default function Security() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <FrontHeader />
+      <FrontHeader transparentUntilScroll={false} />
       <main className="pt-[68px] flex-1">
         {/* Hero */}
         <section className="bg-slate-900 text-white py-20 md:py-28">
