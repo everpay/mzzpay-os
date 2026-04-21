@@ -133,6 +133,9 @@ export function FrontFooter() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-border">
+          <p className="text-sm text-muted-foreground text-center mb-6 font-body">
+            © {new Date().getFullYear()} MzzPay Technologies Inc. All rights reserved.
+          </p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 mb-10 font-body">
             <Link to="/privacy-policy" className={linkClass}>Privacy</Link>
             <Link to="/security" className={linkClass}>Security</Link>
