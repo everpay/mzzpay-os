@@ -122,7 +122,8 @@ export default function AdminProcessors() {
 
   const createRule = useMutation({
     mutationFn: async () => {
-      if (!ruleValidation.ok) throw new Error(ruleValidation.reason);
+      const v = validateRoutingRule(candidateRule, rules as any);
+      if (!v.ok) throw new Error(v.reason);
       const payload: any = {
         merchant_id: newRule.merchant_id,
         name: newRule.name,
