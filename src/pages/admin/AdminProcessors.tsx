@@ -421,8 +421,25 @@ export default function AdminProcessors() {
                       </div>
                     </div>
                   </div>
+                  {newRule.merchant_id && ruleValidation.ok !== true && (
+                    <Alert variant="destructive" className="mt-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>{(ruleValidation as { reason: string }).reason}</AlertDescription>
+                    </Alert>
+                  )}
                   <DialogFooter>
-                    <Button onClick={() => createRule.mutate()} disabled={!newRule.merchant_id || !newRule.name || !newRule.target_provider}>Save</Button>
+                    <Button
+                      onClick={() => createRule.mutate()}
+                      disabled={
+                        !newRule.merchant_id ||
+                        !newRule.name ||
+                        !newRule.target_provider ||
+                        ruleValidation.ok !== true ||
+                        createRule.isPending
+                      }
+                    >
+                      Save
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
