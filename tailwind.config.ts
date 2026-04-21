@@ -17,7 +17,8 @@ export default {
         heading: ['Manrope', 'system-ui', 'sans-serif'],
         body: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
-        logo: ['"Bodoni Moda"', 'Bodoni', 'serif'],
+        logo: ['"Bagel Fat One"', '"Arial Black"', 'system-ui', 'sans-serif'],
+        display: ['Manrope', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -76,6 +77,9 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "1.875rem",
+        "2xl": "2.5rem",
+        pill: "9999px",
       },
       keyframes: {
         "accordion-down": {
