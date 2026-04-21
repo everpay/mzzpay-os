@@ -26,15 +26,17 @@ export const MagicLinkEmail = ({
   confirmationUrl,
 }: MagicLinkEmailProps) => (
   <Html lang="en" dir="ltr">
-    <Head />
-    <Preview>Your Everpay login link</Preview>
+    <Head>
+      <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&display=swap" rel="stylesheet" />
+    </Head>
+    <Preview>Your MzzPay login link</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} width="40" height="40" alt="Everpay" style={logoImg} />
-        <Text style={logo}>Everpay</Text>
+        <Img src={LOGO_URL} width="40" height="40" alt="MzzPay" style={logoImg} />
+        <Text style={logo}>MzzPay</Text>
         <Heading style={h1}>Sign in to your dashboard</Heading>
         <Text style={text}>
-          Click the button below to securely sign in to your Everpay merchant dashboard. This link will expire
+          Click the button below to securely sign in to your MzzPay merchant dashboard. This link will expire
           shortly.
         </Text>
         <Button style={button} href={confirmationUrl}>
@@ -54,16 +56,17 @@ const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', 'Helvetica Neue
 const container = { padding: '32px 28px', maxWidth: '480px', margin: '0 auto' }
 const logoImg = { borderRadius: '8px', margin: '0 0 12px' }
 const logo = {
-  fontSize: '20px',
-  fontWeight: 'bold' as const,
-  fontFamily: "'Space Grotesk', 'Inter', sans-serif",
-  color: 'hsl(172, 72%, 48%)',
+  fontSize: '28px',
+  fontWeight: '400' as const,
+  fontFamily: "'Bagel Fat One', 'Arial Black', sans-serif",
+  color: 'hsl(219, 100%, 40%)',
+  letterSpacing: '0.5px',
   margin: '0 0 24px',
 }
 const h1 = {
   fontSize: '24px',
   fontWeight: 'bold' as const,
-  fontFamily: "'Space Grotesk', 'Inter', sans-serif",
+  fontFamily: "'Manrope', 'Inter', sans-serif",
   color: '#0f172a',
   margin: '0 0 16px',
 }
@@ -74,12 +77,12 @@ const text = {
   margin: '0 0 20px',
 }
 const button = {
-  backgroundColor: 'hsl(172, 72%, 48%)',
-  color: '#0f1419',
+  backgroundColor: 'hsl(219, 100%, 40%)',
+  color: '#ffffff',
   fontSize: '15px',
   fontWeight: '600' as const,
-  borderRadius: '8px',
-  padding: '14px 24px',
+  borderRadius: '9999px',
+  padding: '14px 28px',
   textDecoration: 'none',
 }
 const footer = { fontSize: '13px', color: '#94a3b8', margin: '32px 0 0' }

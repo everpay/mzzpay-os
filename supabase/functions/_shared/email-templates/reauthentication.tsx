@@ -21,12 +21,14 @@ interface ReauthenticationEmailProps {
 
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
   <Html lang="en" dir="ltr">
-    <Head />
-    <Preview>Your Everpay verification code</Preview>
+    <Head>
+      <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&display=swap" rel="stylesheet" />
+    </Head>
+    <Preview>Your MzzPay verification code</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} width="40" height="40" alt="Everpay" style={logoImg} />
-        <Text style={logo}>Everpay</Text>
+        <Img src={LOGO_URL} width="40" height="40" alt="MzzPay" style={logoImg} />
+        <Text style={logo}>MzzPay</Text>
         <Heading style={h1}>Confirm your identity</Heading>
         <Text style={text}>Use the code below to verify your identity:</Text>
         <Text style={codeStyle}>{token}</Text>
@@ -45,16 +47,17 @@ const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', 'Helvetica Neue
 const container = { padding: '32px 28px', maxWidth: '480px', margin: '0 auto' }
 const logoImg = { borderRadius: '8px', margin: '0 0 12px' }
 const logo = {
-  fontSize: '20px',
-  fontWeight: 'bold' as const,
-  fontFamily: "'Space Grotesk', 'Inter', sans-serif",
-  color: 'hsl(172, 72%, 48%)',
+  fontSize: '28px',
+  fontWeight: '400' as const,
+  fontFamily: "'Bagel Fat One', 'Arial Black', sans-serif",
+  color: 'hsl(219, 100%, 40%)',
+  letterSpacing: '0.5px',
   margin: '0 0 24px',
 }
 const h1 = {
   fontSize: '24px',
   fontWeight: 'bold' as const,
-  fontFamily: "'Space Grotesk', 'Inter', sans-serif",
+  fontFamily: "'Manrope', 'Inter', sans-serif",
   color: '#0f172a',
   margin: '0 0 16px',
 }
@@ -68,7 +71,7 @@ const codeStyle = {
   fontFamily: "'JetBrains Mono', 'Fira Code', Courier, monospace",
   fontSize: '28px',
   fontWeight: 'bold' as const,
-  color: 'hsl(172, 72%, 48%)',
+  color: 'hsl(219, 100%, 40%)',
   letterSpacing: '4px',
   margin: '0 0 32px',
 }

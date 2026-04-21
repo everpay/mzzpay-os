@@ -29,17 +29,19 @@ export const InviteEmail = ({
   confirmationUrl,
 }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
-    <Head />
-    <Preview>You've been invited to Everpay</Preview>
+    <Head>
+      <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&display=swap" rel="stylesheet" />
+    </Head>
+    <Preview>You've been invited to MzzPay</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} width="40" height="40" alt="Everpay" style={logoImg} />
-        <Text style={logo}>Everpay</Text>
+        <Img src={LOGO_URL} width="40" height="40" alt="MzzPay" style={logoImg} />
+        <Text style={logo}>MzzPay</Text>
         <Heading style={h1}>You've been invited</Heading>
         <Text style={text}>
           You've been invited to join{' '}
           <Link href={siteUrl} style={link}>
-            <strong>Everpay</strong>
+            <strong>MzzPay</strong>
           </Link>
           . Click the button below to accept the invitation and set up your merchant account.
         </Text>
@@ -61,16 +63,17 @@ const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', 'Helvetica Neue
 const container = { padding: '32px 28px', maxWidth: '480px', margin: '0 auto' }
 const logoImg = { borderRadius: '8px', margin: '0 0 12px' }
 const logo = {
-  fontSize: '20px',
-  fontWeight: 'bold' as const,
-  fontFamily: "'Space Grotesk', 'Inter', sans-serif",
-  color: 'hsl(172, 72%, 48%)',
+  fontSize: '28px',
+  fontWeight: '400' as const,
+  fontFamily: "'Bagel Fat One', 'Arial Black', sans-serif",
+  color: 'hsl(219, 100%, 40%)',
+  letterSpacing: '0.5px',
   margin: '0 0 24px',
 }
 const h1 = {
   fontSize: '24px',
   fontWeight: 'bold' as const,
-  fontFamily: "'Space Grotesk', 'Inter', sans-serif",
+  fontFamily: "'Manrope', 'Inter', sans-serif",
   color: '#0f172a',
   margin: '0 0 16px',
 }
@@ -80,14 +83,14 @@ const text = {
   lineHeight: '1.6',
   margin: '0 0 20px',
 }
-const link = { color: 'hsl(172, 72%, 42%)', textDecoration: 'underline' }
+const link = { color: 'hsl(219, 100%, 45%)', textDecoration: 'underline' }
 const button = {
-  backgroundColor: 'hsl(172, 72%, 48%)',
-  color: '#0f1419',
+  backgroundColor: 'hsl(219, 100%, 40%)',
+  color: '#ffffff',
   fontSize: '15px',
   fontWeight: '600' as const,
-  borderRadius: '8px',
-  padding: '14px 24px',
+  borderRadius: '9999px',
+  padding: '14px 28px',
   textDecoration: 'none',
 }
 const footer = { fontSize: '13px', color: '#94a3b8', margin: '32px 0 0' }
