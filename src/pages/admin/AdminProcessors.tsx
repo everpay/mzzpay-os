@@ -130,6 +130,56 @@ export default function AdminProcessors() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Fee profile CRUD
+  const [feeDialog, setFeeDialog] = useState(false);
+  const [editingFee, setEditingFee] = useState<any>(null);
+  const blankFee = {
+    merchant_id: "", provider: "", currency: "USD",
+    percentage_fee: 2.9, fixed_fee: 0.30, chargeback_fee: 15, refund_fee: 0, settlement_days: 2,
+  };
+  const [newFee, setNewFee] = useState<any>(blankFee);
+  const saveFee = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        ...newFee,
+        percentage_fee: Number(newFee.percentage_fee),
+        fixed_fee: Number(newFee.fixed_fee),
+        chargeback_fee: Number(newFee.chargeback_fee),
+        refund_fee: Number(newFee.refund_fee),
+        settlement_days: Number(newFee.settlement_days),
+      };
+      if (editingFee) {
+        const { error } = await (supabase.from as any)("processor_fee_profiles").update(payload).eq("id", editingFee.id);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase.from as any)("processor_fee_profiles").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(editingFee ? "Fee profile updated" : "Fee profile added");
+      setFeeDialog(false); setEditingFee(null); setNewFee(blankFee); invalidate();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const deleteFee = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase.from as any)("processor_fee_profiles").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Removed"); invalidate(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const openEditFee = (fp: any) => {
+    setEditingFee(fp);
+    setNewFee({
+      merchant_id: fp.merchant_id, provider: fp.provider, currency: fp.currency,
+      percentage_fee: fp.percentage_fee, fixed_fee: fp.fixed_fee, chargeback_fee: fp.chargeback_fee,
+      refund_fee: fp.refund_fee, settlement_days: fp.settlement_days,
+    });
+    setFeeDialog(true);
+  };
+
   return (
     <AppLayout>
       <div className="mb-6">
@@ -375,9 +425,69 @@ export default function AdminProcessors() {
 
         <TabsContent value="fees">
           <Card>
-            <CardHeader>
-              <CardTitle>Processor Fee Profiles</CardTitle>
-              <CardDescription>Read-only summary. Use SQL or future tooling to edit.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Processor Fee Profiles</CardTitle>
+                <CardDescription>Per-merchant fee schedules used by the pricing engine.</CardDescription>
+              </div>
+              <Dialog open={feeDialog} onOpenChange={(o) => { setFeeDialog(o); if (!o) { setEditingFee(null); setNewFee(blankFee); } }}>
+                <DialogTrigger asChild>
+                  <Button size="sm" onClick={() => { setEditingFee(null); setNewFee(blankFee); }}>
+                    <Plus className="h-4 w-4 mr-1" />New Fee Profile
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>{editingFee ? "Edit" : "New"} Fee Profile</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Merchant</Label>
+                      <Select value={newFee.merchant_id} onValueChange={(v) => setNewFee({ ...newFee, merchant_id: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select merchant" /></SelectTrigger>
+                        <SelectContent>{merchants.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Provider</Label>
+                        <Input value={newFee.provider} onChange={(e) => setNewFee({ ...newFee, provider: e.target.value })} placeholder="smartfastpay" />
+                      </div>
+                      <div>
+                        <Label>Currency</Label>
+                        <Input value={newFee.currency} onChange={(e) => setNewFee({ ...newFee, currency: e.target.value.toUpperCase() })} maxLength={3} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Percentage fee (%)</Label>
+                        <Input type="number" step="0.01" value={newFee.percentage_fee} onChange={(e) => setNewFee({ ...newFee, percentage_fee: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label>Fixed fee</Label>
+                        <Input type="number" step="0.01" value={newFee.fixed_fee} onChange={(e) => setNewFee({ ...newFee, fixed_fee: e.target.value })} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label>Chargeback fee</Label>
+                        <Input type="number" step="0.01" value={newFee.chargeback_fee} onChange={(e) => setNewFee({ ...newFee, chargeback_fee: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label>Refund fee</Label>
+                        <Input type="number" step="0.01" value={newFee.refund_fee} onChange={(e) => setNewFee({ ...newFee, refund_fee: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label>Settlement (days)</Label>
+                        <Input type="number" value={newFee.settlement_days} onChange={(e) => setNewFee({ ...newFee, settlement_days: e.target.value })} />
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={() => saveFee.mutate()} disabled={!newFee.merchant_id || !newFee.provider || !newFee.currency}>
+                      {editingFee ? "Save changes" : "Create"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
               <Table>
@@ -390,6 +500,7 @@ export default function AdminProcessors() {
                     <TableHead>Fixed</TableHead>
                     <TableHead>Chargeback</TableHead>
                     <TableHead>Settlement</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -404,11 +515,17 @@ export default function AdminProcessors() {
                         <TableCell>{fp.fixed_fee}</TableCell>
                         <TableCell>{fp.chargeback_fee}</TableCell>
                         <TableCell>{fp.settlement_days}d</TableCell>
+                        <TableCell className="flex gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => openEditFee(fp)}>Edit</Button>
+                          <Button size="icon" variant="ghost" onClick={() => deleteFee.mutate(fp.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
                   {feeProfiles.length === 0 && (
-                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">No fee profiles yet</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">No fee profiles yet</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
