@@ -60,6 +60,16 @@ import FrontCookiePolicy from "./pages/front/CookiePolicy";
 import FrontTerms from "./pages/front/Terms";
 import FrontPrivacyPolicy from "./pages/front/PrivacyPolicy";
 import FrontSecurity from "./pages/front/Security";
+import FrontHelp from "./pages/front/Help";
+import FrontContact from "./pages/front/Contact";
+import SolutionEcommerce from "./pages/front/solutions/Ecommerce";
+import SolutionSaas from "./pages/front/solutions/Saas";
+import SolutionMarketplaces from "./pages/front/solutions/Marketplaces";
+import SolutionEnterprise from "./pages/front/solutions/Enterprise";
+import ProductOnlinePayments from "./pages/front/products/OnlinePayments";
+import ProductPaymentGateway from "./pages/front/products/PaymentGateway";
+import ProductPaymentMethods from "./pages/front/products/PaymentMethods";
+import ProductFraudPrevention from "./pages/front/products/FraudPrevention";
 import { CookieNotice } from "@/components/front/CookieNotice";
 
 const queryClient = new QueryClient();
@@ -89,6 +99,16 @@ const AppRoutes = () => (
     <Route path="/terms" element={<FrontTerms />} />
     <Route path="/privacy-policy" element={<FrontPrivacyPolicy />} />
     <Route path="/security" element={<FrontSecurity />} />
+    <Route path="/help" element={<FrontHelp />} />
+    <Route path="/contact" element={<FrontContact />} />
+    <Route path="/solutions/ecommerce" element={<SolutionEcommerce />} />
+    <Route path="/solutions/saas" element={<SolutionSaas />} />
+    <Route path="/solutions/marketplaces" element={<SolutionMarketplaces />} />
+    <Route path="/solutions/enterprise" element={<SolutionEnterprise />} />
+    <Route path="/products/online-payments" element={<ProductOnlinePayments />} />
+    <Route path="/products/payment-gateway" element={<ProductPaymentGateway />} />
+    <Route path="/products/payment-methods" element={<ProductPaymentMethods />} />
+    <Route path="/products/fraud-prevention" element={<ProductFraudPrevention />} />
     <Route path="/login" element={<AuthRoute><Auth defaultMode="login" /></AuthRoute>} />
     <Route path="/signup" element={<AuthRoute><Auth defaultMode="signup" /></AuthRoute>} />
     <Route path="/auth" element={<Navigate to="/login" replace />} />
