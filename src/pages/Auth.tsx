@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CountrySelect } from '@/components/CountrySelect';
-import { Mail, Lock, User, ArrowRight, Building2, Phone, Globe, Zap, CreditCard, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Building2, Phone, Globe, Zap, CreditCard, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import mzzpayIcon from '@/assets/mzzpay-icon.png';
 
@@ -25,6 +25,7 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
 
   // Signup multi-step
   const [signupStep, setSignupStep] = useState(1);
+  const [signupComplete, setSignupComplete] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [businessName, setBusinessName] = useState('');
@@ -34,6 +35,7 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
   useEffect(() => {
     setIsLogin(defaultMode === 'login');
     setSignupStep(1);
+    setSignupComplete(false);
   }, [defaultMode]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -87,9 +89,17 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
         },
       });
       if (error) throw error;
+      setSignupComplete(true);
       toast.success('Account created! Check your email to confirm.');
     } catch (error: any) {
-      toast.error(error.message);
+      const msg = error?.message ?? 'Could not create account';
+      if (msg.toLowerCase().includes('already') || error?.code === 'user_already_exists') {
+        toast.error('An account with this email already exists. Try signing in instead.');
+      } else if (msg.toLowerCase().includes('rate') || error?.status === 429) {
+        toast.error('Too many attempts. Please wait a minute and try again.');
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }
