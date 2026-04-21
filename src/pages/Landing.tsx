@@ -108,8 +108,18 @@ function AnimatedHeading({
   );
 }
 
-// ============= HERO =============
-function HeroSection() {
+// ============= HERO NAVBAR (transparent over video, solid on scroll) =============
+function HeroNavbar() {
+  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.5);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const navLinks = [
     { label: "Pricing", to: "/pricing" },
     { label: "About", to: "/about" },
@@ -117,8 +127,89 @@ function HeroSection() {
     { label: "Developers", to: "/docs" },
   ];
 
+  const linkClass = scrolled
+    ? "text-base font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+    : "text-base font-semibold text-white/90 hover:text-white transition-colors";
+
   return (
-    <section className="relative min-h-screen w-full overflow-hidden bg-black text-white flex flex-col">
+    <header
+      className={`fixed top-0 z-50 w-full transition-all duration-300 ${
+        scrolled
+          ? "bg-white/90 backdrop-blur-xl shadow-sm"
+          : "bg-transparent"
+      }`}
+    >
+      <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
+        <Link to="/" className="flex items-center gap-2.5">
+          <span
+            className={`font-logo text-2xl tracking-wide transition-colors ${
+              scrolled ? "text-slate-900" : "text-white"
+            }`}
+          >
+            MzzPay
+          </span>
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-9 font-body">
+          {navLinks.map((l) => (
+            <Link key={l.label} to={l.to} className={linkClass}>
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="hidden md:flex items-center gap-5">
+          <Link to="/login" className={linkClass}>
+            Sign In
+          </Link>
+          <Link to="/signup">
+            <Button
+              className={
+                scrolled
+                  ? "rounded-full px-6 h-11 text-base font-bold shadow-md"
+                  : "rounded-full px-6 h-11 text-base font-bold shadow-md bg-white text-slate-900 hover:bg-white/90"
+              }
+              style={scrolled ? { backgroundColor: PRIMARY, color: "white" } : undefined}
+            >
+              Sign Up
+            </Button>
+          </Link>
+        </div>
+
+        <button
+          className={`md:hidden p-2 rounded-full ${scrolled ? "hover:bg-slate-100 text-slate-900" : "text-white hover:bg-white/10"}`}
+          onClick={() => setOpen(!open)}
+          aria-label="Toggle menu"
+        >
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {open && (
+        <div className="md:hidden bg-white border-t border-slate-200 px-6 py-4 space-y-3">
+          {navLinks.map((l) => (
+            <Link key={l.label} to={l.to} className="block text-base font-semibold text-slate-700 py-2" onClick={() => setOpen(false)}>
+              {l.label}
+            </Link>
+          ))}
+          <Link to="/login" className="block text-base font-semibold text-slate-700 py-2" onClick={() => setOpen(false)}>
+            Sign In
+          </Link>
+          <Link to="/signup" onClick={() => setOpen(false)}>
+            <Button className="w-full text-white rounded-full h-12 text-base font-bold" style={{ backgroundColor: PRIMARY }}>
+              Sign Up
+            </Button>
+          </Link>
+        </div>
+      )}
+    </header>
+  );
+}
+
+// ============= HERO (Stripe-inspired structure) =============
+function HeroSection() {
+  return (
+    <section className="relative w-full overflow-hidden bg-black text-white">
       {/* Background video — no overlay */}
       <video
         autoPlay
@@ -129,85 +220,73 @@ function HeroSection() {
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260306_074215_04640ca7-042c-45d6-bb56-58b1e8a42489.mp4"
       />
 
-      {/* Navbar */}
-      <div className="relative z-20 px-6 md:px-12 lg:px-16 pt-6">
-        <nav className="liquid-glass rounded-xl px-4 py-2 flex items-center justify-between">
-          <Link to="/" className="text-2xl font-semibold tracking-tight text-white">
-            Mzzpay
-          </Link>
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((l) => (
-              <Link
-                key={l.label}
-                to={l.to}
-                className="text-sm text-white hover:text-gray-300 transition-colors"
-              >
-                {l.label}
-              </Link>
-            ))}
+      {/* Subtle bottom fade so dashboard image sits cleanly */}
+      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-black/40 pointer-events-none" />
+
+      {/* Hero content — centered, Stripe-style */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 pt-40 md:pt-48 pb-16 md:pb-24 flex flex-col items-center text-center">
+        {/* Eyebrow */}
+        <FadeIn delay={100} duration={800}>
+          <div className="liquid-glass inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 border border-white/15">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
+            <span className="text-xs md:text-sm text-white/90 font-medium tracking-wide">
+              Investing · Building · Advisory
+            </span>
           </div>
-          <Link
-            to="/signup"
-            className="bg-white text-black px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
-          >
-            Sign Up
-          </Link>
-        </nav>
-      </div>
+        </FadeIn>
 
-      {/* Hero content */}
-      <div className="relative z-10 flex-1 flex flex-col justify-end px-6 md:px-12 lg:px-16 pb-12 lg:pb-16 lg:grid lg:grid-cols-2 lg:items-end lg:gap-12">
-        {/* Left column */}
-        <div>
-          <AnimatedHeading
-            text={"The Global Ledger\nfor Modern Commerce."}
-            className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-normal mb-4 text-white"
-          />
+        {/* Headline */}
+        <AnimatedHeading
+          text={"The Global Ledger\nfor Modern Commerce."}
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold mb-6 text-white max-w-5xl"
+        />
 
-          <FadeIn delay={800} duration={1000}>
-            <p className="text-base md:text-lg text-gray-300 mb-5 max-w-xl">
-              Orchestrate complex money movement, unify international payments, and scale your
-              financial infrastructure with surgical precision.
-            </p>
-          </FadeIn>
+        {/* Subhead */}
+        <FadeIn delay={800} duration={1000}>
+          <p className="text-base md:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
+            Orchestrate complex money movement, unify international payments, and scale
+            your financial infrastructure with surgical precision.
+          </p>
+        </FadeIn>
 
-          <FadeIn delay={1200} duration={1000}>
-            <div className="flex flex-wrap gap-4">
-              <Link
-                to="/signup"
-                className="bg-white text-black px-8 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+        {/* CTAs — using project Button design tokens */}
+        <FadeIn delay={1200} duration={1000}>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link to="/signup">
+              <Button
+                size="lg"
+                className="rounded-full px-8 h-12 text-base font-bold shadow-lg text-white"
+                style={{ backgroundColor: PRIMARY }}
               >
                 Start Building
-              </Link>
-              <Link
-                to="/docs"
-                className="liquid-glass border border-white/20 text-white px-8 py-3 rounded-lg font-medium hover:bg-white hover:text-black transition-colors"
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/docs">
+              <Button
+                size="lg"
+                variant="outline"
+                className="rounded-full px-8 h-12 text-base font-bold border-white/30 bg-white/10 text-white backdrop-blur-md hover:bg-white hover:text-slate-900"
               >
                 View Documentation
-              </Link>
-            </div>
-          </FadeIn>
-        </div>
+              </Button>
+            </Link>
+          </div>
+        </FadeIn>
 
-        {/* Right column — keep dashboard image overlay from original */}
-        <div className="mt-12 lg:mt-0 flex items-end justify-start lg:justify-end">
-          <FadeIn delay={1400} duration={1000} className="w-full max-w-md">
-            <div className="liquid-glass rounded-2xl p-3 border border-white/20">
-              <img
-                src={dashboardImg}
-                alt="MzzPay real-time financial dashboard"
-                className="rounded-xl w-full"
-                width={1024}
-                height={768}
-              />
-            </div>
-            <div className="mt-4 liquid-glass border border-white/20 px-6 py-3 rounded-xl inline-block">
-              <span className="text-lg md:text-xl lg:text-2xl font-light text-white">
-                Investing. Building. Advisory.
-              </span>
-            </div>
-          </FadeIn>
-        </div>
+        {/* Dashboard image — like Stripe's product preview below the hero copy */}
+        <FadeIn delay={1500} duration={1200} className="w-full mt-16 md:mt-20">
+          <div className="liquid-glass mx-auto w-full max-w-5xl rounded-2xl p-2 md:p-3 border border-white/20 shadow-2xl">
+            <img
+              src={dashboardImg}
+              alt="MzzPay real-time financial dashboard"
+              className="rounded-xl w-full"
+              width={1600}
+              height={1000}
+              loading="eager"
+            />
+          </div>
+        </FadeIn>
       </div>
     </section>
   );
@@ -804,6 +883,7 @@ function SiteFooter() {
 export default function Landing() {
   return (
     <div className="min-h-screen bg-white">
+      <HeroNavbar />
       <main>
         <HeroSection />
         <PartnersSection />
