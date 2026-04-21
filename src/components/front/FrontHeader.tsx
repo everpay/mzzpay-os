@@ -86,10 +86,12 @@ export function FrontHeader({
     : "text-white hover:bg-white/10";
 
   const desktopLinks = [
+    { label: "Platform", to: "/products/payment-gateway" },
+    { label: "Solutions", to: "/solutions/ecommerce" },
     { label: "Pricing", to: "/pricing" },
-    { label: "About", to: "/about" },
     { label: "Partners", to: "/partners" },
     { label: "Developers", to: "/developers" },
+    { label: "About", to: "/about" },
   ];
 
   return (
@@ -98,8 +100,13 @@ export function FrontHeader({
         className={`fixed top-0 z-50 w-full transition-all duration-300 ${headerClass}`}
       >
         <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-2.5" onClick={closeMenu}>
-            <img src={mzzpayIcon} alt="MzzPay" className="h-8 w-8 rounded-lg" />
+          <Link to="/" className="flex items-center gap-3" onClick={closeMenu}>
+            <img
+              src={mzzpayIcon}
+              alt="MzzPay"
+              className="h-14 w-14 -rotate-[40deg] drop-shadow-md"
+              style={{ filter: "contrast(1.15) saturate(1.1)" }}
+            />
             <span className={`font-logo text-2xl tracking-wide transition-colors ${logoTextClass}`}>
               MzzPay
             </span>
@@ -151,8 +158,13 @@ export function FrontHeader({
             aria-modal="true"
           >
             <div className="flex items-center justify-between h-[68px] px-6 border-b border-border/60">
-              <Link to="/" className="flex items-center gap-2.5" onClick={closeMenu}>
-                <img src={mzzpayIcon} alt="MzzPay" className="h-8 w-8 rounded-lg" />
+              <Link to="/" className="flex items-center gap-3" onClick={closeMenu}>
+                <img
+                  src={mzzpayIcon}
+                  alt="MzzPay"
+                  className="h-14 w-14 -rotate-[40deg] drop-shadow-md"
+                  style={{ filter: "contrast(1.15) saturate(1.1)" }}
+                />
                 <span className="font-logo text-2xl tracking-wide text-foreground">MzzPay</span>
               </Link>
               <button
