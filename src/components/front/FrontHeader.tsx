@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronRight, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import mzzpayIcon from "@/assets/mzzpay-logo.png";
+import mzzpayIcon from "@/assets/mzzpay-icon.png";
 
 const PRIMARY = "hsl(172 72% 48%)";
 
