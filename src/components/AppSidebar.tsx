@@ -116,6 +116,7 @@ const navSections: NavSection[] = [
     title: "Configuration",
     items: [
       { to: "/processor-routing", icon: GitBranch, label: "Processor Routing" },
+      { to: "/processor-analytics", icon: Activity, label: "Processor Analytics" },
       { to: "/multi-acquirer", icon: Globe2, label: "Multi-Acquirer" },
     ],
   },
