@@ -108,104 +108,6 @@ function AnimatedHeading({
   );
 }
 
-// ============= HERO NAVBAR (transparent over video, solid on scroll) =============
-function HeroNavbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.5);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const navLinks = [
-    { label: "Pricing", to: "/pricing" },
-    { label: "About", to: "/about" },
-    { label: "Partners", to: "/partners" },
-    { label: "Developers", to: "/developers" },
-  ];
-
-  const linkClass = scrolled
-    ? "text-base font-semibold text-slate-600 hover:text-slate-900 transition-colors"
-    : "text-base font-semibold text-white/90 hover:text-white transition-colors";
-
-  return (
-    <header
-      className={`fixed top-0 z-50 w-full transition-all duration-300 ${
-        scrolled
-          ? "bg-white/90 backdrop-blur-xl shadow-sm"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
-        <Link to="/" className="flex items-center gap-2.5">
-          <span
-            className={`font-logo text-2xl tracking-wide transition-colors ${
-              scrolled ? "text-slate-900" : "text-white"
-            }`}
-          >
-            MzzPay
-          </span>
-        </Link>
-
-        <nav className="hidden md:flex items-center gap-9 font-body">
-          {navLinks.map((l) => (
-            <Link key={l.label} to={l.to} className={linkClass}>
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden md:flex items-center gap-5">
-          <Link to="/login" className={linkClass}>
-            Sign In
-          </Link>
-          <Link to="/signup">
-            <Button
-              className={
-                scrolled
-                  ? "rounded-full px-6 h-11 text-base font-bold shadow-md"
-                  : "rounded-full px-6 h-11 text-base font-bold shadow-md bg-white text-slate-900 hover:bg-white/90"
-              }
-              style={scrolled ? { backgroundColor: PRIMARY, color: "white" } : undefined}
-            >
-              Sign Up
-            </Button>
-          </Link>
-        </div>
-
-        <button
-          className={`md:hidden p-2 rounded-full ${scrolled ? "hover:bg-slate-100 text-slate-900" : "text-white hover:bg-white/10"}`}
-          onClick={() => setOpen(!open)}
-          aria-label="Toggle menu"
-        >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-      </div>
-
-      {open && (
-        <div className="md:hidden bg-white border-t border-slate-200 px-6 py-4 space-y-3">
-          {navLinks.map((l) => (
-            <Link key={l.label} to={l.to} className="block text-base font-semibold text-slate-700 py-2" onClick={() => setOpen(false)}>
-              {l.label}
-            </Link>
-          ))}
-          <Link to="/login" className="block text-base font-semibold text-slate-700 py-2" onClick={() => setOpen(false)}>
-            Sign In
-          </Link>
-          <Link to="/signup" onClick={() => setOpen(false)}>
-            <Button className="w-full text-white rounded-full h-12 text-base font-bold" style={{ backgroundColor: PRIMARY }}>
-              Sign Up
-            </Button>
-          </Link>
-        </div>
-      )}
-    </header>
-  );
-}
-
 // ============= HERO (Stripe-inspired structure) =============
 function HeroSection() {
   return (
@@ -883,7 +785,7 @@ function SiteFooter() {
 export default function Landing() {
   return (
     <div className="min-h-screen bg-white">
-      <HeroNavbar />
+      <FrontHeader />
       <main>
         <HeroSection />
         <PartnersSection />

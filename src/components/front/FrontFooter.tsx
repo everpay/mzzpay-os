@@ -118,8 +118,9 @@ export function FrontFooter() {
                 />
                 <Button
                   type="submit"
+                  variant="secondary"
                   disabled={submitting}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-bold"
+                  className="w-full rounded-full font-bold"
                 >
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Subscribe"}
                 </Button>
