@@ -59,6 +59,7 @@ import FrontAbout from "./pages/front/About";
 import FrontPartners from "./pages/front/Partners";
 import FrontCookiePolicy from "./pages/front/CookiePolicy";
 import FrontTerms from "./pages/front/Terms";
+import FrontAmlPolicy from "./pages/front/AmlPolicy";
 import FrontPrivacyPolicy from "./pages/front/PrivacyPolicy";
 import FrontSecurity from "./pages/front/Security";
 import FrontHelp from "./pages/front/Help";
