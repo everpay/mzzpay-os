@@ -40,19 +40,15 @@ const INK = "hsl(220 47% 7%)";              // deep navy hero
 // ============= HERO =============
 function HeroSection() {
   return (
-    <section className="relative pt-32 pb-20 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/40">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 right-10 w-[480px] h-[480px] rounded-full bg-blue-100/40 blur-3xl" />
-        <div className="absolute bottom-0 left-10 w-[380px] h-[380px] rounded-full bg-blue-200/20 blur-3xl" />
-      </div>
-
+    <section className="relative pt-32 pb-20 overflow-hidden gradient-brand-hero text-white">
       <div className="max-w-7xl mx-auto px-6 relative z-10 grid lg:grid-cols-12 gap-12 items-center">
         <div className="lg:col-span-7">
           <motion.span
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="inline-block px-4 py-1.5 rounded-full bg-blue-50 text-[#004BCA] text-xs font-bold uppercase tracking-widest mb-6 border border-blue-100"
+            className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6 border"
+            style={{ backgroundColor: "hsl(172 72% 48% / 0.12)", color: PRIMARY, borderColor: "hsl(172 72% 48% / 0.3)" }}
           >
             Built for Scale
           </motion.span>
@@ -61,7 +57,7 @@ function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tighter leading-[1.05] mb-8"
+            className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter leading-[1.05] mb-8 text-white"
             style={{ fontFamily: "Manrope, sans-serif" }}
           >
             The Global <span style={{ color: PRIMARY }}>Ledger</span> for Modern Commerce.
@@ -71,7 +67,7 @@ function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-slate-500 max-w-xl mb-10 leading-relaxed"
+            className="text-lg md:text-xl text-white/65 max-w-xl mb-10 leading-relaxed"
           >
             Orchestrate complex money movement, unify international payments, and scale your financial infrastructure
             with surgical precision.
@@ -86,8 +82,8 @@ function HeroSection() {
             <Link to="/signup">
               <Button
                 size="lg"
-                className="text-white rounded-full px-8 h-14 text-base font-bold gap-2 group shadow-lg shadow-blue-200/50"
-                style={{ backgroundColor: PRIMARY }}
+                className="rounded-full px-8 h-14 text-base font-bold gap-2 group shadow-xl"
+                style={{ backgroundColor: PRIMARY, color: INK }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = PRIMARY_HOVER)}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = PRIMARY)}
               >
@@ -99,7 +95,7 @@ function HeroSection() {
               <Button
                 size="lg"
                 variant="outline"
-                className="bg-white/70 backdrop-blur-md text-slate-900 border-slate-200 hover:bg-white hover:border-slate-300 rounded-full px-8 h-14 text-base font-bold"
+                className="bg-transparent text-white border-white/25 hover:bg-white/10 hover:text-white rounded-full px-8 h-14 text-base font-bold"
               >
                 View Documentation
               </Button>
@@ -113,7 +109,7 @@ function HeroSection() {
           transition={{ duration: 0.7, delay: 0.2 }}
           className="lg:col-span-5 relative"
         >
-          <div className="relative bg-white p-4 rounded-2xl shadow-2xl border border-slate-100 rotate-2 hover:rotate-0 transition-transform duration-500">
+          <div className="relative bg-white/[0.04] backdrop-blur-sm p-4 rounded-2xl shadow-2xl border border-white/10 rotate-2 hover:rotate-0 transition-transform duration-500">
             <img
               src={dashboardImg}
               alt="MzzPay real-time financial dashboard"
@@ -122,10 +118,10 @@ function HeroSection() {
               height={768}
             />
             <div
-              className="absolute -bottom-6 -left-6 p-4 rounded-2xl shadow-xl animate-pulse"
+              className="absolute -bottom-6 -left-6 p-4 rounded-2xl shadow-xl"
               style={{ backgroundColor: PRIMARY }}
             >
-              <CreditCard className="h-8 w-8 text-white" />
+              <CreditCard className="h-8 w-8" style={{ color: INK }} />
             </div>
           </div>
         </motion.div>
