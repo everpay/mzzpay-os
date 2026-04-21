@@ -113,7 +113,7 @@ const AppRoutes = () => (
     <Route path="/signup" element={<AuthRoute><Auth defaultMode="signup" /></AuthRoute>} />
     <Route path="/auth" element={<Navigate to="/login" replace />} />
     <Route path="/landing" element={<Navigate to="/" replace />} />
-    <Route path="/docs" element={<DocsLayout />}>
+    <Route path="/developers" element={<DocsLayout />}>
       <Route index element={<DocsOverview />} />
       <Route path="quick-start" element={<DocsQuickStart />} />
       <Route path="api/authentication" element={<DocsAuthentication />} />
@@ -125,6 +125,9 @@ const AppRoutes = () => (
       <Route path="api-keys" element={<DocsApiKeys />} />
       <Route path="sdks" element={<DocsSdks />} />
     </Route>
+    {/* Legacy /docs → /developers redirects */}
+    <Route path="/docs" element={<Navigate to="/developers" replace />} />
+    <Route path="/docs/*" element={<Navigate to="/developers" replace />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />

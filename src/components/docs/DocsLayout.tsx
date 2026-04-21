@@ -15,26 +15,26 @@ const navSections = [
   {
     title: "Getting Started",
     items: [
-      { label: "Overview", icon: Compass, to: "/docs" },
-      { label: "Quick Start", icon: Zap, to: "/docs/quick-start" },
+      { label: "Overview", icon: Compass, to: "/developers" },
+      { label: "Quick Start", icon: Zap, to: "/developers/quick-start" },
     ],
   },
   {
     title: "API Reference",
     items: [
-      { label: "Authentication", icon: Key, to: "/docs/api/authentication" },
-      { label: "Payments", icon: CreditCard, to: "/docs/api/payments" },
-      { label: "Customers", icon: UserCircle, to: "/docs/api/customers" },
-      { label: "Invoices", icon: FileText, to: "/docs/api/invoices" },
-      { label: "Products", icon: Package, to: "/docs/api/products" },
+      { label: "Authentication", icon: Key, to: "/developers/api/authentication" },
+      { label: "Payments", icon: CreditCard, to: "/developers/api/payments" },
+      { label: "Customers", icon: UserCircle, to: "/developers/api/customers" },
+      { label: "Invoices", icon: FileText, to: "/developers/api/invoices" },
+      { label: "Products", icon: Package, to: "/developers/api/products" },
     ],
   },
   {
     title: "Tools",
     items: [
-      { label: "API Keys", icon: Key, to: "/docs/api-keys" },
-      { label: "Webhooks", icon: Webhook, to: "/docs/webhooks" },
-      { label: "SDKs", icon: Download, to: "/docs/sdks" },
+      { label: "API Keys", icon: Key, to: "/developers/api-keys" },
+      { label: "Webhooks", icon: Webhook, to: "/developers/webhooks" },
+      { label: "SDKs", icon: Download, to: "/developers/sdks" },
     ],
   },
 ];
@@ -53,9 +53,9 @@ export default function DocsLayout() {
       >
         <div className="flex items-center justify-between px-4 h-14 border-b border-sidebar-border shrink-0">
           {open && (
-            <Link to="/docs" className="flex items-center gap-2">
+            <Link to="/developers" className="flex items-center gap-2">
               <img src={mzzpayIcon} alt="MzzPay" className="h-7 w-7 rounded-lg" />
-              <span className="font-logo text-lg tracking-wide text-sidebar-foreground">MzzPay Docs</span>
+              <span className="font-logo text-lg tracking-wide text-sidebar-foreground">MzzPay Developers</span>
             </Link>
           )}
           <button onClick={() => setOpen(!open)} className="p-1.5 rounded-full hover:bg-sidebar-accent/60 transition-colors">
@@ -76,7 +76,7 @@ export default function DocsLayout() {
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    end={item.to === "/docs"}
+                    end={item.to === "/developers"}
                     className={({ isActive }) =>
                       cn(
                         "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
@@ -112,7 +112,7 @@ export default function DocsLayout() {
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search MzzPay docs..."
+                placeholder="Search MzzPay developer docs..."
                 className="pl-10 w-64 bg-muted/50 border-0 focus-visible:ring-1 rounded-full"
               />
             </div>
