@@ -43,7 +43,7 @@ export default function DocsLayout() {
   const [open, setOpen] = useState(true);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="docs-theme flex min-h-screen bg-background">
       {/* Sidebar */}
       <aside
         className={cn(

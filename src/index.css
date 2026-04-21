@@ -214,3 +214,25 @@
       linear-gradient(180deg, hsl(var(--brand-ink)), hsl(var(--brand-ink-2)));
   }
 }
+
+/* ─── Docs surface: rebrand --primary to electric teal ─── */
+@layer base {
+  .docs-theme {
+    --primary: 172 72% 42%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 172 72% 42%;
+    --accent: 172 72% 92%;
+    --accent-foreground: 172 72% 22%;
+    --sidebar-primary: 172 72% 42%;
+    --sidebar-ring: 172 72% 42%;
+  }
+  .dark .docs-theme {
+    --primary: 172 72% 55%;
+    --primary-foreground: 224 30% 6%;
+    --ring: 172 72% 55%;
+    --accent: 172 40% 18%;
+    --accent-foreground: 172 72% 80%;
+    --sidebar-primary: 172 72% 55%;
+    --sidebar-ring: 172 72% 55%;
+  }
+}
