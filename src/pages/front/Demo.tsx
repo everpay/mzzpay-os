@@ -46,7 +46,7 @@ export default function Demo() {
 
   return (
     <div className="min-h-screen bg-white">
-      <FrontHeader transparentUntilScroll={false} />
+      <FrontHeader transparentTextTone="dark" />
       <main className="pt-[68px]">
         <section className="relative bg-gradient-to-br from-white via-emerald-50 to-white py-16 md:py-24">
           <div className="container mx-auto px-4">
