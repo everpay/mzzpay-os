@@ -55,7 +55,7 @@ export default function DocsLayout() {
           {open && (
             <Link to="/docs" className="flex items-center gap-2">
               <img src={mzzpayIcon} alt="MzzPay" className="h-7 w-7 rounded-lg" />
-              <span className="font-logo font-bold text-base text-sidebar-foreground">MzzPay Docs</span>
+              <span className="font-logo text-lg tracking-wide text-sidebar-foreground">MzzPay Docs</span>
             </Link>
           )}
           <button onClick={() => setOpen(!open)} className="p-1.5 rounded-full hover:bg-sidebar-accent/60 transition-colors">

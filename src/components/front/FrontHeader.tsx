@@ -25,7 +25,7 @@ export function FrontHeader() {
       <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
           <img src={mzzpayIcon} alt="MzzPay" className="h-8 w-8 rounded-lg" />
-          <span className="font-logo text-xl font-bold tracking-tight text-slate-900">
+          <span className="font-logo text-2xl tracking-wide text-slate-900">
             MzzPay
           </span>
         </Link>
