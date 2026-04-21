@@ -32,6 +32,9 @@ import {
   ShieldCheck,
   BookOpen,
   Plug,
+  GitBranch,
+  Globe2,
+  Server,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -110,8 +113,16 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: "Configuration",
+    items: [
+      { to: "/processor-routing", icon: GitBranch, label: "Processor Routing" },
+      { to: "/multi-acquirer", icon: Globe2, label: "Multi-Acquirer" },
+    ],
+  },
+  {
     title: "Super Admin",
     items: [
+      { to: "/admin/processors", icon: Server, label: "Processor Admin", visibleTo: ["super_admin", "admin"] },
       { to: "/integrations", icon: Plug, label: "Integrations", visibleTo: ["super_admin"] },
       { to: "/risk", icon: ShieldCheck, label: "Risk Profile", visibleTo: ["super_admin"] },
       { to: "/3ds-settings", icon: Lock, label: "3D Secure", visibleTo: ["super_admin"] },
