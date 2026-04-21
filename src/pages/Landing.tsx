@@ -124,7 +124,7 @@ function HeroNavbar() {
     { label: "Pricing", to: "/pricing" },
     { label: "About", to: "/about" },
     { label: "Partners", to: "/partners" },
-    { label: "Developers", to: "/docs" },
+    { label: "Developers", to: "/developers" },
   ];
 
   const linkClass = scrolled

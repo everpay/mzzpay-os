@@ -9,12 +9,12 @@ import { Search, Book, MessageSquare, Mail, Phone, LifeBuoy, FileText, Zap, Shie
 const PRIMARY = "hsl(172 72% 48%)";
 
 const topics = [
-  { icon: Zap, title: "Getting started", description: "Account setup, onboarding, first payment.", to: "/docs/quick-start" },
-  { icon: CreditCard, title: "Accepting payments", description: "Cards, wallets, local methods, and 3DS.", to: "/docs/api/payments" },
+  { icon: Zap, title: "Getting started", description: "Account setup, onboarding, first payment.", to: "/developers/quick-start" },
+  { icon: CreditCard, title: "Accepting payments", description: "Cards, wallets, local methods, and 3DS.", to: "/developers/api/payments" },
   { icon: ShieldCheck, title: "Security & compliance", description: "PCI scope, KYB, and verification.", to: "/security" },
-  { icon: FileText, title: "Invoicing", description: "Send, track, and reconcile invoices.", to: "/docs/api/invoices" },
-  { icon: Book, title: "API reference", description: "Endpoints, SDKs, and code examples.", to: "/docs" },
-  { icon: LifeBuoy, title: "Disputes & chargebacks", description: "Defend, win, and prevent disputes.", to: "/docs" },
+  { icon: FileText, title: "Invoicing", description: "Send, track, and reconcile invoices.", to: "/developers/api/invoices" },
+  { icon: Book, title: "API reference", description: "Endpoints, SDKs, and code examples.", to: "/developers" },
+  { icon: LifeBuoy, title: "Disputes & chargebacks", description: "Defend, win, and prevent disputes.", to: "/developers" },
 ];
 
 const faqs = [

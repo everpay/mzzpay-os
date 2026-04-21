@@ -105,7 +105,7 @@ const navSections: NavSection[] = [
   {
     title: "Company",
     items: [
-      { to: "/docs", icon: BookOpen, label: "API Docs" },
+      { to: "/developers", icon: BookOpen, label: "API Docs" },
     ],
   },
   {
