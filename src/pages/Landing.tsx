@@ -724,7 +724,7 @@ function SiteFooter() {
 export default function Landing() {
   return (
     <div className="min-h-screen bg-white">
-      <SiteHeader />
+      <FrontHeader />
       <main>
         <HeroSection />
         <PartnersSection />
