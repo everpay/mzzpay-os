@@ -307,7 +307,10 @@ export default function NewPayment() {
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="card">💳 Card</TabsTrigger>
               <TabsTrigger value="open_banking">🏦 Open Banking</TabsTrigger>
-              <TabsTrigger value="apple_pay">🍎 Apple Pay</TabsTrigger>
+              <TabsTrigger value="apple_pay" className="gap-1.5">
+                <img src="/logos/apple-pay.svg" alt="" className="h-4 w-auto" />
+                Apple Pay
+              </TabsTrigger>
               <TabsTrigger value="pix">🇧🇷 PIX</TabsTrigger>
             </TabsList>
 
