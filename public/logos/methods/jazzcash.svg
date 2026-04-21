@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" fill="none">
+  <rect width="120" height="40" rx="6" fill="#FFC60A"/>
+  <path d="M12 10h8v4h-4v16h-4V10z" fill="#D42027"/>
+  <text x="28" y="26" font-family="Arial,sans-serif" font-weight="700" font-size="14" fill="#D42027">JazzCash</text>
+</svg>

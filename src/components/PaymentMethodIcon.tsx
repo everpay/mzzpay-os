@@ -18,7 +18,6 @@ const brandLogos: Record<string, string> = {
   paypal: '/logos/paypal.svg',
   klarna: '/logos/klarna.svg',
   affirm: '/logos/affirm.svg',
-  afterpay: '/logos/afterpay.jpg',
   square: '/logos/square.svg',
   stripe: '/logos/stripe.svg',
   ideal: '/logos/ideal.svg',
@@ -28,6 +27,20 @@ const brandLogos: Record<string, string> = {
   'wechat-pay': '/logos/wechat-pay.svg',
   wechatpay: '/logos/wechat-pay.svg',
   oxxo: '/logos/oxxo.png',
+  // Refreshed/added
+  venmo: '/logos/venmo.svg',
+  cashapp: '/logos/cashapp.svg',
+  'cash-app': '/logos/cashapp.svg',
+  cash_app: '/logos/cashapp.svg',
+  'mercado-pago': '/logos/mercado-pago.svg',
+  mercadopago: '/logos/mercado-pago.svg',
+  mercado_pago: '/logos/mercado-pago.svg',
+  payu: '/logos/payu.svg',
+  paytm: '/logos/paytm.svg',
+  shopify: '/logos/shopify.svg',
+  woocommerce: '/logos/woocommerce.svg',
+  jazzcash: '/logos/methods/jazzcash.svg',
+  easypaisa: '/logos/methods/easypaisa.svg',
 };
 
 interface Props {
