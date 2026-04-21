@@ -1579,6 +1579,7 @@ export type Database = {
           currency: string
           fixed_fee: number
           id: string
+          idempotency_key: string | null
           merchant_id: string
           percentage_fee: number
           provider: string
@@ -1592,6 +1593,7 @@ export type Database = {
           currency?: string
           fixed_fee?: number
           id?: string
+          idempotency_key?: string | null
           merchant_id: string
           percentage_fee?: number
           provider: string
@@ -1605,6 +1607,7 @@ export type Database = {
           currency?: string
           fixed_fee?: number
           id?: string
+          idempotency_key?: string | null
           merchant_id?: string
           percentage_fee?: number
           provider?: string
@@ -2184,6 +2187,7 @@ export type Database = {
           currency_match: string[] | null
           fallback_provider: string | null
           id: string
+          idempotency_key: string | null
           is_active: boolean | null
           merchant_id: string | null
           name: string
@@ -2199,6 +2203,7 @@ export type Database = {
           currency_match?: string[] | null
           fallback_provider?: string | null
           id?: string
+          idempotency_key?: string | null
           is_active?: boolean | null
           merchant_id?: string | null
           name: string
@@ -2214,6 +2219,7 @@ export type Database = {
           currency_match?: string[] | null
           fallback_provider?: string | null
           id?: string
+          idempotency_key?: string | null
           is_active?: boolean | null
           merchant_id?: string | null
           name?: string

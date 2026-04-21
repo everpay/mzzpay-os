@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, GitBranch, DollarSign, Server } from "lucide-react";
+import { Plus, Trash2, GitBranch, DollarSign, Server, AlertTriangle } from "lucide-react";
+import { RoutingAnalyticsWidget } from "@/components/admin/RoutingAnalyticsWidget";
+import { validateRoutingRule } from "@/lib/routing-rules-validation";
 
 function useAdminData() {
   return useQuery({
@@ -89,34 +92,64 @@ export default function AdminProcessors() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Routing rule
+  // Routing rule — with inline conflict validation + per-submission idempotency key
   const [ruleDialog, setRuleDialog] = useState(false);
   const [newRule, setNewRule] = useState({
     merchant_id: "", name: "", priority: 0, target_provider: "", fallback_provider: "",
     amount_min: "" as string | number, amount_max: "" as string | number, currencies: "",
   });
+  // A fresh idempotency key per dialog open — repeated clicks reuse it.
+  const ruleIdemRef = useRef<string>(crypto.randomUUID());
+  const resetRuleDialog = () => {
+    setNewRule({ merchant_id: "", name: "", priority: 0, target_provider: "", fallback_provider: "", amount_min: "", amount_max: "", currencies: "" });
+    ruleIdemRef.current = crypto.randomUUID();
+  };
+
+  const candidateRule = useMemo(() => ({
+    merchant_id: newRule.merchant_id,
+    priority: Number(newRule.priority) || 0,
+    active: true,
+    currency_match: newRule.currencies
+      ? newRule.currencies.split(",").map((c) => c.trim().toUpperCase()).filter(Boolean)
+      : [],
+    amount_min: newRule.amount_min !== "" ? Number(newRule.amount_min) : null,
+    amount_max: newRule.amount_max !== "" ? Number(newRule.amount_max) : null,
+  }), [newRule]);
+  const ruleValidation = useMemo(
+    () => newRule.merchant_id ? validateRoutingRule(candidateRule, rules as any) : { ok: true as const },
+    [candidateRule, rules, newRule.merchant_id],
+  );
+
   const createRule = useMutation({
     mutationFn: async () => {
+      const v = validateRoutingRule(candidateRule, rules as any);
+      if (v.ok !== true) throw new Error((v as { reason: string }).reason);
       const payload: any = {
         merchant_id: newRule.merchant_id,
         name: newRule.name,
         priority: Number(newRule.priority) || 0,
         target_provider: newRule.target_provider,
         fallback_provider: newRule.fallback_provider || null,
-        amount_min: newRule.amount_min !== "" ? Number(newRule.amount_min) : null,
-        amount_max: newRule.amount_max !== "" ? Number(newRule.amount_max) : null,
-        currency_match: newRule.currencies
-          ? newRule.currencies.split(",").map((c) => c.trim().toUpperCase()).filter(Boolean)
-          : [],
+        amount_min: candidateRule.amount_min,
+        amount_max: candidateRule.amount_max,
+        currency_match: candidateRule.currency_match,
         active: true,
+        idempotency_key: ruleIdemRef.current,
       };
+      // Idempotent insert: if the same key already exists, fetch and return the existing row.
       const { error } = await (supabase.from as any)("routing_rules").insert(payload);
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          toast.info("Rule already saved (idempotent)");
+          return;
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       toast.success("Routing rule added");
       setRuleDialog(false);
-      setNewRule({ merchant_id: "", name: "", priority: 0, target_provider: "", fallback_provider: "", amount_min: "", amount_max: "", currencies: "" });
+      resetRuleDialog();
       invalidate();
     },
     onError: (e: any) => toast.error(e.message),
@@ -130,7 +163,7 @@ export default function AdminProcessors() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Fee profile CRUD
+  // Fee profile CRUD — with idempotency key on insert
   const [feeDialog, setFeeDialog] = useState(false);
   const [editingFee, setEditingFee] = useState<any>(null);
   const blankFee = {
@@ -138,9 +171,10 @@ export default function AdminProcessors() {
     percentage_fee: 2.9, fixed_fee: 0.30, chargeback_fee: 15, refund_fee: 0, settlement_days: 2,
   };
   const [newFee, setNewFee] = useState<any>(blankFee);
+  const feeIdemRef = useRef<string>(crypto.randomUUID());
   const saveFee = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const payload: any = {
         ...newFee,
         percentage_fee: Number(newFee.percentage_fee),
         fixed_fee: Number(newFee.fixed_fee),
@@ -152,13 +186,22 @@ export default function AdminProcessors() {
         const { error } = await (supabase.from as any)("processor_fee_profiles").update(payload).eq("id", editingFee.id);
         if (error) throw error;
       } else {
+        payload.idempotency_key = feeIdemRef.current;
         const { error } = await (supabase.from as any)("processor_fee_profiles").insert(payload);
-        if (error) throw error;
+        if (error) {
+          if (error.code === "23505") {
+            toast.info("Fee profile already saved (idempotent)");
+            return;
+          }
+          throw error;
+        }
       }
     },
     onSuccess: () => {
       toast.success(editingFee ? "Fee profile updated" : "Fee profile added");
-      setFeeDialog(false); setEditingFee(null); setNewFee(blankFee); invalidate();
+      setFeeDialog(false); setEditingFee(null); setNewFee(blankFee);
+      feeIdemRef.current = crypto.randomUUID();
+      invalidate();
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -188,6 +231,8 @@ export default function AdminProcessors() {
           Manage acquirers, assign processors to merchants, and configure routing rules.
         </p>
       </div>
+
+      <RoutingAnalyticsWidget />
 
       <Tabs defaultValue="acquirers" className="space-y-4">
         <TabsList>
@@ -329,7 +374,7 @@ export default function AdminProcessors() {
                 <CardTitle>Routing Rules</CardTitle>
                 <CardDescription>Per-merchant routing logic by currency and amount.</CardDescription>
               </div>
-              <Dialog open={ruleDialog} onOpenChange={setRuleDialog}>
+              <Dialog open={ruleDialog} onOpenChange={(o) => { setRuleDialog(o); if (!o) resetRuleDialog(); }}>
                 <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />New Rule</Button></DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>New Routing Rule</DialogTitle></DialogHeader>
@@ -376,8 +421,25 @@ export default function AdminProcessors() {
                       </div>
                     </div>
                   </div>
+                  {newRule.merchant_id && ruleValidation.ok !== true && (
+                    <Alert variant="destructive" className="mt-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>{(ruleValidation as { reason: string }).reason}</AlertDescription>
+                    </Alert>
+                  )}
                   <DialogFooter>
-                    <Button onClick={() => createRule.mutate()} disabled={!newRule.merchant_id || !newRule.name || !newRule.target_provider}>Save</Button>
+                    <Button
+                      onClick={() => createRule.mutate()}
+                      disabled={
+                        !newRule.merchant_id ||
+                        !newRule.name ||
+                        !newRule.target_provider ||
+                        ruleValidation.ok !== true ||
+                        createRule.isPending
+                      }
+                    >
+                      Save
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
