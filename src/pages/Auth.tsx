@@ -125,7 +125,7 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
             className="h-16 w-16 rotate-[33deg] drop-shadow-lg"
             style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
           />
-          <span className="font-logo text-3xl tracking-wide text-foreground -ml-[2px]">MzzPay</span>
+          <span className="font-logo text-3xl tracking-wide text-foreground -ml-[15px]">MzzPay</span>
         </Link>
 
         {isLogin ? (

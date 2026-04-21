@@ -190,7 +190,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       <div className="flex h-14 items-center border-b border-sidebar-border px-5">
         <div className="flex items-center gap-2.5">
           <img src={mzzpayIcon} alt="MzzPay" className="h-7 w-7 rounded-lg" />
-          <span className="font-logo text-xl tracking-wide text-foreground">
+          <span className="font-logo text-xl tracking-wide text-foreground -ml-[15px]">
             MzzPay
           </span>
         </div>

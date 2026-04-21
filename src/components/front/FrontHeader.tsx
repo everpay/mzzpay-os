@@ -114,7 +114,7 @@ export function FrontHeader({
               className="h-20 w-20 rotate-[33deg] drop-shadow-lg"
               style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
             />
-            <span className={`font-logo text-2xl tracking-wide transition-colors -ml-[2px] ${logoTextClass}`}>
+            <span className={`font-logo text-2xl tracking-wide transition-colors -ml-[15px] ${logoTextClass}`}>
               MzzPay
             </span>
           </Link>
@@ -171,7 +171,7 @@ export function FrontHeader({
                   className="h-20 w-20 rotate-[33deg] drop-shadow-lg"
                   style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
                 />
-                <span className="font-logo text-2xl tracking-wide text-foreground">MzzPay</span>
+                <span className="font-logo text-2xl tracking-wide text-foreground -ml-[15px]">MzzPay</span>
               </Link>
               <button
                 className="p-2 rounded-full text-foreground hover:bg-muted transition-colors"
