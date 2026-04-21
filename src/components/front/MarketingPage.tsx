@@ -66,7 +66,7 @@ export function MarketingPage({
   return (
     <div className="min-h-screen bg-white">
       <FrontHeader />
-      <main className="pt-[68px]">
+      <main className="pt-20">
         {/* Hero */}
         <section className="py-20 md:py-32 gradient-brand-hero text-white">
           <div className="container mx-auto px-6 text-center max-w-4xl">
