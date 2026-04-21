@@ -53,7 +53,7 @@ function SiteHeader() {
       <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
           <img src={everpayIcon} alt="MzzPay" className="h-8 w-8 rounded-lg" />
-          <span className="text-xl font-extrabold tracking-tight text-slate-900" style={{ fontFamily: "Manrope, sans-serif" }}>
+          <span className="font-logo text-xl font-bold tracking-tight text-slate-900">
             MzzPay
           </span>
         </Link>
