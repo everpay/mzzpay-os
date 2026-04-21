@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CountrySelect } from '@/components/CountrySelect';
 import { Mail, Lock, User, ArrowRight, Building2, Phone, Globe, Zap, CreditCard, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import everpayIcon from '@/assets/everpay-icon.png';
+import mzzpayIcon from '@/assets/mzzpay-icon.png';
 
 interface AuthProps {
   defaultMode?: 'login' | 'signup';
@@ -118,10 +118,15 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="gradient-glow pointer-events-none fixed inset-0" />
       <div className="relative w-full max-w-md">
-        <div className="flex items-center justify-center gap-2.5 mb-8">
-          <img src={everpayIcon} alt="MzzPay" className="h-10 w-10 rounded-2xl" />
-          <span className="font-logo text-3xl font-bold text-foreground tracking-wide">MzzPay</span>
-        </div>
+        <Link to="/" className="flex items-center justify-center mb-8">
+          <img
+            src={mzzpayIcon}
+            alt="MzzPay"
+            className="h-16 w-16 rotate-[33deg] drop-shadow-lg"
+            style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
+          />
+          <span className="font-logo text-3xl tracking-wide text-foreground -ml-[2px]">MzzPay</span>
+        </Link>
 
         {isLogin ? (
           /* ── LOGIN ── */

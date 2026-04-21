@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import everpayIcon from '@/assets/everpay-icon.png';
+import mzzpayIcon from '@/assets/mzzpay-icon.png';
+import { Link } from 'react-router-dom';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -32,10 +33,15 @@ export default function ResetPassword() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="gradient-glow pointer-events-none fixed inset-0" />
       <div className="relative w-full max-w-md">
-        <div className="flex items-center justify-center gap-2.5 mb-8">
-          <img src={everpayIcon} alt="MZZPay" className="h-10 w-10 rounded-xl" />
-          <span className="font-heading text-2xl font-bold text-foreground tracking-tight">MZZPay</span>
-        </div>
+        <Link to="/" className="flex items-center justify-center mb-8">
+          <img
+            src={mzzpayIcon}
+            alt="MzzPay"
+            className="h-16 w-16 rotate-[33deg] drop-shadow-lg"
+            style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
+          />
+          <span className="font-logo text-2xl tracking-wide text-foreground -ml-[2px]">MzzPay</span>
+        </Link>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-card">
           <h2 className="font-heading text-xl font-bold text-foreground mb-1">Reset Password</h2>

@@ -5,7 +5,7 @@ import { Menu, X, ChevronRight, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import mzzpayIcon from "@/assets/mzzpay-icon.png";
 
-const PRIMARY = "hsl(172 72% 48%)";
+const PRIMARY = "hsl(var(--brand-teal))";
 
 interface FrontHeaderProps {
   transparentUntilScroll?: boolean;
@@ -125,8 +125,7 @@ export function FrontHeader({
             </Link>
             <Link to="/demo">
               <Button
-                className="text-white rounded-full px-6 h-11 text-base font-bold shadow-md"
-                style={{ backgroundColor: PRIMARY }}
+                className="rounded-full px-6 h-11 text-base font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
               >
                 Request Demo
               </Button>
@@ -273,8 +272,7 @@ export function FrontHeader({
               </Link>
               <Link to="/demo" onClick={closeMenu}>
                 <Button
-                  className="w-full text-white rounded-full h-12 text-base font-bold shadow-md"
-                  style={{ backgroundColor: PRIMARY }}
+                  className="w-full rounded-full h-12 text-base font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
                 >
                   Request a Demo
                 </Button>
