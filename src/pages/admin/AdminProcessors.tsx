@@ -136,31 +136,73 @@ export default function AdminProcessors() {
         active: true,
         idempotency_key: ruleIdemRef.current,
       };
-      // Idempotent insert: if the same key already exists, fetch and return the existing row.
-      const { error } = await (supabase.from as any)("routing_rules").insert(payload);
+      const { data, error } = await (supabase.from as any)("routing_rules").insert(payload).select().single();
       if (error) {
-        if (error.code === "23505") {
-          toast.info("Rule already saved (idempotent)");
-          return;
-        }
+        if (error.code === "23505") return { idempotent: true as const };
         throw error;
       }
+      return { row: data };
     },
-    onSuccess: () => {
-      toast.success("Routing rule added");
+    // Optimistic insert: add a temp row to the cache immediately.
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["admin-processors"] });
+      const prev = qc.getQueryData<any>(["admin-processors"]);
+      const tempId = `temp-${crypto.randomUUID()}`;
+      const optimistic = {
+        id: tempId, ...candidateRule,
+        name: newRule.name,
+        target_provider: newRule.target_provider,
+        fallback_provider: newRule.fallback_provider || null,
+        idempotency_key: ruleIdemRef.current,
+        __optimistic: true,
+      };
+      qc.setQueryData<any>(["admin-processors"], (old: any) =>
+        old ? { ...old, rules: [...(old.rules || []), optimistic] } : old,
+      );
+      return { prev, tempId };
+    },
+    onError: (e: any, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["admin-processors"], ctx.prev);
+      toast.error(e.message);
+    },
+    onSuccess: (result, _vars, ctx) => {
+      if (result && "idempotent" in result) {
+        toast.info("Rule already saved (idempotent)");
+        // Drop the optimistic row; real one is already on the server — refetch will reconcile.
+        qc.setQueryData<any>(["admin-processors"], (old: any) =>
+          old ? { ...old, rules: (old.rules || []).filter((r: any) => r.id !== ctx?.tempId) } : old,
+        );
+      } else if (result?.row) {
+        // Replace the optimistic placeholder with the real row.
+        qc.setQueryData<any>(["admin-processors"], (old: any) =>
+          old ? { ...old, rules: (old.rules || []).map((r: any) => r.id === ctx?.tempId ? result.row : r) } : old,
+        );
+        toast.success("Routing rule added");
+      }
       setRuleDialog(false);
       resetRuleDialog();
-      invalidate();
     },
-    onError: (e: any) => toast.error(e.message),
+    onSettled: () => invalidate(),
   });
   const deleteRule = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase.from as any)("routing_rules").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Removed"); invalidate(); },
-    onError: (e: any) => toast.error(e.message),
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ["admin-processors"] });
+      const prev = qc.getQueryData<any>(["admin-processors"]);
+      qc.setQueryData<any>(["admin-processors"], (old: any) =>
+        old ? { ...old, rules: (old.rules || []).filter((r: any) => r.id !== id) } : old,
+      );
+      return { prev };
+    },
+    onError: (e: any, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["admin-processors"], ctx.prev);
+      toast.error(e.message);
+    },
+    onSuccess: () => toast.success("Removed"),
+    onSettled: () => invalidate(),
   });
 
   // Fee profile CRUD — with idempotency key on insert
@@ -183,35 +225,76 @@ export default function AdminProcessors() {
         settlement_days: Number(newFee.settlement_days),
       };
       if (editingFee) {
-        const { error } = await (supabase.from as any)("processor_fee_profiles").update(payload).eq("id", editingFee.id);
+        const { data, error } = await (supabase.from as any)("processor_fee_profiles").update(payload).eq("id", editingFee.id).select().single();
         if (error) throw error;
-      } else {
-        payload.idempotency_key = feeIdemRef.current;
-        const { error } = await (supabase.from as any)("processor_fee_profiles").insert(payload);
-        if (error) {
-          if (error.code === "23505") {
-            toast.info("Fee profile already saved (idempotent)");
-            return;
-          }
-          throw error;
-        }
+        return { row: data };
       }
+      payload.idempotency_key = feeIdemRef.current;
+      const { data, error } = await (supabase.from as any)("processor_fee_profiles").insert(payload).select().single();
+      if (error) {
+        if (error.code === "23505") return { idempotent: true as const };
+        throw error;
+      }
+      return { row: data };
     },
-    onSuccess: () => {
-      toast.success(editingFee ? "Fee profile updated" : "Fee profile added");
+    // Optimistic add or replace, with rollback on failure.
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["admin-processors"] });
+      const prev = qc.getQueryData<any>(["admin-processors"]);
+      const tempId = editingFee?.id ?? `temp-${crypto.randomUUID()}`;
+      const optimistic = { id: tempId, ...newFee, __optimistic: true };
+      qc.setQueryData<any>(["admin-processors"], (old: any) => {
+        if (!old) return old;
+        const list = old.feeProfiles || [];
+        return {
+          ...old,
+          feeProfiles: editingFee
+            ? list.map((f: any) => f.id === editingFee.id ? { ...f, ...optimistic, id: editingFee.id } : f)
+            : [...list, optimistic],
+        };
+      });
+      return { prev, tempId };
+    },
+    onError: (e: any, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["admin-processors"], ctx.prev);
+      toast.error(e.message);
+    },
+    onSuccess: (result, _v, ctx) => {
+      if (result && "idempotent" in result) {
+        toast.info("Fee profile already saved (idempotent)");
+        qc.setQueryData<any>(["admin-processors"], (old: any) =>
+          old ? { ...old, feeProfiles: (old.feeProfiles || []).filter((f: any) => f.id !== ctx?.tempId) } : old,
+        );
+      } else if (result?.row) {
+        qc.setQueryData<any>(["admin-processors"], (old: any) =>
+          old ? { ...old, feeProfiles: (old.feeProfiles || []).map((f: any) => f.id === ctx?.tempId ? result.row : f) } : old,
+        );
+        toast.success(editingFee ? "Fee profile updated" : "Fee profile added");
+      }
       setFeeDialog(false); setEditingFee(null); setNewFee(blankFee);
       feeIdemRef.current = crypto.randomUUID();
-      invalidate();
     },
-    onError: (e: any) => toast.error(e.message),
+    onSettled: () => invalidate(),
   });
   const deleteFee = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase.from as any)("processor_fee_profiles").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Removed"); invalidate(); },
-    onError: (e: any) => toast.error(e.message),
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ["admin-processors"] });
+      const prev = qc.getQueryData<any>(["admin-processors"]);
+      qc.setQueryData<any>(["admin-processors"], (old: any) =>
+        old ? { ...old, feeProfiles: (old.feeProfiles || []).filter((f: any) => f.id !== id) } : old,
+      );
+      return { prev };
+    },
+    onError: (e: any, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["admin-processors"], ctx.prev);
+      toast.error(e.message);
+    },
+    onSuccess: () => toast.success("Removed"),
+    onSettled: () => invalidate(),
   });
   const openEditFee = (fp: any) => {
     setEditingFee(fp);

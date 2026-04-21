@@ -2180,7 +2180,7 @@ export type Database = {
       }
       routing_rules: {
         Row: {
-          active: boolean | null
+          active: boolean
           amount_max: number | null
           amount_min: number | null
           conditions: Json
@@ -2196,7 +2196,7 @@ export type Database = {
           target_provider_id: string | null
         }
         Insert: {
-          active?: boolean | null
+          active?: boolean
           amount_max?: number | null
           amount_min?: number | null
           conditions?: Json
@@ -2212,7 +2212,7 @@ export type Database = {
           target_provider_id?: string | null
         }
         Update: {
-          active?: boolean | null
+          active?: boolean
           amount_max?: number | null
           amount_min?: number | null
           conditions?: Json
