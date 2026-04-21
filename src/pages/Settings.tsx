@@ -355,9 +355,8 @@ export default function Settings() {
     link?: string;
   }[] = [
     { key: "account", label: "Account Details", icon: User },
-    { key: "business", label: "Business Details", icon: Building2 },
+    { key: "business", label: "Business Details & Verification", icon: Building2 },
     { key: "bank-accounts", label: "Bank Accounts", icon: Building2 },
-    { key: "verification", label: "Business Verification", icon: Shield },
     { key: "webhooks", label: "Webhooks", icon: Webhook },
     { key: "team", label: "Members", icon: Users },
     { key: "surcharging", label: "Surcharging", icon: Hash },
