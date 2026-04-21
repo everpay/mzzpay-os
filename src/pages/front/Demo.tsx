@@ -155,12 +155,12 @@ export default function Demo() {
         </section>
 
         {/* Full-width trust stats band */}
-        <section className="border-t border-b border-gray-200 bg-white py-10">
-          <div className="container mx-auto px-4">
+        <section className="border-t border-b border-gray-200 bg-white py-10 w-full">
+          <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
             <p className="text-center text-sm text-gray-500 mb-6 font-body">
               Trusted by thousands of businesses worldwide
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full">
               {[
                 ["99.99%", "Uptime"],
                 ["$2B+", "Processed"],
