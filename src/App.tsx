@@ -99,6 +99,7 @@ const AppRoutes = () => (
     <Route path="/partners" element={<FrontPartners />} />
     <Route path="/cookie-policy" element={<FrontCookiePolicy />} />
     <Route path="/terms" element={<FrontTerms />} />
+    <Route path="/aml-policy" element={<FrontAmlPolicy />} />
     <Route path="/privacy-policy" element={<FrontPrivacyPolicy />} />
     <Route path="/security" element={<FrontSecurity />} />
     <Route path="/help" element={<FrontHelp />} />
