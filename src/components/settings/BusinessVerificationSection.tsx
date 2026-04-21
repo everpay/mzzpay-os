@@ -18,7 +18,11 @@ function useMerchantProfile() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const { data: merchant } = await supabase.from('merchants').select('id').eq('user_id', user.id).single();
+      const { data: merchant } = await supabase
+        .from('merchants')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
       if (!merchant) throw new Error('No merchant found');
       const { data, error } = await supabase
         .from('merchant_profiles' as any)
@@ -26,7 +30,7 @@ function useMerchantProfile() {
         .eq('merchant_id', merchant.id)
         .maybeSingle();
       if (error && error.code !== 'PGRST116') throw error;
-      return { profile: data as any, merchantId: merchant.id };
+      return { profile: data as any, merchantId: merchant.id, merchant: merchant as any };
     },
   });
 }
