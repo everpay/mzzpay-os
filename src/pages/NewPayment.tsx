@@ -391,8 +391,8 @@ export default function NewPayment() {
 
             <TabsContent value="apple_pay" className="mt-4 space-y-4 p-4 rounded-lg border border-border bg-muted/30">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-foreground flex items-center justify-center">
-                  <span className="text-background text-lg">🍎</span>
+                <div className="h-10 w-10 rounded-lg bg-foreground flex items-center justify-center p-1.5">
+                  <img src="/logos/apple-pay.svg" alt="Apple Pay" className="h-full w-auto invert" />
                 </div>
                 <div>
                   <h4 className="font-medium text-foreground">Apple Pay</h4>
