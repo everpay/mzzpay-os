@@ -18,7 +18,11 @@ function useMerchantProfile() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const { data: merchant } = await supabase.from('merchants').select('id').eq('user_id', user.id).single();
+      const { data: merchant } = await supabase
+        .from('merchants')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
       if (!merchant) throw new Error('No merchant found');
       const { data, error } = await supabase
         .from('merchant_profiles' as any)
@@ -26,7 +30,7 @@ function useMerchantProfile() {
         .eq('merchant_id', merchant.id)
         .maybeSingle();
       if (error && error.code !== 'PGRST116') throw error;
-      return { profile: data as any, merchantId: merchant.id };
+      return { profile: data as any, merchantId: merchant.id, merchant: merchant as any };
     },
   });
 }
@@ -35,6 +39,7 @@ export function BusinessVerificationSection() {
   const { data, refetch } = useMerchantProfile();
   const profile = data?.profile;
   const merchantId = data?.merchantId;
+  const merchant = data?.merchant;
 
   const [businessName, setBusinessName] = useState('');
   const [businessType, setBusinessType] = useState('');
@@ -52,14 +57,18 @@ export function BusinessVerificationSection() {
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [documents, setDocuments] = useState<{ name: string; path: string }[]>([]);
 
+  // Prefill from merchant (signup data) and merchant_profiles
   useEffect(() => {
+    // Prefer profile data; fall back to merchant signup data so users see what they entered.
+    if (merchant) {
+      setBusinessName((profile?.business_name) || merchant.name || '');
+      setWebsite(profile?.website || (merchant.website_urls?.[0] ?? ''));
+    }
     if (profile) {
-      setBusinessName(profile.business_name || '');
       setBusinessType(profile.business_type || '');
       setRegistrationNumber(profile.registration_number || '');
       setTaxId(profile.tax_id || '');
       setCountry(profile.country || '');
-      setWebsite(profile.website || '');
       setIndustry(profile.industry || '');
       setMccCode(profile.mcc_code || '');
       const addr = profile.address as any;
@@ -70,7 +79,7 @@ export function BusinessVerificationSection() {
         setPostalCode(addr.postal_code || '');
       }
     }
-  }, [profile]);
+  }, [profile, merchant]);
 
   useEffect(() => {
     const loadDocs = async () => {
@@ -108,6 +117,12 @@ export function BusinessVerificationSection() {
         const { error } = await supabase.from('merchant_profiles' as any).insert(profileData);
         if (error) throw error;
       }
+
+      // Keep merchants.name in sync with the legal business name from signup/onboarding
+      if (businessName && businessName !== merchant?.name) {
+        await supabase.from('merchants').update({ name: businessName }).eq('id', merchantId);
+      }
+
       toast.success('Business profile saved');
       refetch();
     } catch (err: any) {
