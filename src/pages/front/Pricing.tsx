@@ -68,9 +68,9 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-white">
       <FrontHeader />
-      <main className="pt-[68px]">
+      <main>
         {/* Hero */}
-        <section className="pt-16 pb-20 md:pt-24 md:pb-28 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 overflow-hidden relative">
+        <section className="pt-32 pb-20 md:pt-36 md:pb-28 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 overflow-hidden relative">
           <div className="absolute bottom-0 left-0 right-0 h-64 pointer-events-none"
                style={{ background: `linear-gradient(to top, ${PRIMARY}1A, transparent)` }} />
           <div className="container mx-auto px-6 relative z-10">

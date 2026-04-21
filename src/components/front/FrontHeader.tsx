@@ -9,6 +9,7 @@ const PRIMARY = "hsl(var(--brand-teal))";
 
 interface FrontHeaderProps {
   transparentUntilScroll?: boolean;
+  transparentTextTone?: "light" | "dark";
   scrollThreshold?: number;
 }
 
@@ -42,6 +43,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function FrontHeader({
   transparentUntilScroll = true,
+  transparentTextTone = "light",
   scrollThreshold = 80,
 }: FrontHeaderProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -76,14 +78,20 @@ export function FrontHeader({
     ? "bg-background/85 backdrop-blur-xl shadow-soft border-b border-border/60"
     : "bg-transparent";
 
-  const logoTextClass = isSolid ? "text-foreground" : "text-white";
+  const transparentLogoTextClass = transparentTextTone === "dark" ? "text-foreground" : "text-white";
+  const transparentLinkClass = transparentTextTone === "dark"
+    ? "text-base font-semibold text-foreground/80 hover:text-foreground transition-colors"
+    : "text-base font-semibold text-white/90 hover:text-white transition-colors";
+  const logoTextClass = isSolid ? "text-foreground" : transparentLogoTextClass;
   const linkClass = isSolid
     ? "text-base font-semibold text-muted-foreground hover:text-foreground transition-colors"
-    : "text-base font-semibold text-white/90 hover:text-white transition-colors";
+    : transparentLinkClass;
   const signInClass = linkClass;
   const mobileBtnClass = isSolid
     ? "text-foreground hover:bg-muted"
-    : "text-white hover:bg-white/10";
+    : transparentTextTone === "dark"
+      ? "text-foreground hover:bg-foreground/5"
+      : "text-white hover:bg-white/10";
 
   const desktopLinks = [
     { label: "Platform", to: "/products/payment-gateway" },
@@ -98,15 +106,15 @@ export function FrontHeader({
       <header
         className={`fixed top-0 z-50 w-full transition-all duration-300 ${headerClass}`}
       >
-        <div className="max-w-7xl mx-auto flex h-20 items-center justify-between px-6">
-          <Link to="/" className="flex items-center shrink-0" onClick={closeMenu}>
+        <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
+          <Link to="/" className="flex items-center" onClick={closeMenu}>
             <img
               src={mzzpayIcon}
               alt="MzzPay"
-              className="h-16 w-16 rotate-[33deg] drop-shadow-lg shrink-0"
+              className="h-20 w-20 rotate-[33deg] drop-shadow-lg"
               style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
             />
-            <span className={`font-logo text-2xl tracking-wide transition-colors -ml-[2px] whitespace-nowrap drop-shadow-md ${logoTextClass}`}>
+            <span className={`font-logo text-2xl tracking-wide transition-colors -ml-[2px] ${logoTextClass}`}>
               MzzPay
             </span>
           </Link>

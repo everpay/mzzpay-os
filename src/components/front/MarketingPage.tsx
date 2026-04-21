@@ -66,9 +66,9 @@ export function MarketingPage({
   return (
     <div className="min-h-screen bg-white">
       <FrontHeader />
-      <main className="pt-20">
+      <main>
         {/* Hero */}
-        <section className="py-20 md:py-32 gradient-brand-hero text-white">
+        <section className="pt-32 pb-20 md:pt-40 md:pb-32 gradient-brand-hero text-white">
           <div className="container mx-auto px-6 text-center max-w-4xl">
             <motion.div
               initial={{ opacity: 0, y: 12 }}

@@ -62,7 +62,7 @@ const sections = [
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-white">
-      <FrontHeader transparentUntilScroll={false} />
+      <FrontHeader transparentTextTone="dark" />
       <main className="pt-[68px] py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto mb-12">
