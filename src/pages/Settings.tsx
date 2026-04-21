@@ -806,7 +806,7 @@ export default function Settings() {
 
       {section === "webhooks" && <WebhooksSectionComponent />}
 
-      {section === "verification" && <BusinessVerificationSectionComponent />}
+      
 
       {section === "surcharging" && <SurchargeSettingsSection merchantId={merchant?.id} />}
 
