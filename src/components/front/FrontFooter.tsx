@@ -133,16 +133,12 @@ export function FrontFooter() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-border">
-          <p className="text-sm text-muted-foreground text-center mb-6 font-body">
-            © {new Date().getFullYear()} MzzPay Technologies Inc. All rights reserved.
-          </p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 mb-10 font-body">
-            <Link to="/terms" className={linkClass}>Terms</Link>
             <Link to="/privacy-policy" className={linkClass}>Privacy</Link>
             <Link to="/security" className={linkClass}>Security</Link>
             <Link to="/cookie-policy" className={linkClass}>Cookie Policy</Link>
-            <a href="https://status.mzzpay.com" target="_blank" rel="noopener noreferrer" className={linkClass}>Status</a>
-            <Link to="/developers" className={linkClass}>Docs</Link>
+            <Link to="/aml-policy" className={linkClass}>AML Policy</Link>
+            <Link to="/terms" className={linkClass}>Terms</Link>
           </div>
           <div className="pt-6">
             <p className="text-xs text-muted-foreground leading-relaxed font-body">
