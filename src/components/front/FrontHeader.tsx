@@ -283,21 +283,23 @@ export function FrontHeader({
               </ul>
             </motion.nav>
 
-            <div className="px-6 pb-8 pt-4 border-t border-border/60 space-y-4">
-              <Link
-                to="/login"
-                onClick={closeMenu}
-                className="block text-center text-base font-semibold text-foreground py-3 rounded-full border-2 border-border hover:bg-muted transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link to="/demo" onClick={closeMenu}>
-                <Button
-                  className="w-full rounded-full h-12 text-base font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
+            <div className="px-6 pb-8 pt-4 border-t border-border/60">
+              <div className="flex items-center gap-5">
+                <Link
+                  to="/login"
+                  onClick={closeMenu}
+                  className="flex-1 text-center text-base font-semibold text-foreground py-3 rounded-full border-2 border-border hover:bg-muted transition-colors"
                 >
-                  Request a Demo
-                </Button>
-              </Link>
+                  Sign In
+                </Link>
+                <Link to="/demo" onClick={closeMenu} className="flex-1">
+                  <Button
+                    className="w-full rounded-full h-12 text-base font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
+                  >
+                    Request a Demo
+                  </Button>
+                </Link>
+              </div>
             </div>
           </motion.div>
         )}
