@@ -120,7 +120,7 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
       <div className="relative w-full max-w-md">
         <div className="flex items-center justify-center gap-2.5 mb-8">
           <img src={everpayIcon} alt="MZZPay" className="h-10 w-10 rounded-xl" />
-          <span className="font-heading text-2xl font-bold text-foreground tracking-tight">MZZPay</span>
+          <span className="font-logo text-2xl font-bold text-foreground tracking-wide">MZZPay</span>
         </div>
 
         {isLogin ? (
