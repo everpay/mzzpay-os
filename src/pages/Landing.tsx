@@ -28,6 +28,7 @@ import {
   Github,
 } from "lucide-react";
 import { FrontFooter } from "@/components/front/FrontFooter";
+import { FrontHeader } from "@/components/front/FrontHeader";
 
 // MzzPay brand palette (primary #004BCA / #0061FF)
 const PRIMARY = "#004BCA";
