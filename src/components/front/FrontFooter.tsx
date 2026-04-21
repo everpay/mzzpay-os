@@ -80,7 +80,7 @@ export function FrontFooter() {
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-4 font-heading">Resources</h3>
             <ul className="space-y-3 font-body">
-              <li><Link to="/docs" className="text-sm text-gray-600 hover:text-foreground transition-colors">API Documentation</Link></li>
+              <li><Link to="/developers" className="text-sm text-gray-600 hover:text-foreground transition-colors">API Documentation</Link></li>
               <li><Link to="/demo" className="text-sm text-gray-600 hover:text-foreground transition-colors">Request Demo</Link></li>
               <li><Link to="/pricing" className="text-sm text-gray-600 hover:text-foreground transition-colors">Plans & Pricing</Link></li>
               <li><Link to="/help" className="text-sm text-gray-600 hover:text-foreground transition-colors">Help & Support</Link></li>
@@ -144,7 +144,7 @@ export function FrontFooter() {
             <Link to="/security" className="text-sm text-gray-500 hover:text-foreground transition-colors">Security</Link>
             <Link to="/cookie-policy" className="text-sm text-gray-500 hover:text-foreground transition-colors">Cookie Policy</Link>
             <a href="https://status.mzzpay.com" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-foreground transition-colors">Status</a>
-            <Link to="/docs" className="text-sm text-gray-500 hover:text-foreground transition-colors">Docs</Link>
+            <Link to="/developers" className="text-sm text-gray-500 hover:text-foreground transition-colors">Docs</Link>
           </div>
           <div className="pt-6">
             <p className="text-xs text-gray-500 leading-relaxed font-body">
