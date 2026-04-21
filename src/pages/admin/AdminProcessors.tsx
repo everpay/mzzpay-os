@@ -123,7 +123,7 @@ export default function AdminProcessors() {
   const createRule = useMutation({
     mutationFn: async () => {
       const v = validateRoutingRule(candidateRule, rules as any);
-      if (!v.ok) throw new Error(v.reason);
+      if (v.ok !== true) throw new Error((v as { reason: string }).reason);
       const payload: any = {
         merchant_id: newRule.merchant_id,
         name: newRule.name,
@@ -231,6 +231,8 @@ export default function AdminProcessors() {
           Manage acquirers, assign processors to merchants, and configure routing rules.
         </p>
       </div>
+
+      <RoutingAnalyticsWidget />
 
       <Tabs defaultValue="acquirers" className="space-y-4">
         <TabsList>
