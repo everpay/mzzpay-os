@@ -18,15 +18,6 @@ type NavItem = { label: string; to?: string; children?: SubLink[] };
 
 const NAV_ITEMS: NavItem[] = [
   {
-    label: "Platform",
-    children: [
-      { label: "Payment Gateway", to: "/products/payment-gateway", description: "Accept payments anywhere" },
-      { label: "Online Payments", to: "/products/online-payments", description: "Cards, wallets & APMs" },
-      { label: "Payment Methods", to: "/products/payment-methods", description: "200+ global rails" },
-      { label: "Fraud Prevention", to: "/products/fraud-prevention", description: "AI-powered protection" },
-    ],
-  },
-  {
     label: "Solutions",
     children: [
       { label: "E-commerce", to: "/solutions/ecommerce", description: "For online retailers" },
@@ -35,10 +26,32 @@ const NAV_ITEMS: NavItem[] = [
       { label: "Enterprise", to: "/solutions/enterprise", description: "Built to scale" },
     ],
   },
+  {
+    label: "Products",
+    children: [
+      { label: "Payment Gateway", to: "/products/payment-gateway", description: "Accept payments anywhere" },
+      { label: "Online Payments", to: "/products/online-payments", description: "Cards, wallets & APMs" },
+      { label: "Payment Methods", to: "/products/payment-methods", description: "200+ global rails" },
+      { label: "Fraud Prevention", to: "/products/fraud-prevention", description: "AI-powered protection" },
+    ],
+  },
   { label: "Pricing", to: "/pricing" },
-  { label: "Partners", to: "/partners" },
-  { label: "Developers", to: "/developers" },
-  { label: "About", to: "/about" },
+  {
+    label: "Resources",
+    children: [
+      { label: "Developers", to: "/developers", description: "API docs & SDKs" },
+      { label: "Partners", to: "/partners", description: "Our ecosystem" },
+      { label: "Help Center", to: "/help", description: "Support & guides" },
+    ],
+  },
+  {
+    label: "Company",
+    children: [
+      { label: "About", to: "/about", description: "Our story" },
+      { label: "Contact", to: "/contact", description: "Get in touch" },
+      { label: "Security", to: "/security", description: "Trust & compliance" },
+    ],
+  },
 ];
 
 export function FrontHeader({
@@ -270,21 +283,23 @@ export function FrontHeader({
               </ul>
             </motion.nav>
 
-            <div className="px-6 pb-8 pt-4 border-t border-border/60 space-y-4">
-              <Link
-                to="/login"
-                onClick={closeMenu}
-                className="block text-center text-base font-semibold text-foreground py-3 rounded-full border-2 border-border hover:bg-muted transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link to="/demo" onClick={closeMenu}>
-                <Button
-                  className="w-full rounded-full h-12 text-base font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
+            <div className="px-6 pb-8 pt-4 border-t border-border/60">
+              <div className="flex items-center gap-5">
+                <Link
+                  to="/login"
+                  onClick={closeMenu}
+                  className="flex-1 text-center text-base font-semibold text-foreground py-3 rounded-full border-2 border-border hover:bg-muted transition-colors"
                 >
-                  Request a Demo
-                </Button>
-              </Link>
+                  Sign In
+                </Link>
+                <Link to="/demo" onClick={closeMenu} className="flex-1">
+                  <Button
+                    className="w-full rounded-full h-12 text-base font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
+                  >
+                    Request a Demo
+                  </Button>
+                </Link>
+              </div>
             </div>
           </motion.div>
         )}
