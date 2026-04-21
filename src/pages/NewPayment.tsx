@@ -291,7 +291,12 @@ export default function NewPayment() {
                 <SelectItem value="card">💳 Card</SelectItem>
                 <SelectItem value="pix">🇧🇷 PIX</SelectItem>
                 <SelectItem value="boleto">📄 Boleto</SelectItem>
-                <SelectItem value="apple_pay">🍎 Apple Pay</SelectItem>
+                <SelectItem value="apple_pay">
+                  <span className="inline-flex items-center gap-2">
+                    <img src="/logos/apple-pay.svg" alt="Apple Pay" className="h-4 w-auto" />
+                    Apple Pay
+                  </span>
+                </SelectItem>
                 <SelectItem value="open_banking">🏦 Open Banking</SelectItem>
               </SelectContent>
             </Select>
