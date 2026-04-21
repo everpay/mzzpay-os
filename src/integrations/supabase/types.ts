@@ -2177,30 +2177,48 @@ export type Database = {
       }
       routing_rules: {
         Row: {
+          active: boolean | null
+          amount_max: number | null
+          amount_min: number | null
           conditions: Json
+          currency_match: string[] | null
+          fallback_provider: string | null
           id: string
           is_active: boolean | null
           merchant_id: string | null
           name: string
           priority: number | null
+          target_provider: string | null
           target_provider_id: string | null
         }
         Insert: {
+          active?: boolean | null
+          amount_max?: number | null
+          amount_min?: number | null
           conditions?: Json
+          currency_match?: string[] | null
+          fallback_provider?: string | null
           id?: string
           is_active?: boolean | null
           merchant_id?: string | null
           name: string
           priority?: number | null
+          target_provider?: string | null
           target_provider_id?: string | null
         }
         Update: {
+          active?: boolean | null
+          amount_max?: number | null
+          amount_min?: number | null
           conditions?: Json
+          currency_match?: string[] | null
+          fallback_provider?: string | null
           id?: string
           is_active?: boolean | null
           merchant_id?: string | null
           name?: string
           priority?: number | null
+          target_provider?: string | null
           target_provider_id?: string | null
         }
         Relationships: [
