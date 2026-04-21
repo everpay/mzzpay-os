@@ -1,23 +1,96 @@
-<svg version="1.1" id="Layer_1" xmlns:x="ns_extend;" xmlns:i="ns_ai;" xmlns:graph="ns_graphs;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 42.7 42.9" style="enable-background:new 0 0 42.7 42.9;" xml:space="preserve">
- <style type="text/css">
-  .st0{fill-rule:evenodd;clip-rule:evenodd;fill:#00D54B;}
- </style>
- <metadata>
-  <sfw xmlns="ns_sfw;">
-   <slices>
-   </slices>
-   <sliceSourceBounds bottomLeftOrigin="true" height="42.9" width="42.7" x="103.1" y="-221.7">
-   </sliceSourceBounds>
-  </sfw>
- </metadata>
- <g>
-  <path class="st0" d="M9.9,0C4.4,0,0,4.4,0,9.9V33c0,5.5,4.4,9.9,9.9,9.9h22.9c5.5,0,9.9-4.4,9.9-9.9V9.9c0-5.5-4.4-9.9-9.9-9.9H9.9
-		z M28.3,16c-1.6-1.4-3.7-2.1-5.8-2.1c-1.8,0-3.5,0.6-3.5,2.2c0,1.5,1.6,2.1,3.5,2.8c0.2,0.1,0.4,0.1,0.6,0.2c3.8,1.3,7,2.9,7,6.6
-		c0,4.1-3.2,6.8-8.3,7.2l-0.5,2.2c-0.1,0.4-0.4,0.7-0.9,0.7h-3.2c-0.3,0-0.5-0.1-0.7-0.3c-0.2-0.2-0.2-0.5-0.2-0.7l0.5-2.3
-		c-1.9-0.5-3.7-1.5-5.2-2.9c-0.2-0.2-0.3-0.4-0.3-0.6c0-0.2,0.1-0.5,0.3-0.6l1.8-1.8c0.3-0.3,0.9-0.3,1.2,0c1.6,1.6,3.9,2.4,6.1,2.4
-		c2.3,0,3.9-1,3.9-2.6c0-1.4-1.3-1.9-3.8-2.8c-0.3-0.1-0.5-0.2-0.8-0.3c-3.2-1.1-6.2-2.8-6.2-6.5c0-4.4,3.6-6.5,8-6.7l0.5-2.2
-		C22.3,7.2,22.7,7,23.1,7h3.2c0.3,0,0.5,0.1,0.7,0.3c0.2,0.2,0.2,0.5,0.2,0.7l-0.5,2.5c1.6,0.5,3.2,1.4,4.5,2.5
-		c0.2,0.2,0.3,0.4,0.3,0.6c0,0.2-0.1,0.5-0.3,0.6l-1.7,1.7C29.2,16.3,28.6,16.3,28.3,16z">
-  </path>
- </g>
-</svg>
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  integrationId: string;
+  integrationName: string;
+  merchantId?: string;
+  isConnected: boolean;
+}
+
+export function IntegrationConfigureModal({ open, onOpenChange, integrationId, integrationName, merchantId, isConnected }: Props) {
+  const [apiKey, setApiKey] = useState('');
+  const [apiSecret, setApiSecret] = useState('');
+  const [label, setLabel] = useState('');
+  const [sandbox, setSandbox] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!merchantId) {
+      toast.error('Merchant context not loaded');
+      return;
+    }
+    if (!apiKey.trim()) {
+      toast.error('API key is required');
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('gateway_credentials').insert({
+        merchant_id: merchantId,
+        gateway_name: integrationId,
+        gateway_type: 'processor',
+        environment: sandbox ? 'sandbox' : 'production',
+        label: label || integrationName,
+        credentials: { api_key: apiKey, api_secret: apiSecret },
+        is_active: true,
+      });
+      if (error) throw error;
+      toast.success(`${integrationName} connected`);
+      onOpenChange(false);
+      setApiKey('');
+      setApiSecret('');
+      setLabel('');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to save credentials');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isConnected ? 'Configure' : 'Connect'} {integrationName}</DialogTitle>
+          <DialogDescription>
+            Enter your {integrationName} API credentials. They will be stored securely.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="label">Label (optional)</Label>
+            <Input id="label" placeholder="Production account" value={label} onChange={(e) => setLabel(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="api-key">API Key</Label>
+            <Input id="api-key" type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="api-secret">API Secret</Label>
+            <Input id="api-secret" type="password" value={apiSecret} onChange={(e) => setApiSecret(e.target.value)} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <Label htmlFor="sandbox" className="cursor-pointer">Sandbox mode</Label>
+              <p className="text-xs text-muted-foreground">Use test credentials</p>
+            </div>
+            <Switch id="sandbox" checked={sandbox} onCheckedChange={setSandbox} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
