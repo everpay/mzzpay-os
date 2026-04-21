@@ -52,7 +52,7 @@ export default function Security() {
                     Request a Demo
                   </Button>
                 </Link>
-                <Link to="/docs">
+                <Link to="/developers">
                   <Button variant="outline" className="rounded-full h-12 px-7 text-base font-bold border-white/30 bg-white/5 text-white hover:bg-white/10">
                     Read the Docs
                   </Button>

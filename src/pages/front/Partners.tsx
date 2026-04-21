@@ -60,7 +60,7 @@ export default function Partners() {
                     Become a partner <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
                 </Link>
-                <Link to="/docs">
+                <Link to="/developers">
                   <Button variant="outline" className="rounded-full h-12 px-8 border-white/20 bg-transparent text-white hover:bg-white/10 font-semibold">
                     Read the docs
                   </Button>

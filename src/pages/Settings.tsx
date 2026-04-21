@@ -675,7 +675,7 @@ export default function Settings() {
                   </CardTitle>
                   <CardDescription>Manage your API keys for programmatic access.</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => navigate("/docs")} className="gap-1.5">
+                <Button variant="outline" size="sm" onClick={() => navigate("/developers")} className="gap-1.5">
                   <ExternalLink className="h-3.5 w-3.5" /> API Docs
                 </Button>
               </div>

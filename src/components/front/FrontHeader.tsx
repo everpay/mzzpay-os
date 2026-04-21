@@ -1,28 +1,42 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronRight } from "lucide-react";
+import { Menu, X, ChevronRight, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import mzzpayIcon from "@/assets/mzzpay-logo.png";
 
 const PRIMARY = "hsl(172 72% 48%)";
 
 interface FrontHeaderProps {
-  /**
-   * When true, the header is transparent at the top of the page and fades to
-   * a solid surface once the user scrolls past `scrollThreshold` pixels.
-   */
   transparentUntilScroll?: boolean;
-  /** Scroll distance (px) that triggers the solid state. Default: 80. */
   scrollThreshold?: number;
 }
 
-const NAV_LINKS: { label: string; to: string }[] = [
-  { label: "Platform", to: "/products/payment-gateway" },
-  { label: "Solutions", to: "/solutions/ecommerce" },
+type SubLink = { label: string; to: string; description?: string };
+type NavItem = { label: string; to?: string; children?: SubLink[] };
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    label: "Platform",
+    children: [
+      { label: "Payment Gateway", to: "/products/payment-gateway", description: "Accept payments anywhere" },
+      { label: "Online Payments", to: "/products/online-payments", description: "Cards, wallets & APMs" },
+      { label: "Payment Methods", to: "/products/payment-methods", description: "200+ global rails" },
+      { label: "Fraud Prevention", to: "/products/fraud-prevention", description: "AI-powered protection" },
+    ],
+  },
+  {
+    label: "Solutions",
+    children: [
+      { label: "E-commerce", to: "/solutions/ecommerce", description: "For online retailers" },
+      { label: "SaaS", to: "/solutions/saas", description: "Subscription billing" },
+      { label: "Marketplaces", to: "/solutions/marketplaces", description: "Multi-party payouts" },
+      { label: "Enterprise", to: "/solutions/enterprise", description: "Built to scale" },
+    ],
+  },
   { label: "Pricing", to: "/pricing" },
   { label: "Partners", to: "/partners" },
-  { label: "Developers", to: "/docs" },
+  { label: "Developers", to: "/developers" },
   { label: "About", to: "/about" },
 ];
 
@@ -32,6 +46,7 @@ export function FrontHeader({
 }: FrontHeaderProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > scrollThreshold);
@@ -40,7 +55,6 @@ export function FrontHeader({
     return () => window.removeEventListener("scroll", onScroll);
   }, [scrollThreshold]);
 
-  // Lock body scroll when mobile menu open
   useEffect(() => {
     if (isMenuOpen) {
       const prev = document.body.style.overflow;
@@ -50,6 +64,11 @@ export function FrontHeader({
       };
     }
   }, [isMenuOpen]);
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    setExpanded(null);
+  };
 
   const isSolid = !transparentUntilScroll || scrolled;
 
@@ -66,12 +85,11 @@ export function FrontHeader({
     ? "text-foreground hover:bg-muted"
     : "text-white hover:bg-white/10";
 
-  // Top 4 desktop links to keep the bar tidy (full list shows in mobile menu)
   const desktopLinks = [
     { label: "Pricing", to: "/pricing" },
     { label: "About", to: "/about" },
     { label: "Partners", to: "/partners" },
-    { label: "Developers", to: "/docs" },
+    { label: "Developers", to: "/developers" },
   ];
 
   return (
@@ -80,7 +98,7 @@ export function FrontHeader({
         className={`fixed top-0 z-50 w-full transition-all duration-300 ${headerClass}`}
       >
         <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-2.5" onClick={() => setIsMenuOpen(false)}>
+          <Link to="/" className="flex items-center gap-2.5" onClick={closeMenu}>
             <img src={mzzpayIcon} alt="MzzPay" className="h-8 w-8 rounded-lg" />
             <span className={`font-logo text-2xl tracking-wide transition-colors ${logoTextClass}`}>
               MzzPay
@@ -132,22 +150,20 @@ export function FrontHeader({
             role="dialog"
             aria-modal="true"
           >
-            {/* Top bar inside the overlay */}
             <div className="flex items-center justify-between h-[68px] px-6 border-b border-border/60">
-              <Link to="/" className="flex items-center gap-2.5" onClick={() => setIsMenuOpen(false)}>
+              <Link to="/" className="flex items-center gap-2.5" onClick={closeMenu}>
                 <img src={mzzpayIcon} alt="MzzPay" className="h-8 w-8 rounded-lg" />
                 <span className="font-logo text-2xl tracking-wide text-foreground">MzzPay</span>
               </Link>
               <button
                 className="p-2 rounded-full text-foreground hover:bg-muted transition-colors"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={closeMenu}
                 aria-label="Close menu"
               >
                 <X className="h-7 w-7" />
               </button>
             </div>
 
-            {/* Nav body */}
             <motion.nav
               initial="hidden"
               animate="visible"
@@ -155,40 +171,96 @@ export function FrontHeader({
                 hidden: {},
                 visible: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
               }}
-              className="flex-1 overflow-y-auto px-6 py-6"
+              className="flex-1 overflow-y-auto px-6 py-4"
             >
               <ul className="flex flex-col divide-y divide-border/60">
-                {NAV_LINKS.map((item) => (
-                  <motion.li
-                    key={item.to}
-                    variants={{
-                      hidden: { opacity: 0, x: -12 },
-                      visible: { opacity: 1, x: 0 },
-                    }}
-                  >
-                    <Link
-                      to={item.to}
-                      onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center justify-between py-5 text-2xl font-semibold text-foreground hover:text-primary transition-colors"
+                {NAV_ITEMS.map((item) => {
+                  const isExpanded = expanded === item.label;
+                  const hasChildren = !!item.children?.length;
+
+                  return (
+                    <motion.li
+                      key={item.label}
+                      variants={{
+                        hidden: { opacity: 0, x: -12 },
+                        visible: { opacity: 1, x: 0 },
+                      }}
                     >
-                      <span>{item.label}</span>
-                      <ChevronRight className="h-6 w-6 text-muted-foreground" />
-                    </Link>
-                  </motion.li>
-                ))}
+                      {hasChildren ? (
+                        <>
+                          <button
+                            onClick={() => setExpanded(isExpanded ? null : item.label)}
+                            aria-expanded={isExpanded}
+                            className="w-full flex items-center justify-between py-5 text-2xl font-semibold text-foreground hover:text-primary transition-colors"
+                          >
+                            <span>{item.label}</span>
+                            <ChevronDown
+                              className={`h-6 w-6 text-muted-foreground transition-transform duration-200 ${
+                                isExpanded ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+                          <AnimatePresence initial={false}>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                className="overflow-hidden"
+                              >
+                                <ul className="pb-4 pl-1 space-y-1">
+                                  {item.children!.map((sub) => (
+                                    <li key={sub.to}>
+                                      <Link
+                                        to={sub.to}
+                                        onClick={closeMenu}
+                                        className="flex items-center justify-between py-3 px-3 -mx-3 rounded-lg hover:bg-muted transition-colors"
+                                      >
+                                        <span>
+                                          <span className="block text-base font-semibold text-foreground">
+                                            {sub.label}
+                                          </span>
+                                          {sub.description && (
+                                            <span className="block text-sm text-muted-foreground mt-0.5">
+                                              {sub.description}
+                                            </span>
+                                          )}
+                                        </span>
+                                        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 ml-3" />
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </>
+                      ) : (
+                        <Link
+                          to={item.to!}
+                          onClick={closeMenu}
+                          className="flex items-center justify-between py-5 text-2xl font-semibold text-foreground hover:text-primary transition-colors"
+                        >
+                          <span>{item.label}</span>
+                          <ChevronRight className="h-6 w-6 text-muted-foreground" />
+                        </Link>
+                      )}
+                    </motion.li>
+                  );
+                })}
               </ul>
             </motion.nav>
 
-            {/* Footer actions */}
             <div className="px-6 pb-8 pt-4 border-t border-border/60 space-y-4">
               <Link
                 to="/login"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={closeMenu}
                 className="block text-center text-base font-semibold text-foreground py-3 rounded-full border-2 border-border hover:bg-muted transition-colors"
               >
                 Sign In
               </Link>
-              <Link to="/demo" onClick={() => setIsMenuOpen(false)}>
+              <Link to="/demo" onClick={closeMenu}>
                 <Button
                   className="w-full text-white rounded-full h-12 text-base font-bold shadow-md"
                   style={{ backgroundColor: PRIMARY }}

@@ -124,7 +124,7 @@ function HeroNavbar() {
     { label: "Pricing", to: "/pricing" },
     { label: "About", to: "/about" },
     { label: "Partners", to: "/partners" },
-    { label: "Developers", to: "/docs" },
+    { label: "Developers", to: "/developers" },
   ];
 
   const linkClass = scrolled
@@ -262,7 +262,7 @@ function HeroSection() {
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/docs">
+            <Link to="/developers">
               <Button
                 size="lg"
                 variant="outline"
