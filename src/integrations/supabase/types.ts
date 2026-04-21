@@ -55,6 +55,45 @@ export type Database = {
           },
         ]
       }
+      acquirers: {
+        Row: {
+          active: boolean
+          api_endpoint: string | null
+          avg_latency_ms: number | null
+          country: string | null
+          created_at: string
+          id: string
+          name: string
+          routing_weight: number | null
+          success_rate: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          api_endpoint?: string | null
+          avg_latency_ms?: number | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          routing_weight?: number | null
+          success_rate?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          api_endpoint?: string | null
+          avg_latency_ms?: number | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          routing_weight?: number | null
+          success_rate?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -869,6 +908,57 @@ export type Database = {
         }
         Relationships: []
       }
+      merchant_acquirer_mids: {
+        Row: {
+          acquirer_id: string
+          active: boolean | null
+          created_at: string
+          id: string
+          merchant_id: string
+          mid: string
+          priority: number | null
+          routing_weight: number | null
+          updated_at: string
+        }
+        Insert: {
+          acquirer_id: string
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          merchant_id: string
+          mid: string
+          priority?: number | null
+          routing_weight?: number | null
+          updated_at?: string
+        }
+        Update: {
+          acquirer_id?: string
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          mid?: string
+          priority?: number | null
+          routing_weight?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_acquirer_mids_acquirer_id_fkey"
+            columns: ["acquirer_id"]
+            isOneToOne: false
+            referencedRelation: "acquirers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merchant_acquirer_mids_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_processor_configs: {
         Row: {
           encrypted_api_secret: string
@@ -1271,6 +1361,50 @@ export type Database = {
           },
         ]
       }
+      payment_attempts: {
+        Row: {
+          attempt_number: number
+          created_at: string
+          id: string
+          latency_ms: number | null
+          provider: string
+          response_code: string | null
+          response_message: string | null
+          status: string
+          transaction_id: string | null
+        }
+        Insert: {
+          attempt_number?: number
+          created_at?: string
+          id?: string
+          latency_ms?: number | null
+          provider: string
+          response_code?: string | null
+          response_message?: string | null
+          status?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          attempt_number?: number
+          created_at?: string
+          id?: string
+          latency_ms?: number | null
+          provider?: string
+          response_code?: string | null
+          response_message?: string | null
+          status?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_attempts_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_methods: {
         Row: {
           card_brand: string | null
@@ -1437,6 +1571,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      processor_fee_profiles: {
+        Row: {
+          chargeback_fee: number
+          created_at: string
+          currency: string
+          fixed_fee: number
+          id: string
+          merchant_id: string
+          percentage_fee: number
+          provider: string
+          refund_fee: number
+          settlement_days: number
+          updated_at: string
+        }
+        Insert: {
+          chargeback_fee?: number
+          created_at?: string
+          currency?: string
+          fixed_fee?: number
+          id?: string
+          merchant_id: string
+          percentage_fee?: number
+          provider: string
+          refund_fee?: number
+          settlement_days?: number
+          updated_at?: string
+        }
+        Update: {
+          chargeback_fee?: number
+          created_at?: string
+          currency?: string
+          fixed_fee?: number
+          id?: string
+          merchant_id?: string
+          percentage_fee?: number
+          provider?: string
+          refund_fee?: number
+          settlement_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processor_fee_profiles_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       processor_metrics: {
         Row: {
