@@ -85,6 +85,15 @@
     --radius-pill: 9999px;
     --radius-xl: 1.875rem;   /* 30px */
     --radius-2xl: 2.5rem;    /* 40px */
+
+    /* ─── Public brand palette (marketing + docs surfaces) ─── */
+    --brand-teal: 172 72% 48%;            /* electric teal accent */
+    --brand-teal-soft: 172 72% 92%;       /* tinted background */
+    --brand-ink: 220 47% 7%;              /* deep navy hero */
+    --brand-ink-2: 220 40% 12%;           /* secondary panel */
+    --brand-ink-soft: 220 25% 18%;        /* card on dark */
+    --brand-ink-foreground: 0 0% 100%;
+    --brand-muted: 218 14% 65%;           /* muted body on dark */
   }
 
   .dark {
@@ -186,4 +195,22 @@
   .font-heading { font-family: var(--font-heading); }
   .font-mono { font-family: var(--font-mono); }
   .font-logo { font-family: var(--font-logo); }
+
+  /* Public brand utility classes */
+  .text-brand-teal { color: hsl(var(--brand-teal)); }
+  .bg-brand-teal { background-color: hsl(var(--brand-teal)); }
+  .bg-brand-teal\/10 { background-color: hsl(var(--brand-teal) / 0.1); }
+  .bg-brand-teal\/20 { background-color: hsl(var(--brand-teal) / 0.2); }
+  .border-brand-teal { border-color: hsl(var(--brand-teal)); }
+  .ring-brand-teal { --tw-ring-color: hsl(var(--brand-teal)); }
+  .bg-brand-ink { background-color: hsl(var(--brand-ink)); }
+  .bg-brand-ink-2 { background-color: hsl(var(--brand-ink-2)); }
+  .bg-brand-ink-soft { background-color: hsl(var(--brand-ink-soft)); }
+  .text-brand-muted { color: hsl(var(--brand-muted)); }
+  .gradient-brand-hero {
+    background:
+      radial-gradient(ellipse at 20% 0%, hsl(var(--brand-teal) / 0.18), transparent 55%),
+      radial-gradient(ellipse at 80% 100%, hsl(var(--brand-teal) / 0.1), transparent 60%),
+      linear-gradient(180deg, hsl(var(--brand-ink)), hsl(var(--brand-ink-2)));
+  }
 }
