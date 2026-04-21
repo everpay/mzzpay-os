@@ -48,6 +48,7 @@ import Treasury from "./pages/Treasury";
 import AuditTrail from "./pages/AuditTrail";
 
 import Products from "./pages/Products";
+import Integrations from "./pages/Integrations";
 import RiskProfile from "./pages/RiskProfile";
 import ThreeDSecureSettings from "./pages/ThreeDSecureSettings";
 import SmartRetry from "./pages/SmartRetry";
@@ -163,6 +164,7 @@ const AppRoutes = () => (
     <Route path="/chargeflow" element={<Navigate to="/chargebacks" replace />} />
     <Route path="/3ds-settings" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><ThreeDSecureSettings /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/smart-retry" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><SmartRetry /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/integrations" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><Integrations /></RoleProtectedRoute></ProtectedRoute>} />
     {/* Redirect old routes */}
     <Route path="/new-payment" element={<Navigate to="/payments/new" replace />} />
     <Route path="/merchant" element={<Navigate to="/chargebacks" replace />} />

@@ -31,6 +31,7 @@ import {
   Repeat,
   ShieldCheck,
   BookOpen,
+  Plug,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -111,6 +112,7 @@ const navSections: NavSection[] = [
   {
     title: "Super Admin",
     items: [
+      { to: "/integrations", icon: Plug, label: "Integrations", visibleTo: ["super_admin"] },
       { to: "/risk", icon: ShieldCheck, label: "Risk Profile", visibleTo: ["super_admin"] },
       { to: "/3ds-settings", icon: Lock, label: "3D Secure", visibleTo: ["super_admin"] },
       { to: "/smart-retry", icon: Repeat, label: "Smart Retry", visibleTo: ["super_admin"] },
