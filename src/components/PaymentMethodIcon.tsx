@@ -6,6 +6,9 @@ const brandLogos: Record<string, string> = {
   amex: '/logos/amex.svg',
   'american-express': '/logos/amex.svg',
   americanexpress: '/logos/amex.svg',
+  discover: '/logos/discover.svg',
+  jcb: '/logos/jcb.svg',
+  unionpay: '/logos/unionpay.svg',
   'apple-pay': '/logos/apple-pay.svg',
   applepay: '/logos/apple-pay.svg',
   apple_pay: '/logos/apple-pay.svg',
@@ -14,9 +17,17 @@ const brandLogos: Record<string, string> = {
   google_pay: '/logos/google-pay.svg',
   paypal: '/logos/paypal.svg',
   klarna: '/logos/klarna.svg',
+  affirm: '/logos/affirm.svg',
+  afterpay: '/logos/afterpay.jpg',
+  square: '/logos/square.svg',
+  stripe: '/logos/stripe.svg',
   ideal: '/logos/ideal.svg',
   bancontact: '/logos/bancontact.svg',
   alipay: '/logos/alipay.svg',
+  wechat: '/logos/wechat-pay.svg',
+  'wechat-pay': '/logos/wechat-pay.svg',
+  wechatpay: '/logos/wechat-pay.svg',
+  oxxo: '/logos/oxxo.png',
 };
 
 interface Props {
