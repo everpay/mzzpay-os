@@ -37,94 +37,177 @@ const INK = "hsl(220 47% 7%)";              // deep navy hero
 
 // Header is provided by the shared <FrontHeader /> component (see /components/front/FrontHeader.tsx).
 
+// ============= HERO HELPERS =============
+function FadeIn({
+  children,
+  delay = 0,
+  duration = 1000,
+  className = "",
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  duration?: number;
+  className?: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), delay);
+    return () => clearTimeout(t);
+  }, [delay]);
+  return (
+    <div
+      className={`transition-opacity ${className}`}
+      style={{ opacity: visible ? 1 : 0, transitionDuration: `${duration}ms` }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function AnimatedHeading({
+  text,
+  className = "",
+  initialDelay = 200,
+  charDelay = 30,
+}: {
+  text: string;
+  className?: string;
+  initialDelay?: number;
+  charDelay?: number;
+}) {
+  const [start, setStart] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setStart(true), initialDelay);
+    return () => clearTimeout(t);
+  }, [initialDelay]);
+
+  const lines = text.split("\n");
+  return (
+    <h1 className={className} style={{ letterSpacing: "-0.04em" }}>
+      {lines.map((line, lineIndex) => (
+        <span key={lineIndex} className="block">
+          {Array.from(line).map((char, charIndex) => {
+            const delay = lineIndex * line.length * charDelay + charIndex * charDelay;
+            return (
+              <span
+                key={charIndex}
+                className="inline-block"
+                style={{
+                  opacity: start ? 1 : 0,
+                  transform: start ? "translateX(0)" : "translateX(-18px)",
+                  transition: `opacity 500ms ease ${delay}ms, transform 500ms ease ${delay}ms`,
+                }}
+              >
+                {char === " " ? "\u00A0" : char}
+              </span>
+            );
+          })}
+        </span>
+      ))}
+    </h1>
+  );
+}
+
 // ============= HERO =============
 function HeroSection() {
+  const navLinks = [
+    { label: "Pricing", to: "/pricing" },
+    { label: "About", to: "/about" },
+    { label: "Partners", to: "/partners" },
+    { label: "Developers", to: "/docs" },
+  ];
+
   return (
-    <section className="relative pt-32 pb-20 overflow-hidden gradient-brand-hero text-white">
-      <div className="max-w-7xl mx-auto px-6 relative z-10 grid lg:grid-cols-12 gap-12 items-center">
-        <div className="lg:col-span-7">
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6 border"
-            style={{ backgroundColor: "hsl(172 72% 48% / 0.12)", color: PRIMARY, borderColor: "hsl(172 72% 48% / 0.3)" }}
-          >
-            Built for Scale
-          </motion.span>
+    <section className="relative min-h-screen w-full overflow-hidden bg-black text-white flex flex-col">
+      {/* Background video — no overlay */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260306_074215_04640ca7-042c-45d6-bb56-58b1e8a42489.mp4"
+      />
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter leading-[1.05] mb-8 text-white"
-            style={{ fontFamily: "Manrope, sans-serif" }}
+      {/* Navbar */}
+      <div className="relative z-20 px-6 md:px-12 lg:px-16 pt-6">
+        <nav className="liquid-glass rounded-xl px-4 py-2 flex items-center justify-between">
+          <Link to="/" className="text-2xl font-semibold tracking-tight text-white">
+            Mzzpay
+          </Link>
+          <div className="hidden md:flex items-center gap-8">
+            {navLinks.map((l) => (
+              <Link
+                key={l.label}
+                to={l.to}
+                className="text-sm text-white hover:text-gray-300 transition-colors"
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
+          <Link
+            to="/signup"
+            className="bg-white text-black px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
           >
-            The Global <span style={{ color: PRIMARY }}>Ledger</span> for Modern Commerce.
-          </motion.h1>
+            Sign Up
+          </Link>
+        </nav>
+      </div>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-white/65 max-w-xl mb-10 leading-relaxed"
-          >
-            Orchestrate complex money movement, unify international payments, and scale your financial infrastructure
-            with surgical precision.
-          </motion.p>
+      {/* Hero content */}
+      <div className="relative z-10 flex-1 flex flex-col justify-end px-6 md:px-12 lg:px-16 pb-12 lg:pb-16 lg:grid lg:grid-cols-2 lg:items-end lg:gap-12">
+        {/* Left column */}
+        <div>
+          <AnimatedHeading
+            text={"The Global Ledger\nfor Modern Commerce."}
+            className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-normal mb-4 text-white"
+          />
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-wrap gap-4"
-          >
-            <Link to="/signup">
-              <Button
-                size="lg"
-                className="rounded-full px-8 h-14 text-base font-bold gap-2 group shadow-xl"
-                style={{ backgroundColor: PRIMARY, color: INK }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = PRIMARY_HOVER)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = PRIMARY)}
+          <FadeIn delay={800} duration={1000}>
+            <p className="text-base md:text-lg text-gray-300 mb-5 max-w-xl">
+              Orchestrate complex money movement, unify international payments, and scale your
+              financial infrastructure with surgical precision.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={1200} duration={1000}>
+            <div className="flex flex-wrap gap-4">
+              <Link
+                to="/signup"
+                className="bg-white text-black px-8 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
               >
                 Start Building
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-            <Link to="/docs">
-              <Button
-                size="lg"
-                variant="outline"
-                className="bg-transparent text-white border-white/25 hover:bg-white/10 hover:text-white rounded-full px-8 h-14 text-base font-bold"
+              </Link>
+              <Link
+                to="/docs"
+                className="liquid-glass border border-white/20 text-white px-8 py-3 rounded-lg font-medium hover:bg-white hover:text-black transition-colors"
               >
                 View Documentation
-              </Button>
-            </Link>
-          </motion.div>
+              </Link>
+            </div>
+          </FadeIn>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.7, delay: 0.2 }}
-          className="lg:col-span-5 relative"
-        >
-          <div className="relative bg-white/[0.04] backdrop-blur-sm p-4 rounded-2xl shadow-2xl border border-white/10 rotate-2 hover:rotate-0 transition-transform duration-500">
-            <img
-              src={dashboardImg}
-              alt="MzzPay real-time financial dashboard"
-              className="rounded-xl w-full"
-              width={1024}
-              height={768}
-            />
-            <div
-              className="absolute -bottom-6 -left-6 p-4 rounded-2xl shadow-xl"
-              style={{ backgroundColor: PRIMARY }}
-            >
-              <CreditCard className="h-8 w-8" style={{ color: INK }} />
+        {/* Right column — keep dashboard image overlay from original */}
+        <div className="mt-12 lg:mt-0 flex items-end justify-start lg:justify-end">
+          <FadeIn delay={1400} duration={1000} className="w-full max-w-md">
+            <div className="liquid-glass rounded-2xl p-3 border border-white/20">
+              <img
+                src={dashboardImg}
+                alt="MzzPay real-time financial dashboard"
+                className="rounded-xl w-full"
+                width={1024}
+                height={768}
+              />
             </div>
-          </div>
-        </motion.div>
+            <div className="mt-4 liquid-glass border border-white/20 px-6 py-3 rounded-xl inline-block">
+              <span className="text-lg md:text-xl lg:text-2xl font-light text-white">
+                Investing. Building. Advisory.
+              </span>
+            </div>
+          </FadeIn>
+        </div>
       </div>
     </section>
   );
