@@ -39,9 +39,9 @@ export default function Partners() {
   return (
     <div className="min-h-screen bg-white">
       <FrontHeader />
-      <main className="pt-[68px]">
+      <main>
         {/* Hero */}
-        <section className="py-20 md:py-28 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
+        <section className="pt-32 pb-20 md:pt-36 md:pb-28 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
           <div className="container mx-auto px-6 max-w-5xl">
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <span className="inline-block text-xs font-bold uppercase tracking-widest mb-4" style={{ color: PRIMARY }}>

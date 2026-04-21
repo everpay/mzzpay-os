@@ -26,9 +26,9 @@ export default function About() {
   return (
     <div className="min-h-screen bg-white">
       <FrontHeader />
-      <main className="pt-[68px]">
+      <main>
         {/* Hero */}
-        <section className="py-20 md:py-32 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
+        <section className="pt-32 pb-20 md:pt-40 md:pb-32 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
           <div className="container mx-auto px-6 text-center max-w-4xl">
             <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
               className="text-5xl md:text-6xl font-extrabold leading-[1.05] tracking-tight mb-6 font-heading">
