@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,11 +22,14 @@ const demoKeys: ApiKey[] = [
   { id: "1", name: "Default", prefix: "pk_test_", key: "pk_test_51NxBz2K8dF9m3Xp7wQrYhJv", type: "publishable", env: "sandbox", created: "2026-02-15" },
   { id: "2", name: "Default", prefix: "sk_test_", key: "sk_test_••••••••••••••••••••••••", type: "secret", env: "sandbox", created: "2026-02-15" },
   { id: "3", name: "Mobile App", prefix: "pk_test_", key: "pk_test_73Yd5n8F1hK2j6Lm4xRtWsAe", type: "publishable", env: "sandbox", created: "2026-03-01" },
+  { id: "4", name: "Default", prefix: "pk_live_", key: "pk_live_92Mq7H4nF8jK1pX5wRtZvBuC", type: "publishable", env: "production", created: "2026-03-10" },
+  { id: "5", name: "Default", prefix: "sk_live_", key: "sk_live_••••••••••••••••••••••••", type: "secret", env: "production", created: "2026-03-10" },
 ];
 
 export default function DocsApiKeys() {
   const { user } = useAuth();
   const [keys] = useState<ApiKey[]>(demoKeys);
+  const [environment, setEnvironment] = useState<"sandbox" | "production">("sandbox");
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState<string | null>(null);
   const { toast } = useToast();
@@ -42,12 +45,16 @@ export default function DocsApiKeys() {
 
   const maskKey = (key: string) => key.substring(0, 12) + "•".repeat(16);
 
+  const filteredKeys = useMemo(() => keys.filter((k) => k.env === environment), [keys, environment]);
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <Badge variant="secondary" className="mb-3">API Keys</Badge>
-          <h1 className="text-3xl font-heading font-bold tracking-tight">Sandbox Keys</h1>
+          <h1 className="text-3xl font-heading font-bold tracking-tight">
+            {environment === "sandbox" ? "Sandbox Keys" : "Production Keys"}
+          </h1>
           <p className="text-muted-foreground mt-2">
             {user ? "Your API keys for testing and development." : "Sign in to view your real keys. Demo keys shown below."}
           </p>
@@ -71,48 +78,79 @@ export default function DocsApiKeys() {
       )}
 
       <div className="flex gap-2">
-        <Button variant="default" size="sm">Sandbox</Button>
-        <Button variant="ghost" size="sm" className="text-muted-foreground">Production</Button>
+        <Button
+          variant={environment === "sandbox" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setEnvironment("sandbox")}
+          className={environment !== "sandbox" ? "text-muted-foreground" : ""}
+        >
+          Sandbox
+        </Button>
+        <Button
+          variant={environment === "production" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setEnvironment("production")}
+          className={environment !== "production" ? "text-muted-foreground" : ""}
+        >
+          Production
+        </Button>
       </div>
 
+      {environment === "production" && !user && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="py-4">
+            <p className="text-sm font-medium">Production keys require sign-in</p>
+            <p className="text-xs text-muted-foreground mt-1">Demo production keys shown below for reference. Sign in to manage your real production keys.</p>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="space-y-4">
-        {keys.map((k) => (
-          <Card key={k.id}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CardTitle className="text-base">{k.name}</CardTitle>
-                  <Badge variant={k.type === "secret" ? "destructive" : "secondary"} className="text-[10px]">
-                    {k.type}
-                  </Badge>
-                  {!user && <Badge variant="outline" className="text-[10px]">demo</Badge>}
-                </div>
-                <CardDescription className="text-xs">Created {k.created}</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Input
-                  readOnly
-                  value={revealed[k.id] ? k.key : maskKey(k.key)}
-                  className="font-mono text-xs bg-muted/50"
-                />
-                <Button variant="ghost" size="icon" onClick={() => toggleReveal(k.id)}>
-                  {revealed[k.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => copyKey(k.id, k.key)}>
-                  {copied === k.id ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
-                </Button>
-                {user && (
-                  <>
-                    <Button variant="ghost" size="icon" className="text-muted-foreground"><RotateCcw className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                  </>
-                )}
-              </div>
+        {filteredKeys.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              No {environment} keys yet.
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          filteredKeys.map((k) => (
+            <Card key={k.id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CardTitle className="text-base">{k.name}</CardTitle>
+                    <Badge variant={k.type === "secret" ? "destructive" : "secondary"} className="text-[10px]">
+                      {k.type}
+                    </Badge>
+                    {!user && <Badge variant="outline" className="text-[10px]">demo</Badge>}
+                  </div>
+                  <CardDescription className="text-xs">Created {k.created}</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Input
+                    readOnly
+                    value={revealed[k.id] ? k.key : maskKey(k.key)}
+                    className="font-mono text-xs bg-muted/50"
+                  />
+                  <Button variant="ghost" size="icon" onClick={() => toggleReveal(k.id)}>
+                    {revealed[k.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => copyKey(k.id, k.key)}>
+                    {copied === k.id ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                  {user && (
+                    <>
+                      <Button variant="ghost" size="icon" className="text-muted-foreground"><RotateCcw className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
