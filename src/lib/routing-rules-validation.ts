@@ -2,6 +2,12 @@
 // merchant before the admin saves an override. A conflict is two ACTIVE rules
 // for the same merchant with the same priority that share at least one
 // currency AND have overlapping amount ranges.
+//
+// Also enforces basic field constraints that mirror the database CHECK
+// constraints, so the UI rejects bad input *before* we hit Postgres:
+//   - amount_min / amount_max must be non-negative
+//   - amount_min must be <= amount_max
+//   - priority must be in [0, 1000]
 
 export type RoutingRule = {
   id?: string;
@@ -51,12 +57,21 @@ export function validateRoutingRule(
   existing: RoutingRule[],
 ): { ok: true } | { ok: false; reason: string; conflicts: RoutingRule[] } {
   if (!candidate.merchant_id) return { ok: false, reason: "Merchant is required", conflicts: [] };
+  if (candidate.amount_min != null && Number(candidate.amount_min) < 0) {
+    return { ok: false, reason: "Min amount cannot be negative", conflicts: [] };
+  }
+  if (candidate.amount_max != null && Number(candidate.amount_max) < 0) {
+    return { ok: false, reason: "Max amount cannot be negative", conflicts: [] };
+  }
   if (
     candidate.amount_min != null &&
     candidate.amount_max != null &&
     Number(candidate.amount_min) > Number(candidate.amount_max)
   ) {
     return { ok: false, reason: "Min amount must be less than or equal to max amount", conflicts: [] };
+  }
+  if (candidate.priority != null && (Number(candidate.priority) < 0 || Number(candidate.priority) > 1000)) {
+    return { ok: false, reason: "Priority must be between 0 and 1000", conflicts: [] };
   }
   const conflicts = findConflicts(candidate, existing);
   if (conflicts.length > 0) {

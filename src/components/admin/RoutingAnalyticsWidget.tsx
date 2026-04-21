@@ -1,25 +1,39 @@
 // Lightweight routing-analytics widget for the admin processors page.
 // Aggregates routing_rule coverage (provider × currency) and recent
 // payment_attempts outcomes per provider — read-only, no mutations.
+// Includes a time window selector (1h / 24h / 7d / 30d) for attempt outcomes.
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Activity, Target, AlertCircle } from "lucide-react";
 
 type Rule = { target_provider: string; currency_match: string[] | null; active: boolean };
-type Attempt = { provider: string; status: string };
+type Attempt = { provider: string; status: string; created_at: string };
+type Window = "1h" | "24h" | "7d" | "30d";
 
-function useRoutingAnalytics() {
+const WINDOW_HOURS: Record<Window, number> = { "1h": 1, "24h": 24, "7d": 24 * 7, "30d": 24 * 30 };
+const WINDOW_LABEL: Record<Window, string> = {
+  "1h": "Last 1 hour",
+  "24h": "Last 24 hours",
+  "7d": "Last 7 days",
+  "30d": "Last 30 days",
+};
+
+function useRoutingAnalytics(window: Window) {
   return useQuery({
-    queryKey: ["admin-routing-analytics"],
+    queryKey: ["admin-routing-analytics", window],
     queryFn: async () => {
+      const cutoff = new Date(Date.now() - WINDOW_HOURS[window] * 3600_000).toISOString();
       const [{ data: rules }, { data: attempts }] = await Promise.all([
         (supabase.from as any)("routing_rules").select("target_provider, currency_match, active"),
         (supabase.from as any)("payment_attempts")
-          .select("provider, status")
+          .select("provider, status, created_at")
+          .gte("created_at", cutoff)
           .order("created_at", { ascending: false })
-          .limit(1000),
+          .limit(5000),
       ]);
       return { rules: (rules ?? []) as Rule[], attempts: (attempts ?? []) as Attempt[] };
     },
@@ -28,31 +42,36 @@ function useRoutingAnalytics() {
 }
 
 export function RoutingAnalyticsWidget() {
-  const { data, isLoading } = useRoutingAnalytics();
+  const [window, setWindow] = useState<Window>("24h");
+  const { data, isLoading } = useRoutingAnalytics(window);
   const rules = data?.rules ?? [];
   const attempts = data?.attempts ?? [];
 
-  // provider × currency rule coverage
-  const ruleMatrix = new Map<string, Map<string, number>>();
-  for (const r of rules) {
-    if (!r.active) continue;
-    const provider = r.target_provider || "—";
-    const currencies = r.currency_match?.length ? r.currency_match : ["ANY"];
-    const row = ruleMatrix.get(provider) ?? new Map<string, number>();
-    for (const c of currencies) row.set(c, (row.get(c) ?? 0) + 1);
-    ruleMatrix.set(provider, row);
-  }
+  const ruleMatrix = useMemo(() => {
+    const m = new Map<string, Map<string, number>>();
+    for (const r of rules) {
+      if (!r.active) continue;
+      const provider = r.target_provider || "—";
+      const currencies = r.currency_match?.length ? r.currency_match : ["ANY"];
+      const row = m.get(provider) ?? new Map<string, number>();
+      for (const c of currencies) row.set(c, (row.get(c) ?? 0) + 1);
+      m.set(provider, row);
+    }
+    return m;
+  }, [rules]);
 
-  // attempt outcomes per provider
-  const outcomes = new Map<string, { success: number; failed: number; pending: number; total: number }>();
-  for (const a of attempts) {
-    const slot = outcomes.get(a.provider) ?? { success: 0, failed: 0, pending: 0, total: 0 };
-    slot.total++;
-    if (a.status === "success" || a.status === "approved") slot.success++;
-    else if (a.status === "failed" || a.status === "declined" || a.status === "error") slot.failed++;
-    else slot.pending++;
-    outcomes.set(a.provider, slot);
-  }
+  const outcomes = useMemo(() => {
+    const m = new Map<string, { success: number; failed: number; pending: number; total: number }>();
+    for (const a of attempts) {
+      const slot = m.get(a.provider) ?? { success: 0, failed: 0, pending: 0, total: 0 };
+      slot.total++;
+      if (a.status === "success" || a.status === "approved") slot.success++;
+      else if (a.status === "failed" || a.status === "declined" || a.status === "error") slot.failed++;
+      else slot.pending++;
+      m.set(a.provider, slot);
+    }
+    return m;
+  }, [attempts]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
@@ -90,11 +109,23 @@ export function RoutingAnalyticsWidget() {
 
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-primary" />
-            <CardTitle className="text-base">Recent Attempt Outcomes</CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">Recent Attempt Outcomes</CardTitle>
+            </div>
+            <Select value={window} onValueChange={(v) => setWindow(v as Window)}>
+              <SelectTrigger className="h-7 w-[140px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(WINDOW_LABEL) as Window[]).map((k) => (
+                  <SelectItem key={k} value={k} className="text-xs">{WINDOW_LABEL[k]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <CardDescription>Last 1,000 payment attempts grouped by provider.</CardDescription>
+          <CardDescription>Payment attempts grouped by provider — {WINDOW_LABEL[window].toLowerCase()}.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -102,7 +133,7 @@ export function RoutingAnalyticsWidget() {
           ) : outcomes.size === 0 ? (
             <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
               <AlertCircle className="h-4 w-4" />
-              No payment attempts recorded yet.
+              No payment attempts in the selected window.
             </div>
           ) : (
             <div className="space-y-2">

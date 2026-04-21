@@ -57,7 +57,33 @@ describe("routing-rule validation", () => {
     expect(v.ok).toBe(false);
   });
 
+  it("validateRoutingRule rejects negative min", () => {
+    const v = validateRoutingRule(base({ amount_min: -10 }), []);
+    expect(v.ok).toBe(false);
+    if (v.ok === false) expect(v.reason).toMatch(/negative/i);
+  });
+
+  it("validateRoutingRule rejects negative max", () => {
+    const v = validateRoutingRule(base({ amount_max: -5 }), []);
+    expect(v.ok).toBe(false);
+  });
+
+  it("validateRoutingRule rejects priority below 0", () => {
+    const v = validateRoutingRule(base({ priority: -1 }), []);
+    expect(v.ok).toBe(false);
+  });
+
+  it("validateRoutingRule rejects priority above 1000", () => {
+    const v = validateRoutingRule(base({ priority: 1001 }), []);
+    expect(v.ok).toBe(false);
+  });
+
   it("validateRoutingRule passes a clean rule", () => {
     expect(validateRoutingRule(base({ priority: 5 }), []).ok).toBe(true);
+  });
+
+  it("validateRoutingRule passes priority at boundaries", () => {
+    expect(validateRoutingRule(base({ priority: 0 }), []).ok).toBe(true);
+    expect(validateRoutingRule(base({ priority: 1000 }), []).ok).toBe(true);
   });
 });
