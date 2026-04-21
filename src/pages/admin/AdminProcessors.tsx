@@ -374,7 +374,7 @@ export default function AdminProcessors() {
                 <CardTitle>Routing Rules</CardTitle>
                 <CardDescription>Per-merchant routing logic by currency and amount.</CardDescription>
               </div>
-              <Dialog open={ruleDialog} onOpenChange={setRuleDialog}>
+              <Dialog open={ruleDialog} onOpenChange={(o) => { setRuleDialog(o); if (!o) resetRuleDialog(); }}>
                 <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />New Rule</Button></DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>New Routing Rule</DialogTitle></DialogHeader>
