@@ -18,15 +18,6 @@ type NavItem = { label: string; to?: string; children?: SubLink[] };
 
 const NAV_ITEMS: NavItem[] = [
   {
-    label: "Platform",
-    children: [
-      { label: "Payment Gateway", to: "/products/payment-gateway", description: "Accept payments anywhere" },
-      { label: "Online Payments", to: "/products/online-payments", description: "Cards, wallets & APMs" },
-      { label: "Payment Methods", to: "/products/payment-methods", description: "200+ global rails" },
-      { label: "Fraud Prevention", to: "/products/fraud-prevention", description: "AI-powered protection" },
-    ],
-  },
-  {
     label: "Solutions",
     children: [
       { label: "E-commerce", to: "/solutions/ecommerce", description: "For online retailers" },
@@ -35,10 +26,32 @@ const NAV_ITEMS: NavItem[] = [
       { label: "Enterprise", to: "/solutions/enterprise", description: "Built to scale" },
     ],
   },
+  {
+    label: "Products",
+    children: [
+      { label: "Payment Gateway", to: "/products/payment-gateway", description: "Accept payments anywhere" },
+      { label: "Online Payments", to: "/products/online-payments", description: "Cards, wallets & APMs" },
+      { label: "Payment Methods", to: "/products/payment-methods", description: "200+ global rails" },
+      { label: "Fraud Prevention", to: "/products/fraud-prevention", description: "AI-powered protection" },
+    ],
+  },
   { label: "Pricing", to: "/pricing" },
-  { label: "Partners", to: "/partners" },
-  { label: "Developers", to: "/developers" },
-  { label: "About", to: "/about" },
+  {
+    label: "Resources",
+    children: [
+      { label: "Developers", to: "/developers", description: "API docs & SDKs" },
+      { label: "Partners", to: "/partners", description: "Our ecosystem" },
+      { label: "Help Center", to: "/help", description: "Support & guides" },
+    ],
+  },
+  {
+    label: "Company",
+    children: [
+      { label: "About", to: "/about", description: "Our story" },
+      { label: "Contact", to: "/contact", description: "Get in touch" },
+      { label: "Security", to: "/security", description: "Trust & compliance" },
+    ],
+  },
 ];
 
 export function FrontHeader({
