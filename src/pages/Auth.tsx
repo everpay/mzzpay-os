@@ -119,14 +119,14 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
       <div className="gradient-glow pointer-events-none fixed inset-0" />
       <div className="relative w-full max-w-md">
         <div className="flex items-center justify-center gap-2.5 mb-8">
-          <img src={everpayIcon} alt="MZZPay" className="h-10 w-10 rounded-xl" />
-          <span className="font-logo text-2xl font-bold text-foreground tracking-wide">MZZPay</span>
+          <img src={everpayIcon} alt="MzzPay" className="h-10 w-10 rounded-2xl" />
+          <span className="font-logo text-3xl font-bold text-foreground tracking-wide">MzzPay</span>
         </div>
 
         {isLogin ? (
           /* ── LOGIN ── */
-          <div className="rounded-xl border border-border bg-card p-6 shadow-card">
-            <h2 className="font-heading text-xl font-bold text-foreground mb-1 text-center">Welcome back</h2>
+          <div className="rounded-3xl border border-border bg-card p-8 shadow-elevated">
+            <h2 className="font-display text-3xl font-bold text-foreground mb-2 text-center tracking-tight">Welcome back</h2>
             <p className="text-sm text-muted-foreground mb-6 text-center">Sign in to your merchant dashboard</p>
 
             <form onSubmit={handleLogin} className="space-y-4">
@@ -160,8 +160,8 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
           </div>
         ) : (
           /* ── SIGNUP ── */
-          <div className="rounded-xl border border-border bg-card p-6 shadow-card">
-            <h2 className="font-heading text-xl font-bold text-foreground mb-1">Let's create your account.</h2>
+          <div className="rounded-3xl border border-border bg-card p-8 shadow-elevated">
+            <h2 className="font-display text-3xl font-bold text-foreground mb-2 tracking-tight">Let's create your account.</h2>
             <p className="text-sm text-muted-foreground mb-6">
               Signing up is fast and free — no commitments or long-term contracts required.
             </p>
