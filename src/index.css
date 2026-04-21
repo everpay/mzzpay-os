@@ -18,28 +18,28 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 11% 11%;
 
-    /* Brand: MzzPay Blue */
-    --primary: 219 100% 40%;              /* #004BCA */
+    /* Brand: MzzPay Electric Teal */
+    --primary: 172 72% 42%;               /* electric teal */
     --primary-foreground: 0 0% 100%;
-    --primary-container: 219 100% 50%;    /* #0061FF */
-    --primary-fixed: 226 100% 93%;        /* #DBE1FF */
-    --primary-fixed-dim: 222 100% 85%;    /* #B4C5FF */
+    --primary-container: 172 72% 48%;
+    --primary-fixed: 172 72% 92%;
+    --primary-fixed-dim: 172 60% 80%;
 
-    --secondary: 224 60% 92%;             /* #DAE2FD secondary-container */
-    --secondary-foreground: 226 41% 13%;  /* #131B2E */
+    --secondary: 172 60% 94%;             /* tinted teal surface */
+    --secondary-foreground: 172 72% 18%;
 
     --muted: 210 11% 92%;                 /* surface-container */
     --muted-foreground: 226 14% 30%;      /* #424656 on-surface-variant */
 
-    --accent: 224 60% 92%;                /* same as secondary container */
-    --accent-foreground: 219 100% 40%;
+    --accent: 172 60% 94%;
+    --accent-foreground: 172 72% 22%;
 
     --destructive: 0 84% 42%;             /* #BA1A1A */
     --destructive-foreground: 0 0% 100%;
 
     --border: 226 23% 80%;                /* #C2C6D9 outline-variant */
     --input: 226 23% 80%;
-    --ring: 219 100% 40%;
+    --ring: 172 72% 42%;
 
     --radius: 0.75rem;
 
@@ -53,24 +53,24 @@
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 226 14% 30%;
-    --sidebar-primary: 219 100% 40%;
+    --sidebar-primary: 172 72% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 14% 96%;
     --sidebar-accent-foreground: 210 11% 11%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 219 100% 40%;
+    --sidebar-ring: 172 72% 42%;
 
     /* Charts */
-    --chart-1: 219 100% 40%;
+    --chart-1: 172 72% 42%;
     --chart-2: 200 80% 45%;
     --chart-3: 262 60% 50%;
     --chart-4: 152 60% 40%;
     --chart-5: 38 92% 55%;
 
     /* Effects */
-    --gradient-primary: linear-gradient(135deg, hsl(219 100% 40%), hsl(219 100% 50%));
+    --gradient-primary: linear-gradient(135deg, hsl(172 72% 38%), hsl(172 72% 52%));
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 33% 99%));
-    --gradient-glow: radial-gradient(ellipse at top, hsl(219 100% 40% / 0.05), transparent 65%);
+    --gradient-glow: radial-gradient(ellipse at top, hsl(172 72% 42% / 0.06), transparent 65%);
     --shadow-card: 0 4px 12px hsl(210 11% 11% / 0.06), 0 0 0 1px hsl(226 23% 80% / 0.4);
     --shadow-elevated: 0 16px 40px hsl(210 11% 11% / 0.12), 0 0 0 1px hsl(226 23% 80% / 0.3);
     --shadow-soft: 0 4px 14px hsl(210 11% 11% / 0.06);
@@ -106,11 +106,11 @@
     --popover: 224 25% 10%;
     --popover-foreground: 210 20% 95%;
 
-    --primary: 222 100% 75%;              /* primary-fixed-dim #B4C5FF */
+    --primary: 172 72% 55%;               /* electric teal (dark) */
     --primary-foreground: 224 30% 6%;
-    --primary-container: 219 100% 50%;
-    --primary-fixed: 226 100% 93%;
-    --primary-fixed-dim: 222 100% 85%;
+    --primary-container: 172 72% 48%;
+    --primary-fixed: 172 60% 88%;
+    --primary-fixed-dim: 172 60% 75%;
 
     --secondary: 224 20% 16%;
     --secondary-foreground: 210 20% 88%;
@@ -118,15 +118,15 @@
     --muted: 224 18% 14%;
     --muted-foreground: 220 12% 60%;
 
-    --accent: 224 25% 18%;
-    --accent-foreground: 222 100% 85%;
+    --accent: 172 40% 18%;
+    --accent-foreground: 172 72% 80%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 224 18% 18%;
     --input: 224 18% 18%;
-    --ring: 222 100% 75%;
+    --ring: 172 72% 55%;
 
     --success: 152 60% 48%;
     --success-foreground: 224 30% 6%;
@@ -137,22 +137,22 @@
 
     --sidebar-background: 224 30% 8%;
     --sidebar-foreground: 220 12% 65%;
-    --sidebar-primary: 222 100% 75%;
+    --sidebar-primary: 172 72% 55%;
     --sidebar-primary-foreground: 224 30% 6%;
     --sidebar-accent: 224 20% 14%;
     --sidebar-accent-foreground: 210 20% 95%;
     --sidebar-border: 224 18% 14%;
-    --sidebar-ring: 222 100% 75%;
+    --sidebar-ring: 172 72% 55%;
 
-    --chart-1: 222 100% 75%;
+    --chart-1: 172 72% 55%;
     --chart-2: 200 80% 55%;
     --chart-3: 262 60% 58%;
     --chart-4: 152 60% 48%;
     --chart-5: 38 92% 60%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(219 100% 50%), hsl(222 100% 75%));
+    --gradient-primary: linear-gradient(135deg, hsl(172 72% 42%), hsl(172 72% 55%));
     --gradient-card: linear-gradient(180deg, hsl(224 25% 11%), hsl(224 25% 9%));
-    --gradient-glow: radial-gradient(ellipse at top, hsl(222 100% 75% / 0.06), transparent 60%);
+    --gradient-glow: radial-gradient(ellipse at top, hsl(172 72% 55% / 0.08), transparent 60%);
     --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.35), 0 0 0 1px hsl(224 18% 18% / 0.6);
     --shadow-elevated: 0 16px 40px hsl(0 0% 0% / 0.5), 0 0 0 1px hsl(224 18% 18% / 0.5);
     --shadow-soft: 0 4px 14px hsl(0 0% 0% / 0.3);
