@@ -313,6 +313,8 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
                 Already have an account? <span className="text-primary font-medium">Sign in</span>
               </Link>
             </div>
+              </>
+            )}
           </div>
         )}
       </div>
