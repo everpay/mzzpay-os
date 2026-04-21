@@ -167,6 +167,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
     if (!userRole) return false;
     // Strict gates: only the listed role can see these items.
     if (item.visibleTo.includes('super_admin') && !isSuperAdmin) return false;
+    // Hide reseller-only items from super_admin (merchant-only flow).
     if (item.visibleTo.includes('reseller') && !isReseller) return false;
     return item.visibleTo.some((r) => roles.includes(r));
   };
