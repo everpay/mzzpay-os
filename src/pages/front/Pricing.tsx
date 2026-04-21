@@ -19,7 +19,7 @@ const paymentPricing = [
   {
     title: "Cards & wallets",
     description: "Accept Visa, Mastercard, Amex, Apple Pay, Google Pay and more.",
-    rate: "2.9% + 30¢",
+    rate: "3.49% + 40¢",
     detail: "per successful transaction",
     extras: [
       { label: "+0.5%", note: "for manually entered cards" },
@@ -92,7 +92,7 @@ export default function Pricing() {
                 </p>
                 <div className="mb-8">
                   <span className="text-[40px] font-extrabold text-gray-900 tracking-tight font-heading" style={{ lineHeight: 1.1 }}>
-                    2.9% + 30¢
+                    3.49% + 40¢
                   </span>
                   <p className="text-sm text-gray-500 mt-1 font-body">per successful transaction for domestic cards</p>
                 </div>

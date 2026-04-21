@@ -33,8 +33,8 @@ export function FrontFooter() {
     }
   };
 
-  const linkClass = "text-sm text-muted-foreground hover:text-foreground transition-colors";
-  const headingClass = "text-sm font-semibold text-foreground mb-4 font-heading";
+  const linkClass = "text-base text-muted-foreground hover:text-foreground transition-colors";
+  const headingClass = "text-lg font-extrabold text-foreground mb-5 font-heading tracking-tight";
 
   return (
     <footer className="border-t border-border bg-muted/40 relative">
@@ -95,7 +95,7 @@ export function FrontFooter() {
 
           <div>
             <h3 className={headingClass}>Stay Updated</h3>
-            <p className="text-sm text-muted-foreground mb-4 font-body">
+            <p className="text-base text-muted-foreground mb-4 font-body">
               Subscribe to our newsletter for the latest updates.
             </p>
             {done ? (
