@@ -55,6 +55,7 @@ import SmartRetry from "./pages/SmartRetry";
 import ProcessorRouting from "./pages/ProcessorRouting";
 import MultiAcquirer from "./pages/MultiAcquirer";
 import AdminProcessors from "./pages/admin/AdminProcessors";
+import ProcessorAnalyticsPage from "./pages/ProcessorAnalyticsPage";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 import FrontPricing from "./pages/front/Pricing";
 import FrontDemo from "./pages/front/Demo";
@@ -171,6 +172,7 @@ const AppRoutes = () => (
     <Route path="/smart-retry" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><SmartRetry /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/processor-routing" element={<ProtectedRoute><ProcessorRouting /></ProtectedRoute>} />
     <Route path="/processor-transparency" element={<Navigate to="/processor-routing" replace />} />
+    <Route path="/processor-analytics" element={<ProtectedRoute><ProcessorAnalyticsPage /></ProtectedRoute>} />
     <Route path="/multi-acquirer" element={<ProtectedRoute><MultiAcquirer /></ProtectedRoute>} />
     <Route path="/admin/processors" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><AdminProcessors /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/integrations" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><Integrations /></RoleProtectedRoute></ProtectedRoute>} />
