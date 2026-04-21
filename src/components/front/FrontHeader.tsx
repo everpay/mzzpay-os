@@ -99,12 +99,12 @@ export function FrontHeader({
         className={`fixed top-0 z-50 w-full transition-all duration-300 ${headerClass}`}
       >
         <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-3" onClick={closeMenu}>
+          <Link to="/" className="flex items-center gap-5" onClick={closeMenu}>
             <img
               src={mzzpayIcon}
               alt="MzzPay"
-              className="h-[4.5rem] w-[4.5rem] rotate-[40deg] drop-shadow-md"
-              style={{ filter: "contrast(1.15) saturate(1.1)" }}
+              className="h-20 w-20 rotate-[33deg] drop-shadow-lg"
+              style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
             />
             <span className={`font-logo text-2xl tracking-wide transition-colors ${logoTextClass}`}>
               MzzPay
@@ -157,12 +157,12 @@ export function FrontHeader({
             aria-modal="true"
           >
             <div className="flex items-center justify-between h-[68px] px-6 border-b border-border/60">
-              <Link to="/" className="flex items-center gap-3" onClick={closeMenu}>
+              <Link to="/" className="flex items-center gap-5" onClick={closeMenu}>
                 <img
                   src={mzzpayIcon}
                   alt="MzzPay"
-                  className="h-[4.5rem] w-[4.5rem] rotate-[40deg] drop-shadow-md"
-                  style={{ filter: "contrast(1.15) saturate(1.1)" }}
+                  className="h-20 w-20 rotate-[33deg] drop-shadow-lg"
+                  style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
                 />
                 <span className="font-logo text-2xl tracking-wide text-foreground">MzzPay</span>
               </Link>
