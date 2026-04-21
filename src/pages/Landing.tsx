@@ -31,9 +31,9 @@ import { FrontFooter } from "@/components/front/FrontFooter";
 import { FrontHeader } from "@/components/front/FrontHeader";
 
 // MzzPay public brand palette (matches /index.css brand tokens)
-const TEAL = "hsl(172 72% 48%)";
-const TEAL_HOVER = "hsl(172 72% 42%)";
-const INK = "hsl(220 47% 7%)";
+const PRIMARY = "hsl(172 72% 48%)";        // electric teal
+const PRIMARY_HOVER = "hsl(172 72% 42%)";
+const INK = "hsl(220 47% 7%)";              // deep navy hero
 
 // Header is provided by the shared <FrontHeader /> component (see /components/front/FrontHeader.tsx).
 
