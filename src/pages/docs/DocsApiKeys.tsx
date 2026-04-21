@@ -97,7 +97,7 @@ export default function DocsApiKeys() {
       </div>
 
       {environment === "production" && !user && (
-        <Card className="border-amber-500/30 bg-amber-500/5">
+        <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="py-4">
             <p className="text-sm font-medium">Production keys require sign-in</p>
             <p className="text-xs text-muted-foreground mt-1">Demo production keys shown below for reference. Sign in to manage your real production keys.</p>
