@@ -89,9 +89,8 @@ export function FrontHeader({
     { label: "Platform", to: "/products/payment-gateway" },
     { label: "Solutions", to: "/solutions/ecommerce" },
     { label: "Pricing", to: "/pricing" },
-    { label: "Partners", to: "/partners" },
-    { label: "Developers", to: "/developers" },
-    { label: "About", to: "/about" },
+    { label: "Resources", to: "/developers" },
+    { label: "Company", to: "/about" },
   ];
 
   return (
@@ -104,7 +103,7 @@ export function FrontHeader({
             <img
               src={mzzpayIcon}
               alt="MzzPay"
-              className="h-14 w-14 -rotate-[40deg] drop-shadow-md"
+              className="h-[4.5rem] w-[4.5rem] rotate-[40deg] drop-shadow-md"
               style={{ filter: "contrast(1.15) saturate(1.1)" }}
             />
             <span className={`font-logo text-2xl tracking-wide transition-colors ${logoTextClass}`}>
@@ -162,7 +161,7 @@ export function FrontHeader({
                 <img
                   src={mzzpayIcon}
                   alt="MzzPay"
-                  className="h-14 w-14 -rotate-[40deg] drop-shadow-md"
+                  className="h-[4.5rem] w-[4.5rem] rotate-[40deg] drop-shadow-md"
                   style={{ filter: "contrast(1.15) saturate(1.1)" }}
                 />
                 <span className="font-logo text-2xl tracking-wide text-foreground">MzzPay</span>
