@@ -30,9 +30,10 @@ import {
 import { FrontFooter } from "@/components/front/FrontFooter";
 import { FrontHeader } from "@/components/front/FrontHeader";
 
-// MzzPay brand palette (primary #004BCA / #0061FF)
-const PRIMARY = "#004BCA";
-const PRIMARY_HOVER = "#0061FF";
+// MzzPay public brand palette (matches /index.css brand tokens)
+const TEAL = "hsl(172 72% 48%)";
+const TEAL_HOVER = "hsl(172 72% 42%)";
+const INK = "hsl(220 47% 7%)";
 
 // Header is provided by the shared <FrontHeader /> component (see /components/front/FrontHeader.tsx).
 
