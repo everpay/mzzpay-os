@@ -176,6 +176,29 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
         ) : (
           /* ── SIGNUP ── */
           <div className="rounded-3xl border border-border bg-card p-8 shadow-elevated">
+            {signupComplete ? (
+              <div className="text-center py-4">
+                <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <CheckCircle2 className="h-9 w-9 text-primary" />
+                </div>
+                <h2 className="font-display text-2xl font-bold text-foreground mb-2 tracking-tight">Check your email</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>.
+                  Click it to activate your account, then sign in.
+                </p>
+                <Button onClick={() => navigate('/login')} className="w-full gap-2" size="lg">
+                  Go to Sign In <ArrowRight className="h-4 w-4" />
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => { setSignupComplete(false); setSignupStep(1); }}
+                  className="mt-4 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Used the wrong email? Start over
+                </button>
+              </div>
+            ) : (
+              <>
             <h2 className="font-display text-3xl font-bold text-foreground mb-2 tracking-tight">Let's create your account.</h2>
             <p className="text-sm text-muted-foreground mb-6">
               Signing up is fast and free — no commitments or long-term contracts required.
