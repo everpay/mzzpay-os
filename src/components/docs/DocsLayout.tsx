@@ -81,7 +81,7 @@ export default function DocsLayout() {
                       cn(
                         "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
                         isActive
-                          ? "bg-primary/10 text-primary font-medium"
+                          ? "bg-[hsl(172_72%_48%_/_0.12)] text-[hsl(172_72%_42%)] font-semibold"
                           : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
                       )
                     }
@@ -125,7 +125,7 @@ export default function DocsLayout() {
                 Dashboard
               </Button>
             </Link>
-            <div className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">v1</div>
+            <div className="px-2.5 py-1 rounded-full bg-[hsl(172_72%_48%_/_0.15)] text-[hsl(172_72%_38%)] text-xs font-semibold">v1</div>
           </div>
         </header>
         <main className="flex-1 p-6 lg:p-10 overflow-auto animate-fade-in">

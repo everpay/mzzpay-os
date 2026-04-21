@@ -68,7 +68,7 @@ export function MarketingPage({
       <FrontHeader />
       <main className="pt-[68px]">
         {/* Hero */}
-        <section className="py-20 md:py-32 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
+        <section className="py-20 md:py-32 gradient-brand-hero text-white">
           <div className="container mx-auto px-6 text-center max-w-4xl">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -234,7 +234,7 @@ export function MarketingPage({
         )}
 
         {/* CTA */}
-        <section className="py-20 bg-slate-950">
+        <section className="py-20 bg-brand-ink">
           <div className="container mx-auto px-6 text-center max-w-2xl">
             <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-5 font-heading">{finalCtaTitle}</h2>
             <p className="text-white/70 mb-8 font-body">{finalCtaSubtitle}</p>
