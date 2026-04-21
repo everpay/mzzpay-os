@@ -230,7 +230,7 @@ function HeroSection() {
           <div className="liquid-glass inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 border border-white/15">
             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
             <span className="text-xs md:text-sm text-white/90 font-medium tracking-wide">
-              Investing · Building · Advisory
+              Payments · Remittance · Commerce
             </span>
           </div>
         </FadeIn>
