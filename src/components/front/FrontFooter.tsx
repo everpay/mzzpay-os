@@ -45,10 +45,10 @@ export function FrontFooter() {
             <h3 className="text-sm font-semibold text-gray-900 mb-4 font-heading">Solutions</h3>
             <ul className="space-y-3 font-body">
               {[
-                { label: "E-commerce", to: "/pricing" },
-                { label: "SaaS & Platforms", to: "/pricing" },
-                { label: "Marketplaces", to: "/pricing" },
-                { label: "Enterprise", to: "/pricing" },
+                { label: "E-commerce", to: "/solutions/ecommerce" },
+                { label: "SaaS & Platforms", to: "/solutions/saas" },
+                { label: "Marketplaces", to: "/solutions/marketplaces" },
+                { label: "Enterprise", to: "/solutions/enterprise" },
               ].map((item) => (
                 <li key={item.label}>
                   <Link to={item.to} className="text-sm text-gray-600 hover:text-foreground transition-colors">
@@ -63,10 +63,10 @@ export function FrontFooter() {
             <h3 className="text-sm font-semibold text-gray-900 mb-4 font-heading">Products</h3>
             <ul className="space-y-3 font-body">
               {[
-                { label: "Online Payments", to: "/pricing" },
-                { label: "Payment Gateway", to: "/pricing" },
-                { label: "Payment Methods", to: "/pricing" },
-                { label: "Fraud Prevention", to: "/pricing" },
+                { label: "Online Payments", to: "/products/online-payments" },
+                { label: "Payment Gateway", to: "/products/payment-gateway" },
+                { label: "Payment Methods", to: "/products/payment-methods" },
+                { label: "Fraud Prevention", to: "/products/fraud-prevention" },
               ].map((item) => (
                 <li key={item.label}>
                   <Link to={item.to} className="text-sm text-gray-600 hover:text-foreground transition-colors">
@@ -83,7 +83,7 @@ export function FrontFooter() {
               <li><Link to="/docs" className="text-sm text-gray-600 hover:text-foreground transition-colors">API Documentation</Link></li>
               <li><Link to="/demo" className="text-sm text-gray-600 hover:text-foreground transition-colors">Request Demo</Link></li>
               <li><Link to="/pricing" className="text-sm text-gray-600 hover:text-foreground transition-colors">Plans & Pricing</Link></li>
-              <li><Link to="/docs" className="text-sm text-gray-600 hover:text-foreground transition-colors">Help & Support</Link></li>
+              <li><Link to="/help" className="text-sm text-gray-600 hover:text-foreground transition-colors">Help & Support</Link></li>
             </ul>
           </div>
 
@@ -92,7 +92,7 @@ export function FrontFooter() {
             <ul className="space-y-3 font-body">
               <li><Link to="/about" className="text-sm text-gray-600 hover:text-foreground transition-colors">About Us</Link></li>
               <li><Link to="/partners" className="text-sm text-gray-600 hover:text-foreground transition-colors">Partners</Link></li>
-              <li><Link to="/demo" className="text-sm text-gray-600 hover:text-foreground transition-colors">Contact</Link></li>
+              <li><Link to="/contact" className="text-sm text-gray-600 hover:text-foreground transition-colors">Contact</Link></li>
             </ul>
           </div>
 
