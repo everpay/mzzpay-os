@@ -39,7 +39,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import mzzpayIcon from "@/assets/mzzpay-logo.png";
+import mzzpayIcon from "@/assets/mzzpay-icon.png";
 
 interface NavItem {
   to: string;

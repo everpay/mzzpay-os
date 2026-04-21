@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import mzzpayIcon from "@/assets/mzzpay-logo.png";
+import mzzpayIcon from "@/assets/mzzpay-icon.png";
 
 const navSections = [
   {
