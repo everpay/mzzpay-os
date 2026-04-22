@@ -60,8 +60,13 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !user) return jsonResponse({ success: false, error: 'Invalid auth' }, 401);
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims?.sub) {
+      console.error('[elektropay-wallet] auth failed:', claimsErr?.message);
+      return jsonResponse({ success: false, error: 'Invalid auth' }, 401);
+    }
+    const user = { id: claimsData.claims.sub as string, email: claimsData.claims.email as string };
 
     const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
     const isAdmin = roles?.some((r: any) => r.role === 'super_admin' || r.role === 'admin');
