@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/format';
-import { CheckCircle2, AlertTriangle, XCircle, Download, RefreshCw, Scale, TrendingUp, TrendingDown } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, Download, RefreshCw, Scale, TrendingUp, TrendingDown, FileText } from 'lucide-react';
+import { exportPdf } from '@/lib/export-pdf';
 
 export default function Reconciliation() {
   const { data: rows, isLoading, refetch } = useQuery({
@@ -45,11 +46,21 @@ export default function Reconciliation() {
     const csv = 'Date,Provider,Gross,Settled,Variance,Status\n' + rows.map(r => `${r.date},${r.provider},${r.gross.toFixed(2)},${r.settled.toFixed(2)},${r.variance.toFixed(2)},${r.status}`).join('\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `reconciliation-${new Date().toISOString().slice(0,10)}.csv`; a.click();
   };
+  const exportPdfReport = () => {
+    if (!rows) return;
+    exportPdf({
+      title: 'Reconciliation Report',
+      filename: 'reconciliation',
+      subtitle: `${rows.length} settlement days`,
+      headers: ['Date', 'Provider', 'Gross', 'Settled', 'Variance', 'Status', 'Txns'],
+      rows: rows.map(r => [r.date, r.provider, r.gross.toFixed(2), r.settled.toFixed(2), r.variance.toFixed(2), r.status, r.count]),
+    });
+  };
   return (
     <AppLayout>
       <div className="mb-6 flex items-center justify-between">
         <div><h1 className="font-heading text-2xl font-bold">Reconciliation</h1><p className="mt-1 text-sm text-muted-foreground">Daily settlement vs ledger comparison</p></div>
-        <div className="flex gap-2"><Button variant="outline" size="sm" className="rounded-full" onClick={() => refetch()}><RefreshCw className="h-4 w-4 mr-1" />Refresh</Button><Button variant="outline" size="sm" className="rounded-full" onClick={exportCsv}><Download className="h-4 w-4 mr-1" />Export</Button></div>
+        <div className="flex gap-2"><Button variant="outline" size="sm" className="rounded-full" onClick={() => refetch()}><RefreshCw className="h-4 w-4 mr-1" />Refresh</Button><Button variant="outline" size="sm" className="rounded-full" onClick={exportCsv}><Download className="h-4 w-4 mr-1" />CSV</Button><Button variant="outline" size="sm" className="rounded-full" onClick={exportPdfReport}><FileText className="h-4 w-4 mr-1" />PDF</Button></div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-success/10"><CheckCircle2 className="h-5 w-5 text-success" /></div><div><p className="text-sm text-muted-foreground">Matched</p><p className="text-2xl font-bold">{stats.matched}</p></div></div></CardContent></Card>

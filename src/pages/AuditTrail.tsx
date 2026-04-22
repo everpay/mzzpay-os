@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, Download, Search, Shield, Clock } from 'lucide-react';
 import { format } from 'date-fns';
+import { exportPdf } from '@/lib/export-pdf';
 
 export default function AuditTrail() {
   const { user } = useAuth();
@@ -36,6 +37,21 @@ export default function AuditTrail() {
     const csv = 'Timestamp,Action,Entity,EntityID,Metadata\n' + filtered.map(l => `${l.created_at},${l.action},${l.entity_type || ''},${l.entity_id || ''},"${JSON.stringify(l.metadata || {}).replace(/"/g, '""')}"`).join('\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `audit-${format(new Date(), 'yyyy-MM-dd')}.csv`; a.click();
   };
+  const expPdf = () => {
+    exportPdf({
+      title: 'Audit Trail',
+      filename: 'audit-trail',
+      subtitle: `${filtered.length} events`,
+      headers: ['Timestamp', 'Action', 'Entity', 'Entity ID', 'Metadata'],
+      rows: filtered.map(l => [
+        format(new Date(l.created_at), 'yyyy-MM-dd HH:mm:ss'),
+        l.action,
+        l.entity_type || '',
+        l.entity_id || '',
+        JSON.stringify(l.metadata || {}).slice(0, 120),
+      ]),
+    });
+  };
   const ac = (a: string): any => a.includes('create') ? 'default' : a.includes('delete') ? 'destructive' : a.includes('update') ? 'secondary' : 'outline';
 
   return (
@@ -43,7 +59,10 @@ export default function AuditTrail() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div><h1 className="font-heading text-2xl font-bold flex items-center gap-2"><Shield className="h-6 w-6 text-primary" />Audit Trail</h1><p className="text-sm text-muted-foreground mt-1">Compliance-grade activity logging</p></div>
-          <Button onClick={exp} variant="outline" size="sm" className="rounded-full"><Download className="h-4 w-4 mr-2" />Export</Button>
+          <div className="flex gap-2">
+            <Button onClick={exp} variant="outline" size="sm" className="rounded-full"><Download className="h-4 w-4 mr-2" />CSV</Button>
+            <Button onClick={expPdf} variant="outline" size="sm" className="rounded-full"><FileText className="h-4 w-4 mr-2" />PDF</Button>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card><CardContent className="pt-4"><div className="text-sm text-muted-foreground flex items-center gap-2"><FileText className="h-4 w-4" />Total Events</div><p className="text-2xl font-bold mt-1">{logs.length}</p></CardContent></Card>
