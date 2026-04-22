@@ -2,3 +2,6 @@ project_id = "sprjfzeyyihtfvxnfuhb"
 
 [functions.newsletter-subscribe]
 verify_jwt = false
+
+[functions.crypto-pay]
+verify_jwt = false
