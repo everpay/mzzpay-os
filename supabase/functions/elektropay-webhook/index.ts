@@ -55,9 +55,7 @@ serve(async (req) => {
         .update({
           status,
           tx_hash: payload.tx_hash ?? payload.txid,
-          rate: payload.rate,
-          rate_date: payload.rate_date,
-          metadata: { webhook: payload },
+          metadata: { webhook: payload, rate: payload.rate, rate_date: payload.rate_date },
         })
         .eq('elektropay_id', epId);
 
