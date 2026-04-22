@@ -5,18 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText, Download } from 'lucide-react';
+import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText, Download, Bitcoin } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { formatCurrency } from '@/lib/format';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
+import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 
 export default function PayInvoice() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'openbanking' | 'apple_pay'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'openbanking' | 'apple_pay' | 'crypto'>('card');
   const [cardNumber, setCardNumber] = useState('');
   const [expMonth, setExpMonth] = useState('');
   const [expYear, setExpYear] = useState('');
@@ -207,7 +208,7 @@ export default function PayInvoice() {
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">
           <Tabs value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="card" className="gap-1 text-xs">
                 <CreditCard className="h-3.5 w-3.5" /> Card
               </TabsTrigger>
@@ -216,6 +217,9 @@ export default function PayInvoice() {
               </TabsTrigger>
               <TabsTrigger value="apple_pay" className="gap-1 text-xs">
                 🍎 Apple Pay
+              </TabsTrigger>
+              <TabsTrigger value="crypto" className="gap-1 text-xs">
+                <Bitcoin className="h-3.5 w-3.5" /> Crypto
               </TabsTrigger>
             </TabsList>
 
@@ -272,11 +276,30 @@ export default function PayInvoice() {
               </div>
               <p className="text-xs text-muted-foreground">Available on Safari and iOS devices</p>
             </TabsContent>
+
+            <TabsContent value="crypto" className="mt-4">
+              <CryptoPaymentPanel
+                amount={Number(invoice.amount)}
+                currency={invoice.currency}
+                description={`Invoice ${invoice.invoice_number}`}
+                reference={invoice.id}
+                onComplete={async (txId) => {
+                  await supabase.from('invoices').update({
+                    status: 'paid',
+                    paid_at: new Date().toISOString(),
+                    transaction_id: txId,
+                  }).eq('id', invoice.id);
+                  setPaymentComplete(true);
+                }}
+              />
+            </TabsContent>
           </Tabs>
 
-          <Button type="submit" className="w-full gap-2" size="lg" disabled={isSubmitting}>
+          <Button type="submit" className="w-full gap-2" size="lg" disabled={isSubmitting || paymentMethod === 'crypto'}>
             {isSubmitting ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
+            ) : paymentMethod === 'crypto' ? (
+              <>Use the crypto panel above</>
             ) : (
               <>Pay {formatCurrency(invoice.amount, invoice.currency)} <ArrowRight className="h-4 w-4" /></>
             )}
