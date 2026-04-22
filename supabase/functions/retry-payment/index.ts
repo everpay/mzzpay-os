@@ -6,8 +6,38 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Dunning schedule: retry after these many days
-const RETRY_SCHEDULE = [1, 3, 7]; // days after initial failure
+const DEFAULT_SETTINGS = {
+  enabled: true,
+  max_attempts: 3,
+  backoff_strategy: 'exponential' as const,
+  backoff_seconds: 60,
+  retry_decline_codes: ['insufficient_funds', 'do_not_honor', 'try_again_later'],
+};
+
+type Strategy = 'linear' | 'exponential' | 'fibonacci';
+
+function fib(n: number): number {
+  if (n <= 1) return 1;
+  let a = 1, b = 1;
+  for (let i = 2; i <= n; i++) [a, b] = [b, a + b];
+  return b;
+}
+
+function delaySecondsForAttempt(attempt: number, base: number, strategy: Strategy): number {
+  if (attempt < 1) return base;
+  switch (strategy) {
+    case 'linear': return base * attempt;
+    case 'fibonacci': return base * fib(attempt);
+    case 'exponential':
+    default: return base * Math.pow(2, attempt - 1);
+  }
+}
+
+function isRetryable(reason: string | null | undefined, allowed: string[]): boolean {
+  if (!reason) return true; // unknown reason — allow if smart retry enabled
+  const r = reason.toLowerCase().replace(/\s+/g, '_');
+  return allowed.some(c => r.includes(c.toLowerCase()));
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -22,29 +52,58 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { subscription_id, force = false } = body;
 
-    // Get past_due subscriptions
     let query = supabase
       .from('subscriptions')
       .select(`
         *,
         customer:customers(id, email, first_name, last_name, merchant_id),
-        plan:subscription_plans(name, amount, currency),
+        plan:subscription_plans(name, amount, currency, interval),
         payment_method:payment_methods(vgs_alias, card_last4, card_brand)
       `)
       .eq('status', 'past_due');
 
-    if (subscription_id) {
-      query = query.eq('id', subscription_id);
-    }
+    if (subscription_id) query = query.eq('id', subscription_id);
 
     const { data: pastDueSubscriptions, error } = await query;
-
     if (error) throw error;
 
-    const results = [];
+    const results: any[] = [];
+    const settingsCache = new Map<string, typeof DEFAULT_SETTINGS>();
+
+    async function getSettings(merchantId: string | null | undefined) {
+      if (!merchantId) return DEFAULT_SETTINGS;
+      if (settingsCache.has(merchantId)) return settingsCache.get(merchantId)!;
+      const { data } = await supabase
+        .from('retry_settings')
+        .select('*')
+        .eq('merchant_id', merchantId)
+        .maybeSingle();
+      const s = data
+        ? {
+            enabled: data.enabled,
+            max_attempts: data.max_attempts,
+            backoff_strategy: data.backoff_strategy as Strategy,
+            backoff_seconds: data.backoff_seconds,
+            retry_decline_codes: Array.isArray(data.retry_decline_codes)
+              ? (data.retry_decline_codes as string[])
+              : DEFAULT_SETTINGS.retry_decline_codes,
+          }
+        : DEFAULT_SETTINGS;
+      settingsCache.set(merchantId, s);
+      return s;
+    }
 
     for (const sub of (pastDueSubscriptions || [])) {
-      // Check retry history from provider_events
+      const merchantId = sub.customer?.merchant_id;
+      const settings = await getSettings(merchantId);
+
+      // Honor per-merchant disable
+      if (!settings.enabled && !force) {
+        results.push({ id: sub.id, action: 'skipped_disabled' });
+        continue;
+      }
+
+      // Retry history
       const { data: retryEvents } = await supabase
         .from('provider_events')
         .select('created_at, payload')
@@ -54,15 +113,26 @@ serve(async (req) => {
 
       const retryCount = retryEvents?.length || 0;
       const lastRetry = retryEvents?.[0]?.created_at;
+      const lastReason = (retryEvents?.[0]?.payload as any)?.failure_reason as string | undefined;
 
-      // Determine if we should retry now
+      // Honor decline-code allow-list
+      if (lastReason && !force && !isRetryable(lastReason, settings.retry_decline_codes)) {
+        await supabase.from('subscriptions').update({
+          status: 'canceled',
+          canceled_at: new Date().toISOString(),
+        }).eq('id', sub.id);
+        results.push({ id: sub.id, action: 'canceled_non_retryable', reason: lastReason });
+        continue;
+      }
+
       let shouldRetry = force;
       if (!force) {
-        if (retryCount >= RETRY_SCHEDULE.length) {
-          // Exhausted all retries — mark as canceled
-          await supabase.from('subscriptions').update({ status: 'canceled', canceled_at: new Date().toISOString() }).eq('id', sub.id);
+        if (retryCount >= settings.max_attempts) {
+          await supabase.from('subscriptions').update({
+            status: 'canceled',
+            canceled_at: new Date().toISOString(),
+          }).eq('id', sub.id);
 
-          // Fire cancellation alert
           await supabase.functions.invoke('subscription-alerts', {
             body: {
               type: 'cancellation_confirmed',
@@ -71,30 +141,34 @@ serve(async (req) => {
             },
           });
 
-          results.push({ id: sub.id, action: 'canceled_after_exhausted_retries' });
+          results.push({ id: sub.id, action: 'canceled_after_exhausted_retries', attempts: retryCount });
           continue;
         }
 
-        if (lastRetry) {
-          const daysSinceLastRetry = (Date.now() - new Date(lastRetry).getTime()) / (1000 * 60 * 60 * 24);
-          shouldRetry = daysSinceLastRetry >= RETRY_SCHEDULE[retryCount];
-        } else {
-          // First retry attempt
-          const daysSincePastDue = (Date.now() - new Date(sub.updated_at).getTime()) / (1000 * 60 * 60 * 24);
-          shouldRetry = daysSincePastDue >= RETRY_SCHEDULE[0];
+        const requiredDelaySec = delaySecondsForAttempt(
+          retryCount + 1,
+          settings.backoff_seconds,
+          settings.backoff_strategy,
+        );
+        const since = lastRetry ? new Date(lastRetry).getTime() : new Date(sub.updated_at).getTime();
+        const elapsedSec = (Date.now() - since) / 1000;
+        shouldRetry = elapsedSec >= requiredDelaySec;
+
+        if (!shouldRetry) {
+          results.push({
+            id: sub.id,
+            action: 'skipped',
+            retryCount,
+            nextRetryInSec: Math.max(0, Math.round(requiredDelaySec - elapsedSec)),
+          });
+          continue;
         }
       }
 
-      if (!shouldRetry) {
-        results.push({ id: sub.id, action: 'skipped', retryCount, nextRetryDay: RETRY_SCHEDULE[retryCount] });
-        continue;
-      }
-
-      // Simulate payment retry (in production would call actual payment processor)
-      const paymentSuccess = Math.random() > 0.3; // 70% success rate for simulation
+      // Simulated retry (production should call provider)
+      const paymentSuccess = Math.random() > 0.3;
 
       if (paymentSuccess) {
-        // Update subscription back to active
         const nextPeriodEnd = new Date();
         nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + (sub.plan?.interval === 'year' ? 12 : 1));
 
@@ -105,27 +179,33 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         }).eq('id', sub.id);
 
-        // Log event
-        await supabase.from('provider_events').insert({
-          merchant_id: sub.customer?.merchant_id,
-          provider: 'dunning',
-          event_type: 'payment.retry_success',
-          payload: { subscription_id: sub.id, attempt: retryCount + 1, amount: sub.plan?.amount },
-        });
-
-        results.push({ id: sub.id, action: 'retry_succeeded', attempt: retryCount + 1 });
-      } else {
-        // Log failed retry
-        if (sub.customer?.merchant_id) {
+        if (merchantId) {
           await supabase.from('provider_events').insert({
-            merchant_id: sub.customer.merchant_id,
+            merchant_id: merchantId,
             provider: 'dunning',
-            event_type: 'payment.retry_attempted',
-            payload: { subscription_id: sub.id, attempt: retryCount + 1, failed: true },
+            event_type: 'payment.retry_success',
+            payload: { subscription_id: sub.id, attempt: retryCount + 1, amount: sub.plan?.amount },
           });
         }
 
-        // Send payment failed alert
+        results.push({ id: sub.id, action: 'retry_succeeded', attempt: retryCount + 1 });
+      } else {
+        const failureReason = settings.retry_decline_codes[0] || 'do_not_honor';
+        if (merchantId) {
+          await supabase.from('provider_events').insert({
+            merchant_id: merchantId,
+            provider: 'dunning',
+            event_type: 'payment.retry_attempted',
+            payload: {
+              subscription_id: sub.id,
+              attempt: retryCount + 1,
+              failed: true,
+              failure_reason: failureReason,
+              backoff_strategy: settings.backoff_strategy,
+            },
+          });
+        }
+
         await supabase.functions.invoke('subscription-alerts', {
           body: {
             type: 'payment_failed',
