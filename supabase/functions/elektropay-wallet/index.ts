@@ -269,8 +269,8 @@ serve(async (req) => {
         const { data, error } = await supabase.from('crypto_transactions').insert({
           wallet_id, merchant_id: wallet.merchant_id, store_id: wallet.store_id,
           tx_type: 'convert', status: 'complete', asset_id: wallet.asset_id, amount,
-          rate: elektropayResp?.rate, rate_date: elektropayResp?.rate_date,
-          metadata: { target_asset_id, raw: elektropayResp }, initiated_by: user.id,
+          metadata: { target_asset_id, rate: elektropayResp?.rate, rate_date: elektropayResp?.rate_date, raw: elektropayResp },
+          initiated_by: user.id,
         }).select().single();
         if (error) throw error;
         await audit(supabase, user, 'crypto_convert', wallet.merchant_id, data);
