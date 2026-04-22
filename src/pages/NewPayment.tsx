@@ -126,9 +126,13 @@ export default function NewPayment() {
 
       if (paymentMethod === 'card') {
         if (cardEntryMode === 'vgs' && vgsToken) {
+          // Recurring / card-on-file path: VGS-vaulted token
           payload.vgsToken = vgsToken;
+          payload.saveCard = true;
         } else if (cardNumber) {
+          // One-off payment: PAN goes directly to processor, NOT through VGS
           payload.cardDetails = { number: cardNumber, expMonth, expYear, cvc, holderName: holderName.trim() };
+          payload.saveCard = false;
         }
       }
 
