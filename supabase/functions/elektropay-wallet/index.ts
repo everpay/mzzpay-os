@@ -269,8 +269,8 @@ serve(async (req) => {
         const { data, error } = await supabase.from('crypto_transactions').insert({
           wallet_id, merchant_id: wallet.merchant_id, store_id: wallet.store_id,
           tx_type: 'convert', status: 'complete', asset_id: wallet.asset_id, amount,
-          rate: elektropayResp?.rate, rate_date: elektropayResp?.rate_date,
-          metadata: { target_asset_id, raw: elektropayResp }, initiated_by: user.id,
+          metadata: { target_asset_id, rate: elektropayResp?.rate, rate_date: elektropayResp?.rate_date, raw: elektropayResp },
+          initiated_by: user.id,
         }).select().single();
         if (error) throw error;
         await audit(supabase, user, 'crypto_convert', wallet.merchant_id, data);
@@ -302,6 +302,13 @@ serve(async (req) => {
       case 'auto_provision_merchant': {
         const { merchant_id, business_name, country } = payload;
         if (!merchant_id || !business_name) return jsonResponse({ success: false, error: 'merchant_id and business_name required' }, 400);
+
+        // Caller must own the merchant (or be admin)
+        if (!isAdmin) {
+          const { data: ownedMerchant } = await supabase.from('merchants')
+            .select('id').eq('user_id', user.id).maybeSingle();
+          if (ownedMerchant?.id !== merchant_id) return forbidden();
+        }
 
         const cc = String(country || '').toUpperCase();
         const SANCTIONED = ['IR','IRAN','KP','NORTH KOREA','SY','SYRIA','CU','CUBA','RU','RUSSIA','BY','BELARUS','MM','MYANMAR','VE','VENEZUELA','ZW','ZIMBABWE','SD','SUDAN','SS','SOUTH SUDAN'];
@@ -408,13 +415,14 @@ async function getWalletWithGuard(supabase: any, wallet_id: string, user: any, i
 
 async function audit(supabase: any, user: any, change_type: string, merchant_id: string, data: any) {
   try {
+    const isUuid = typeof merchant_id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(merchant_id);
     await supabase.from('audit_logs').insert({
-      resource_type: 'crypto',
-      resource_id: merchant_id,
-      change_type,
-      changed_by: user.email || user.id,
-      user_token: user.id,
-      new_value: data,
+      action: change_type,
+      entity_type: 'crypto',
+      entity_id: typeof merchant_id === 'string' ? merchant_id : String(merchant_id),
+      user_id: user.id,
+      merchant_id: isUuid ? merchant_id : null,
+      metadata: { change_type, actor_email: user.email, payload: data },
     });
   } catch (e) { console.warn('audit failed:', e); }
 }
