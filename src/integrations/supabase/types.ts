@@ -283,6 +283,318 @@ export type Database = {
           },
         ]
       }
+      crypto_assets: {
+        Row: {
+          asset_id: string
+          created_at: string
+          decimals: number
+          id: string
+          is_active: boolean
+          is_fiat: boolean
+          max_withdrawal_amount: number | null
+          min_withdrawal_amount: number | null
+          name: string
+          network: string | null
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          decimals?: number
+          id?: string
+          is_active?: boolean
+          is_fiat?: boolean
+          max_withdrawal_amount?: number | null
+          min_withdrawal_amount?: number | null
+          name: string
+          network?: string | null
+          symbol: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          decimals?: number
+          id?: string
+          is_active?: boolean
+          is_fiat?: boolean
+          max_withdrawal_amount?: number | null
+          min_withdrawal_amount?: number | null
+          name?: string
+          network?: string | null
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crypto_commissions: {
+        Row: {
+          asset_id: string | null
+          created_at: string
+          fee_fixed: number
+          fee_percent: number
+          id: string
+          is_active: boolean
+          merchant_id: string | null
+          split_percent: number
+          split_to_wallet_id: string | null
+          tx_type: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id?: string | null
+          created_at?: string
+          fee_fixed?: number
+          fee_percent?: number
+          id?: string
+          is_active?: boolean
+          merchant_id?: string | null
+          split_percent?: number
+          split_to_wallet_id?: string | null
+          tx_type: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string | null
+          created_at?: string
+          fee_fixed?: number
+          fee_percent?: number
+          id?: string
+          is_active?: boolean
+          merchant_id?: string | null
+          split_percent?: number
+          split_to_wallet_id?: string | null
+          tx_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crypto_commissions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crypto_commissions_split_to_wallet_id_fkey"
+            columns: ["split_to_wallet_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crypto_stores: {
+        Row: {
+          base_currency: string
+          created_at: string
+          elektropay_store_id: string | null
+          id: string
+          is_active: boolean
+          is_test: boolean
+          merchant_id: string
+          metadata: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          base_currency?: string
+          created_at?: string
+          elektropay_store_id?: string | null
+          id?: string
+          is_active?: boolean
+          is_test?: boolean
+          merchant_id: string
+          metadata?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string
+          elektropay_store_id?: string | null
+          id?: string
+          is_active?: boolean
+          is_test?: boolean
+          merchant_id?: string
+          metadata?: Json
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crypto_stores_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crypto_transactions: {
+        Row: {
+          amount: number
+          asset_id: string
+          created_at: string
+          description: string | null
+          elektropay_id: string | null
+          fee: number
+          fee_asset_id: string | null
+          from_address: string | null
+          id: string
+          initiated_by: string | null
+          merchant_id: string
+          metadata: Json
+          status: string
+          store_id: string | null
+          to_address: string | null
+          tx_hash: string | null
+          tx_type: string
+          updated_at: string
+          wallet_id: string | null
+        }
+        Insert: {
+          amount: number
+          asset_id: string
+          created_at?: string
+          description?: string | null
+          elektropay_id?: string | null
+          fee?: number
+          fee_asset_id?: string | null
+          from_address?: string | null
+          id?: string
+          initiated_by?: string | null
+          merchant_id: string
+          metadata?: Json
+          status?: string
+          store_id?: string | null
+          to_address?: string | null
+          tx_hash?: string | null
+          tx_type: string
+          updated_at?: string
+          wallet_id?: string | null
+        }
+        Update: {
+          amount?: number
+          asset_id?: string
+          created_at?: string
+          description?: string | null
+          elektropay_id?: string | null
+          fee?: number
+          fee_asset_id?: string | null
+          from_address?: string | null
+          id?: string
+          initiated_by?: string | null
+          merchant_id?: string
+          metadata?: Json
+          status?: string
+          store_id?: string | null
+          to_address?: string | null
+          tx_hash?: string | null
+          tx_type?: string
+          updated_at?: string
+          wallet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crypto_transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crypto_transactions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crypto_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crypto_wallets: {
+        Row: {
+          address: string | null
+          asset_id: string
+          available: number | null
+          balance: number
+          base_balance: number
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          is_user_added: boolean
+          merchant_id: string
+          metadata: Json
+          network: string | null
+          on_hold: number
+          status: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          asset_id: string
+          available?: number | null
+          balance?: number
+          base_balance?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          is_user_added?: boolean
+          merchant_id: string
+          metadata?: Json
+          network?: string | null
+          on_hold?: number
+          status?: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          asset_id?: string
+          available?: number | null
+          balance?: number
+          base_balance?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          is_user_added?: boolean
+          merchant_id?: string
+          metadata?: Json
+          network?: string | null
+          on_hold?: number
+          status?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crypto_wallets_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crypto_wallets_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           billing_address: Json | null
@@ -395,6 +707,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      elektropay_webhook_events: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          error_message: string | null
+          event_id: string
+          event_type: string
+          id: string
+          last_attempt_at: string | null
+          payload: Json
+          processed: boolean
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          error_message?: string | null
+          event_id: string
+          event_type: string
+          id?: string
+          last_attempt_at?: string | null
+          payload?: Json
+          processed?: boolean
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          error_message?: string | null
+          event_id?: string
+          event_type?: string
+          id?: string
+          last_attempt_at?: string | null
+          payload?: Json
+          processed?: boolean
+          updated_at?: string
+        }
+        Relationships: []
       }
       email_send_log: {
         Row: {
