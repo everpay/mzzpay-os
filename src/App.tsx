@@ -169,7 +169,7 @@ const AppRoutes = () => (
     <Route path="/risk" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><RiskProfile /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/chargeflow" element={<Navigate to="/chargebacks" replace />} />
     <Route path="/3ds-settings" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><ThreeDSecureSettings /></RoleProtectedRoute></ProtectedRoute>} />
-    <Route path="/smart-retry" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><SmartRetry /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/smart-retry" element={<ProtectedRoute><SmartRetry /></ProtectedRoute>} />
     <Route path="/processor-routing" element={<ProtectedRoute><ProcessorRouting /></ProtectedRoute>} />
     <Route path="/processor-transparency" element={<Navigate to="/processor-routing" replace />} />
     <Route path="/processor-analytics" element={<ProtectedRoute><ProcessorAnalyticsPage /></ProtectedRoute>} />

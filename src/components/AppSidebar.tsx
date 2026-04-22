@@ -118,6 +118,7 @@ const navSections: NavSection[] = [
       { to: "/processor-routing", icon: GitBranch, label: "Processor Routing" },
       { to: "/processor-analytics", icon: Activity, label: "Processor Analytics" },
       { to: "/multi-acquirer", icon: Globe2, label: "Multi-Acquirer" },
+      { to: "/smart-retry", icon: Repeat, label: "Smart Retry" },
     ],
   },
   {
@@ -127,7 +128,6 @@ const navSections: NavSection[] = [
       { to: "/integrations", icon: Plug, label: "Integrations", visibleTo: ["super_admin"] },
       { to: "/risk", icon: ShieldCheck, label: "Risk Profile", visibleTo: ["super_admin"] },
       { to: "/3ds-settings", icon: Lock, label: "3D Secure", visibleTo: ["super_admin"] },
-      { to: "/smart-retry", icon: Repeat, label: "Smart Retry", visibleTo: ["super_admin"] },
       { to: "/reconciliation", icon: FileBarChart, label: "Reconciliation", visibleTo: ["super_admin"] },
       { to: "/treasury", icon: Landmark, label: "Multi-currency", visibleTo: ["super_admin"] },
       { to: "/audit-trail", icon: ScrollText, label: "Audit Trail", visibleTo: ["super_admin"] },
