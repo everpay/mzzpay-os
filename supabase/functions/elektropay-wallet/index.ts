@@ -303,6 +303,13 @@ serve(async (req) => {
         const { merchant_id, business_name, country } = payload;
         if (!merchant_id || !business_name) return jsonResponse({ success: false, error: 'merchant_id and business_name required' }, 400);
 
+        // Caller must own the merchant (or be admin)
+        if (!isAdmin) {
+          const { data: ownedMerchant } = await supabase.from('merchants')
+            .select('id').eq('user_id', user.id).maybeSingle();
+          if (ownedMerchant?.id !== merchant_id) return forbidden();
+        }
+
         const cc = String(country || '').toUpperCase();
         const SANCTIONED = ['IR','IRAN','KP','NORTH KOREA','SY','SYRIA','CU','CUBA','RU','RUSSIA','BY','BELARUS','MM','MYANMAR','VE','VENEZUELA','ZW','ZIMBABWE','SD','SUDAN','SS','SOUTH SUDAN'];
         if (cc && SANCTIONED.includes(cc)) {
