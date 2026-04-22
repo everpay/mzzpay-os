@@ -13,6 +13,13 @@ interface PaymentRequest {
   customerEmail?: string;
   description?: string;
   idempotencyKey?: string;
+  /**
+   * VGS POLICY: Card data is sent DIRECTLY to the processor (Mondo / MzzPay).
+   * VGS is ONLY used to vault cards when the merchant intends to charge again
+   * later (recurring billing, saved card-on-file). Set `saveCard: true` to
+   * opt-in. Live one-off payments must NEVER be proxied through VGS.
+   */
+  saveCard?: boolean;
   cardDetails?: {
     number: string;
     expMonth: string;
@@ -125,7 +132,9 @@ serve(async (req) => {
     let providerResponse;
     let vgsVaultPromise = null;
 
-    if (cardDetails) {
+    // VGS is for vaulting only — opt-in via `saveCard` (recurring / card-on-file).
+    // One-off payments go straight to the processor; we never proxy live PAN through VGS.
+    if (cardDetails && paymentData.saveCard === true) {
       vgsVaultPromise = vaultToVGS(cardDetails);
     }
 
