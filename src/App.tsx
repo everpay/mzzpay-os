@@ -46,6 +46,7 @@ import BankAccounts from "./pages/BankAccounts";
 import Recipients from "./pages/Recipients";
 import Treasury from "./pages/Treasury";
 import AuditTrail from "./pages/AuditTrail";
+import EmailDnsBundle from "./pages/EmailDnsBundle";
 
 import Products from "./pages/Products";
 import Integrations from "./pages/Integrations";
@@ -172,6 +173,7 @@ const AppRoutes = () => (
     <Route path="/recipients" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Recipients /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/treasury" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><Treasury /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/audit-trail" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><AuditTrail /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/settings/email-dns" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><EmailDnsBundle /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/webhooks" element={<Navigate to="/settings" replace />} />
     <Route path="/products" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Products /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/kyc" element={<Navigate to="/settings" replace />} />
