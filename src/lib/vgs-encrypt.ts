@@ -1,20 +1,24 @@
 /**
- * Lightweight client-side helper for storing gateway credentials.
+ * VGS USAGE POLICY (project-wide)
+ * --------------------------------
+ * VGS is used for TWO purposes only:
+ *   1. Vaulting cards intended for recurring billing / card-on-file.
+ *   2. Securing payment FORMS (VGS Collect iframe fields) so raw PAN never
+ *      touches our frontend or backend in plaintext.
  *
- * NOTE: This project does not yet expose a `vgs-encrypt` Edge Function.
- * To avoid blocking the Integrations UX, this helper currently passes
- * credential values through unchanged. When the VGS proxy is wired up,
- * swap the implementation of `encryptWithVGS` to call the edge function
- * (see Everpay Platform OS for the reference implementation).
+ * Live, one-off payment data is sent DIRECTLY to the destination processor
+ * (Mondo / MzzPay / Matrix / etc). We do NOT proxy transactional traffic
+ * through VGS Outbound — that path is reserved for tokenization only.
  *
- * Stored values are still protected at-rest by Supabase RLS — only the
- * owning merchant (or admin) can read the row.
+ * This helper exists so non-card credential fields (e.g. gateway API
+ * secrets stored on the Integrations page) can be aliased before they hit
+ * the database. RLS still protects the row at-rest.
  */
 
 export async function encryptWithVGS(
   fields: Record<string, string>,
 ): Promise<{ aliases: Record<string, string>; vault: string }> {
-  // TODO: replace with real VGS proxy call.
+  // TODO: replace with real VGS proxy call when the vgs-encrypt edge function lands.
   return { aliases: { ...fields }, vault: 'pass-through' };
 }
 
