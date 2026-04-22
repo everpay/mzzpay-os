@@ -7,13 +7,15 @@ import {
   Container,
   Head,
   Heading,
+  Hr,
   Html,
   Img,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
-const LOGO_URL = 'https://zzxcqvyhhueffxzekfzs.supabase.co/storage/v1/object/public/email-assets/mzzpay-logo.png'
+const LOGO_URL = 'https://sprjfzeyyihtfvxnfuhb.supabase.co/storage/v1/object/public/email-assets/mzzpay-logo.png'
 
 interface ReauthenticationEmailProps {
   token: string
@@ -21,20 +23,22 @@ interface ReauthenticationEmailProps {
 
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
   <Html lang="en" dir="ltr">
-    <Head>
-      <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&display=swap" rel="stylesheet" />
-    </Head>
-    <Preview>Your MzzPay verification code</Preview>
+    <Head />
+    <Preview>Your MZZPay verification code</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} width="40" height="40" alt="MzzPay" style={logoImg} />
-        <Text style={logo}>MzzPay</Text>
+        <Section style={header}>
+          <Img src={LOGO_URL} width="48" height="48" alt="MZZPay" style={logoImg} />
+        </Section>
         <Heading style={h1}>Confirm your identity</Heading>
         <Text style={text}>Use the code below to verify your identity:</Text>
-        <Text style={codeStyle}>{token}</Text>
+        <Section style={codeBox}>
+          <Text style={codeStyle}>{token}</Text>
+        </Section>
+        <Hr style={hr} />
         <Text style={footer}>
-          This code will expire shortly. If you didn't request this, you can
-          safely ignore this email.
+          This code will expire shortly. If you didn't request this, you can safely ignore this email.<br />
+          © MZZPay · Modern payments infrastructure
         </Text>
       </Container>
     </Body>
@@ -44,35 +48,33 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
 export default ReauthenticationEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }
-const container = { padding: '32px 28px', maxWidth: '480px', margin: '0 auto' }
-const logoImg = { borderRadius: '8px', margin: '0 0 12px' }
-const logo = {
-  fontSize: '28px',
-  fontWeight: '400' as const,
-  fontFamily: "'Bagel Fat One', 'Arial Black', sans-serif",
-  color: 'hsl(219, 100%, 40%)',
-  letterSpacing: '0.5px',
-  margin: '0 0 24px',
-}
+const container = { padding: '32px 28px', maxWidth: '520px', margin: '0 auto' }
+const header = { padding: '0 0 8px' }
+const logoImg = { display: 'block', margin: '0 0 24px' }
 const h1 = {
-  fontSize: '24px',
-  fontWeight: 'bold' as const,
+  fontSize: '26px',
+  fontWeight: 700 as const,
   fontFamily: "'Manrope', 'Inter', sans-serif",
   color: '#0f172a',
   margin: '0 0 16px',
+  letterSpacing: '-0.01em',
 }
-const text = {
-  fontSize: '15px',
-  color: '#64748b',
-  lineHeight: '1.6',
-  margin: '0 0 20px',
+const text = { fontSize: '15px', color: '#475569', lineHeight: '1.6', margin: '0 0 16px' }
+const codeBox = {
+  backgroundColor: 'hsl(172, 60%, 96%)',
+  border: '1px solid hsl(172, 60%, 88%)',
+  borderRadius: '12px',
+  padding: '20px',
+  textAlign: 'center' as const,
+  margin: '8px 0 24px',
 }
 const codeStyle = {
   fontFamily: "'JetBrains Mono', 'Fira Code', Courier, monospace",
-  fontSize: '28px',
-  fontWeight: 'bold' as const,
-  color: 'hsl(219, 100%, 40%)',
-  letterSpacing: '4px',
-  margin: '0 0 32px',
+  fontSize: '32px',
+  fontWeight: 700 as const,
+  color: 'hsl(172, 72%, 28%)',
+  letterSpacing: '6px',
+  margin: 0,
 }
-const footer = { fontSize: '13px', color: '#94a3b8', margin: '32px 0 0' }
+const hr = { borderColor: '#e2e8f0', margin: '32px 0 20px' }
+const footer = { fontSize: '12px', color: '#94a3b8', lineHeight: '1.6', margin: 0 }

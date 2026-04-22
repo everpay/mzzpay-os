@@ -8,14 +8,16 @@ import {
   Container,
   Head,
   Heading,
+  Hr,
   Html,
   Img,
   Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
-const LOGO_URL = 'https://zzxcqvyhhueffxzekfzs.supabase.co/storage/v1/object/public/email-assets/mzzpay-logo.png'
+const LOGO_URL = 'https://sprjfzeyyihtfvxnfuhb.supabase.co/storage/v1/object/public/email-assets/mzzpay-logo.png'
 
 interface InviteEmailProps {
   siteName: string
@@ -23,34 +25,31 @@ interface InviteEmailProps {
   confirmationUrl: string
 }
 
-export const InviteEmail = ({
-  siteName,
-  siteUrl,
-  confirmationUrl,
-}: InviteEmailProps) => (
+export const InviteEmail = ({ siteUrl, confirmationUrl }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
-    <Head>
-      <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&display=swap" rel="stylesheet" />
-    </Head>
-    <Preview>You've been invited to MzzPay</Preview>
+    <Head />
+    <Preview>You've been invited to MZZPay</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} width="40" height="40" alt="MzzPay" style={logoImg} />
-        <Text style={logo}>MzzPay</Text>
+        <Section style={header}>
+          <Img src={LOGO_URL} width="48" height="48" alt="MZZPay" style={logoImg} />
+        </Section>
         <Heading style={h1}>You've been invited</Heading>
         <Text style={text}>
           You've been invited to join{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>MzzPay</strong>
-          </Link>
-          . Click the button below to accept the invitation and set up your merchant account.
+          <Link href={siteUrl} style={link}>MZZPay</Link>. Accept the invitation to set up your merchant account.
         </Text>
-        <Button style={button} href={confirmationUrl}>
-          Accept Invitation
-        </Button>
+        <Section style={buttonWrapper}>
+          <Button style={button} href={confirmationUrl}>Accept invitation</Button>
+        </Section>
+        <Text style={smallText}>
+          Or paste this link into your browser:<br />
+          <Link href={confirmationUrl} style={link}>{confirmationUrl}</Link>
+        </Text>
+        <Hr style={hr} />
         <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this
-          email.
+          If you weren't expecting this invitation, you can safely ignore this email.<br />
+          © MZZPay · Modern payments infrastructure
         </Text>
       </Container>
     </Body>
@@ -60,37 +59,30 @@ export const InviteEmail = ({
 export default InviteEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }
-const container = { padding: '32px 28px', maxWidth: '480px', margin: '0 auto' }
-const logoImg = { borderRadius: '8px', margin: '0 0 12px' }
-const logo = {
-  fontSize: '28px',
-  fontWeight: '400' as const,
-  fontFamily: "'Bagel Fat One', 'Arial Black', sans-serif",
-  color: 'hsl(219, 100%, 40%)',
-  letterSpacing: '0.5px',
-  margin: '0 0 24px',
-}
+const container = { padding: '32px 28px', maxWidth: '520px', margin: '0 auto' }
+const header = { padding: '0 0 8px' }
+const logoImg = { display: 'block', margin: '0 0 24px' }
 const h1 = {
-  fontSize: '24px',
-  fontWeight: 'bold' as const,
+  fontSize: '26px',
+  fontWeight: 700 as const,
   fontFamily: "'Manrope', 'Inter', sans-serif",
   color: '#0f172a',
   margin: '0 0 16px',
+  letterSpacing: '-0.01em',
 }
-const text = {
-  fontSize: '15px',
-  color: '#64748b',
-  lineHeight: '1.6',
-  margin: '0 0 20px',
-}
-const link = { color: 'hsl(219, 100%, 45%)', textDecoration: 'underline' }
+const text = { fontSize: '15px', color: '#475569', lineHeight: '1.6', margin: '0 0 16px' }
+const smallText = { fontSize: '12px', color: '#94a3b8', lineHeight: '1.5', margin: '20px 0 0', wordBreak: 'break-all' as const }
+const link = { color: 'hsl(172, 72%, 38%)', textDecoration: 'underline' }
+const buttonWrapper = { margin: '24px 0 4px' }
 const button = {
-  backgroundColor: 'hsl(219, 100%, 40%)',
+  backgroundColor: 'hsl(172, 72%, 42%)',
   color: '#ffffff',
   fontSize: '15px',
-  fontWeight: '600' as const,
-  borderRadius: '9999px',
+  fontWeight: 600 as const,
+  borderRadius: '12px',
   padding: '14px 28px',
   textDecoration: 'none',
+  display: 'inline-block',
 }
-const footer = { fontSize: '13px', color: '#94a3b8', margin: '32px 0 0' }
+const hr = { borderColor: '#e2e8f0', margin: '32px 0 20px' }
+const footer = { fontSize: '12px', color: '#94a3b8', lineHeight: '1.6', margin: 0 }
