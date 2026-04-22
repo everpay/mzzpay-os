@@ -13,6 +13,10 @@ interface CryptoPaymentPanelProps {
   description?: string;
   /** optional invoice/checkout reference for tagging */
   reference?: string;
+  /** Invoice id — required for invoice payments so we can resolve receiving merchant */
+  invoiceId?: string;
+  /** Merchant id — required for hosted checkout flows when invoice_id is unknown */
+  merchantId?: string;
   /** Called once a payment has been confirmed (we poll for it). */
   onComplete?: (txId: string) => void;
 }
@@ -25,7 +29,7 @@ const ASSETS = [
   { id: 'ETH', label: 'Ethereum (ETH)', network: 'ETHEREUM' },
 ];
 
-export function CryptoPaymentPanel({ amount, currency, description, reference, onComplete }: CryptoPaymentPanelProps) {
+export function CryptoPaymentPanel({ amount, currency, description, reference, invoiceId, merchantId, onComplete }: CryptoPaymentPanelProps) {
   const [assetId, setAssetId] = useState('USDT.TRC20');
   const [generating, setGenerating] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
@@ -60,20 +64,21 @@ export function CryptoPaymentPanel({ amount, currency, description, reference, o
   }, [txId, confirmed, onComplete]);
 
   const handleGenerate = async () => {
+    if (!invoiceId && !merchantId) {
+      toast.error('Crypto payment is not available for this checkout');
+      return;
+    }
     setGenerating(true);
     try {
-      // Need any wallet for the receiving merchant. The hosted checkout/invoice
-      // is typically opened anonymously, so this calls a public-safe edge endpoint
-      // that resolves a wallet for the merchant context (deposit-address generator).
-      const { data, error } = await supabase.functions.invoke('elektropay-wallet', {
+      const { data, error } = await supabase.functions.invoke('crypto-pay', {
         body: {
-          action: 'create_deposit',
-          payload: {
-            asset_id: assetId,
-            amount,
-            currency,
-            description: description || `Payment ${reference || ''}`.trim(),
-          },
+          invoice_id: invoiceId,
+          merchant_id: merchantId,
+          asset_id: assetId,
+          amount,
+          currency,
+          description: description || `Payment ${reference || ''}`.trim(),
+          reference,
         },
       });
       if (error) throw error;

@@ -283,6 +283,7 @@ export default function PayInvoice() {
                 currency={invoice.currency}
                 description={`Invoice ${invoice.invoice_number}`}
                 reference={invoice.id}
+                invoiceId={invoice.id}
                 onComplete={async (txId) => {
                   await supabase.from('invoices').update({
                     status: 'paid',
