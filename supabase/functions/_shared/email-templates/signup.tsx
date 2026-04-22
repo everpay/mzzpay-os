@@ -1,7 +1,6 @@
 /// <reference types="npm:@types/react@18.3.1" />
 
 import * as React from 'npm:react@18.3.1'
-
 import {
   Body,
   Button,
@@ -10,54 +9,51 @@ import {
   Heading,
   Hr,
   Html,
-  Img,
   Link,
   Preview,
   Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
-
-const LOGO_URL = 'https://sprjfzeyyihtfvxnfuhb.supabase.co/storage/v1/object/public/email-assets/mzzpay-logo.png'
+import { BRAND, FOOTER_LINE, styles } from '../email-branding.ts'
+import { BrandHeader } from './_brand-header.tsx'
 
 interface SignupEmailProps {
-  siteName: string
-  siteUrl: string
-  recipient: string
-  confirmationUrl: string
+  siteName?: string
+  siteUrl?: string
+  recipient?: string
+  confirmationUrl?: string
 }
 
 export const SignupEmail = ({
-  siteUrl,
-  recipient,
-  confirmationUrl,
+  siteUrl = BRAND.siteUrl,
+  recipient = '',
+  confirmationUrl = '#',
 }: SignupEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Welcome to MZZPay — confirm your email</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Section style={header}>
-          <Img src={LOGO_URL} width="48" height="48" alt="MZZPay" style={logoImg} />
-        </Section>
-        <Heading style={h1}>Welcome aboard</Heading>
-        <Text style={text}>
+    <Preview>Welcome to {BRAND.name} — confirm your email to activate your dashboard</Preview>
+    <Body style={styles.main}>
+      <Container style={styles.container}>
+        <BrandHeader />
+        <Heading style={styles.h1}>Welcome aboard</Heading>
+        <Text style={styles.text}>
           Thanks for creating your merchant account with{' '}
-          <Link href={siteUrl} style={link}>MZZPay</Link>.
+          <Link href={siteUrl} style={styles.link}>{BRAND.name}</Link>.
         </Text>
-        <Text style={text}>
-          Please confirm <strong>{recipient}</strong> to activate your dashboard:
+        <Text style={styles.text}>
+          Please confirm <strong style={{ color: '#0f172a' }}>{recipient}</strong> to activate your dashboard:
         </Text>
-        <Section style={buttonWrapper}>
-          <Button style={button} href={confirmationUrl}>Verify email</Button>
+        <Section style={styles.buttonWrapper}>
+          <Button style={styles.button} href={confirmationUrl}>Verify email</Button>
         </Section>
-        <Text style={smallText}>
+        <Text style={styles.smallText}>
           Or paste this link into your browser:<br />
-          <Link href={confirmationUrl} style={link}>{confirmationUrl}</Link>
+          <Link href={confirmationUrl} style={styles.link}>{confirmationUrl}</Link>
         </Text>
-        <Hr style={hr} />
-        <Text style={footer}>
+        <Hr style={styles.hr} />
+        <Text style={styles.footer}>
           If you didn't create an account, you can safely ignore this email.<br />
-          © MZZPay · Modern payments infrastructure
+          {FOOTER_LINE}
         </Text>
       </Container>
     </Body>
@@ -65,32 +61,3 @@ export const SignupEmail = ({
 )
 
 export default SignupEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }
-const container = { padding: '32px 28px', maxWidth: '520px', margin: '0 auto' }
-const header = { padding: '0 0 8px' }
-const logoImg = { display: 'block', margin: '0 0 24px' }
-const h1 = {
-  fontSize: '26px',
-  fontWeight: 700 as const,
-  fontFamily: "'Manrope', 'Inter', sans-serif",
-  color: '#0f172a',
-  margin: '0 0 16px',
-  letterSpacing: '-0.01em',
-}
-const text = { fontSize: '15px', color: '#475569', lineHeight: '1.6', margin: '0 0 16px' }
-const smallText = { fontSize: '12px', color: '#94a3b8', lineHeight: '1.5', margin: '20px 0 0', wordBreak: 'break-all' as const }
-const link = { color: 'hsl(172, 72%, 38%)', textDecoration: 'underline' }
-const buttonWrapper = { margin: '24px 0 4px' }
-const button = {
-  backgroundColor: 'hsl(172, 72%, 42%)',
-  color: '#ffffff',
-  fontSize: '15px',
-  fontWeight: 600 as const,
-  borderRadius: '12px',
-  padding: '14px 28px',
-  textDecoration: 'none',
-  display: 'inline-block',
-}
-const hr = { borderColor: '#e2e8f0', margin: '32px 0 20px' }
-const footer = { fontSize: '12px', color: '#94a3b8', lineHeight: '1.6', margin: 0 }
