@@ -263,7 +263,7 @@ export default function EmailDnsBundle() {
                   <Card>
                     <CardContent className="pt-6">
                       <p className="text-xs text-muted-foreground">Pending</p>
-                      <p className="text-2xl font-bold text-amber-500">{result.summary.pending}</p>
+                      <p className="text-2xl font-bold text-warning">{result.summary.pending}</p>
                     </CardContent>
                   </Card>
                   <Card>
@@ -289,7 +289,7 @@ export default function EmailDnsBundle() {
                         {c.ok ? (
                           <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                         ) : (
-                          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                          <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                         )}
                         <div className="flex-1 min-w-0 space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
