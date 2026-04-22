@@ -408,13 +408,14 @@ async function getWalletWithGuard(supabase: any, wallet_id: string, user: any, i
 
 async function audit(supabase: any, user: any, change_type: string, merchant_id: string, data: any) {
   try {
+    const isUuid = typeof merchant_id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(merchant_id);
     await supabase.from('audit_logs').insert({
-      resource_type: 'crypto',
-      resource_id: merchant_id,
-      change_type,
-      changed_by: user.email || user.id,
-      user_token: user.id,
-      new_value: data,
+      action: change_type,
+      entity_type: 'crypto',
+      entity_id: typeof merchant_id === 'string' ? merchant_id : String(merchant_id),
+      user_id: user.id,
+      merchant_id: isUuid ? merchant_id : null,
+      metadata: { change_type, actor_email: user.email, payload: data },
     });
   } catch (e) { console.warn('audit failed:', e); }
 }
