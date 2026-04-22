@@ -6,9 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Globe, X, Download } from 'lucide-react';
+import { Search, Globe, X, Download, FileText } from 'lucide-react';
 import { PeriodSelector, type PeriodValue, getPeriodCutoff } from '@/components/PeriodSelector';
 import { CurrencySelector } from '@/components/CurrencySelector';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { exportPdf } from '@/lib/export-pdf';
 import { motion } from 'framer-motion';
 
 export default function Transactions() {
@@ -92,6 +94,25 @@ export default function Transactions() {
     URL.revokeObjectURL(url);
   };
 
+  const exportPdfReport = () => {
+    exportPdf({
+      title: 'Transactions Report',
+      filename: 'transactions',
+      subtitle: `${filtered.length} transactions`,
+      headers: ['Date', 'ID', 'Customer', 'Amount', 'Currency', 'Status', 'Provider', 'Description'],
+      rows: filtered.map((tx) => [
+        new Date(tx.created_at).toLocaleString(),
+        tx.id.slice(0, 12),
+        tx.customer_email || '',
+        tx.amount.toFixed(2),
+        tx.currency,
+        tx.status,
+        tx.provider,
+        tx.description || '',
+      ]),
+    });
+  };
+
   return (
     <AppLayout>
       <motion.div
@@ -105,9 +126,21 @@ export default function Transactions() {
             All payment transactions across providers, currencies, and statuses.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={exportCsv} className="gap-1.5">
-          <Download className="h-4 w-4" /> Export CSV
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Download className="h-4 w-4" /> Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={exportCsv} className="gap-2">
+              <Download className="h-4 w-4" /> Export CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportPdfReport} className="gap-2">
+              <FileText className="h-4 w-4" /> Export PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </motion.div>
 
       {/* Summary cards */}
