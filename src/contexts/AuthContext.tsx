@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
 
       // Auto-provision Elektropay store + USDC/USDT wallet on first sign-in
+      // Silently skipped if crypto tables aren't provisioned in this environment.
       if (event === 'SIGNED_IN' && session?.user) {
         setTimeout(async () => {
           try {
@@ -34,13 +35,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .eq('user_id', session.user.id)
               .maybeSingle();
             if (!m) return;
-            const { data: existing } = await supabase
+
+            const { data: existing, error: existingErr } = await supabase
               .from('crypto_stores' as any)
               .select('id')
               .eq('merchant_id', m.id)
               .limit(1)
               .maybeSingle();
+            // If the table doesn't exist (PGRST205) or any other lookup error, skip provisioning entirely.
+            if (existingErr) return;
             if (existing) return;
+
             const { data: profile } = await supabase
               .from('merchant_profiles' as any)
               .select('country')

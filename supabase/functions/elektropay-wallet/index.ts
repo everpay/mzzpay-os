@@ -330,7 +330,14 @@ serve(async (req) => {
           merchant_id, name: business_name, base_currency: 'USD',
           metadata: { auto_provisioned: true, region: isNA ? 'NA' : 'INTL', country: cc || null },
         }, { onConflict: 'merchant_id,name' }).select().single();
-        if (storeErr) throw storeErr;
+        if (storeErr) {
+          // Crypto tables not provisioned in this environment — skip gracefully.
+          if ((storeErr as any).code === 'PGRST205') {
+            console.warn('[elektropay-wallet] crypto tables missing, skipping provision');
+            return jsonResponse({ success: true, skipped: true, reason: 'crypto tables not provisioned' });
+          }
+          throw storeErr;
+        }
 
         const existing = await supabase.from('crypto_wallets').select('id, address')
           .eq('store_id', store.id).eq('asset_id', defaultAssetId).maybeSingle();
