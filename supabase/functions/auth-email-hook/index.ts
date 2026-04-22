@@ -16,12 +16,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: 'Welcome to MzzPay — confirm your email',
+  invite: "You've been invited to MzzPay",
+  magiclink: 'Your secure MzzPay sign-in link',
+  recovery: 'Reset your MzzPay password',
+  email_change: 'Confirm your new MzzPay email',
+  reauthentication: 'Your MzzPay verification code',
 }
 
 // Template mapping
@@ -35,7 +35,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "mzzpay"
+const SITE_NAME = "MzzPay"
 const SENDER_DOMAIN = "notify.mzzpay.io"
 const ROOT_DOMAIN = "mzzpay.io"
 const FROM_DOMAIN = "mzzpay.io" // Domain shown in From address (may be root or sender subdomain)
