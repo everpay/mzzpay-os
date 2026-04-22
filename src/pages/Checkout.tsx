@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2 } from 'lucide-react';
+import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, Bitcoin } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
+import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 
 const DOMAIN = 'mzzpay.io';
 
@@ -28,9 +29,10 @@ export default function Checkout() {
   const [customAmount, setCustomAmount] = useState(amount);
   const [customerEmail, setCustomerEmail] = useState(email);
   const [customerName, setCustomerName] = useState(name);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'openbanking'>(
-    method === 'openbanking' ? 'openbanking' : 'card'
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'openbanking' | 'crypto'>(
+    method === 'openbanking' ? 'openbanking' : method === 'crypto' ? 'crypto' : 'card'
   );
+  const merchantId = searchParams.get('merchant_id') || undefined;
   const [cardNumber, setCardNumber] = useState('');
   const [expMonth, setExpMonth] = useState('');
   const [expYear, setExpYear] = useState('');
@@ -235,12 +237,15 @@ export default function Checkout() {
           {/* Payment Method Tabs */}
           {method === 'all' ? (
             <Tabs value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="card" className="gap-2">
                   <CreditCard className="h-3.5 w-3.5" /> Card
                 </TabsTrigger>
                 <TabsTrigger value="openbanking" className="gap-2">
                   <Building2 className="h-3.5 w-3.5" /> Bank
+                </TabsTrigger>
+                <TabsTrigger value="crypto" className="gap-2">
+                  <Bitcoin className="h-3.5 w-3.5" /> Crypto
                 </TabsTrigger>
               </TabsList>
 
@@ -257,9 +262,29 @@ export default function Checkout() {
               <TabsContent value="openbanking" className="mt-4">
                 <OpenBankingSection currency={currency} />
               </TabsContent>
+
+              <TabsContent value="crypto" className="mt-4">
+                <CryptoPaymentPanel
+                  amount={parseFloat(displayAmount) || 0}
+                  currency={currency}
+                  description={description}
+                  reference={ref}
+                  merchantId={merchantId}
+                  onComplete={() => setPaymentComplete(true)}
+                />
+              </TabsContent>
             </Tabs>
           ) : method === 'openbanking' ? (
             <OpenBankingSection currency={currency} />
+          ) : method === 'crypto' ? (
+            <CryptoPaymentPanel
+              amount={parseFloat(displayAmount) || 0}
+              currency={currency}
+              description={description}
+              reference={ref}
+              merchantId={merchantId}
+              onComplete={() => setPaymentComplete(true)}
+            />
           ) : (
             <CardFields
               cardNumber={cardNumber} setCardNumber={setCardNumber}

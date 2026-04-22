@@ -21,9 +21,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setLoading(false);
+
+      // Auto-provision Elektropay store + USDC/USDT wallet on first sign-in
+      if (event === 'SIGNED_IN' && session?.user) {
+        setTimeout(async () => {
+          try {
+            const { data: m } = await supabase.from('merchants')
+              .select('id, name')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            if (!m) return;
+            const { data: existing } = await supabase
+              .from('crypto_stores' as any)
+              .select('id')
+              .eq('merchant_id', m.id)
+              .limit(1)
+              .maybeSingle();
+            if (existing) return;
+            const { data: profile } = await supabase
+              .from('merchant_profiles' as any)
+              .select('country')
+              .eq('merchant_id', m.id)
+              .maybeSingle();
+            await supabase.functions.invoke('elektropay-wallet', {
+              body: {
+                action: 'auto_provision_merchant',
+                payload: {
+                  merchant_id: m.id,
+                  business_name: m.name,
+                  country: (profile as any)?.country || null,
+                },
+              },
+            });
+          } catch (err) {
+            console.warn('auto-provision skipped:', err);
+          }
+        }, 0);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
