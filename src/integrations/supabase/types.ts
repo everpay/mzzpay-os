@@ -908,6 +908,69 @@ export type Database = {
         }
         Relationships: []
       }
+      liquidity_wallets: {
+        Row: {
+          account_holder: string | null
+          account_last4: string | null
+          balance: number
+          bank_name: string | null
+          created_at: string
+          crypto_address: string | null
+          crypto_network: string | null
+          currency: string
+          iban: string | null
+          id: string
+          is_active: boolean
+          label: string
+          metadata: Json
+          pending_balance: number
+          routing_number: string | null
+          swift_bic: string | null
+          updated_at: string
+          wallet_type: string
+        }
+        Insert: {
+          account_holder?: string | null
+          account_last4?: string | null
+          balance?: number
+          bank_name?: string | null
+          created_at?: string
+          crypto_address?: string | null
+          crypto_network?: string | null
+          currency: string
+          iban?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          metadata?: Json
+          pending_balance?: number
+          routing_number?: string | null
+          swift_bic?: string | null
+          updated_at?: string
+          wallet_type: string
+        }
+        Update: {
+          account_holder?: string | null
+          account_last4?: string | null
+          balance?: number
+          bank_name?: string | null
+          created_at?: string
+          crypto_address?: string | null
+          crypto_network?: string | null
+          currency?: string
+          iban?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          metadata?: Json
+          pending_balance?: number
+          routing_number?: string | null
+          swift_bic?: string | null
+          updated_at?: string
+          wallet_type?: string
+        }
+        Relationships: []
+      }
       merchant_acquirer_mids: {
         Row: {
           acquirer_id: string
@@ -1533,6 +1596,42 @@ export type Database = {
           is_active?: boolean | null
           percentage?: number | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      platform_integrations: {
+        Row: {
+          category: string
+          config: Json
+          created_at: string
+          enabled: boolean
+          id: string
+          name: string
+          secret_reference: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          config?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name: string
+          secret_reference?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          config?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          secret_reference?: string | null
+          slug?: string
+          updated_at?: string
         }
         Relationships: []
       }
