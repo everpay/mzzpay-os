@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, Bitcoin } from 'lucide-react';
+import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, Bitcoin, AlertTriangle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
+import { CountrySelect } from '@/components/CountrySelect';
 
 const DOMAIN = 'mzzpay.io';
 
@@ -22,17 +22,24 @@ export default function Checkout() {
   const email = searchParams.get('email') ? decodeURIComponent(searchParams.get('email')!) : '';
   const name = searchParams.get('name') ? decodeURIComponent(searchParams.get('name')!) : '';
   const ref = searchParams.get('ref') || '';
+  const orderId = searchParams.get('order_id') || ref;
   const method = searchParams.get('method') || 'all';
+  const merchantId = searchParams.get('merchant_id') || undefined;
   const successUrl = searchParams.get('success_url') ? decodeURIComponent(searchParams.get('success_url')!) : '';
   const cancelUrl = searchParams.get('cancel_url') ? decodeURIComponent(searchParams.get('cancel_url')!) : '';
 
   const [customAmount, setCustomAmount] = useState(amount);
   const [customerEmail, setCustomerEmail] = useState(email);
   const [customerName, setCustomerName] = useState(name);
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [billingAddress, setBillingAddress] = useState('');
+  const [billingCity, setBillingCity] = useState('');
+  const [billingState, setBillingState] = useState('');
+  const [billingZip, setBillingZip] = useState('');
+  const [billingCountry, setBillingCountry] = useState('US');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'openbanking' | 'crypto'>(
     method === 'openbanking' ? 'openbanking' : method === 'crypto' ? 'crypto' : 'card'
   );
-  const merchantId = searchParams.get('merchant_id') || undefined;
   const [cardNumber, setCardNumber] = useState('');
   const [expMonth, setExpMonth] = useState('');
   const [expYear, setExpYear] = useState('');
@@ -45,6 +52,12 @@ export default function Checkout() {
   const [threeDSUrl, setThreeDSUrl] = useState('');
   const [threeDSTxId, setThreeDSTxId] = useState('');
 
+  // Retry / processor-error UI state
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastFailedProvider, setLastFailedProvider] = useState('');
+  const [lastProcessorError, setLastProcessorError] = useState('');
+  const [showRetryPanel, setShowRetryPanel] = useState(false);
+
   const displayAmount = amount || customAmount;
 
   const formatCardNumber = (value: string) => {
@@ -53,8 +66,18 @@ export default function Checkout() {
     return groups ? groups.join(' ') : cleaned;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const redirectToOutcome = (outcome: 'success' | 'failed', transactionId?: string) => {
+    const target = outcome === 'success' ? successUrl : cancelUrl;
+    if (!target) return;
+    const url = new URL(target, window.location.origin);
+    if (transactionId) url.searchParams.set('TRANSACTION_ID', transactionId);
+    if (ref) url.searchParams.set('PARTNER_SESSION_ID', ref);
+    setTimeout(() => { window.location.href = url.toString(); }, 1500);
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (paymentMethod === 'crypto') return; // handled by CryptoPaymentPanel
     setIsSubmitting(true);
 
     try {
@@ -62,41 +85,81 @@ export default function Checkout() {
         amount: parseFloat(displayAmount),
         currency,
         paymentMethod,
-        customerEmail: customerEmail,
+        customerEmail,
         description: description || `Payment ${ref}`,
         idempotencyKey: `link_${ref}_${Date.now()}`,
+        merchantId,
+        orderId,
+        successUrl: successUrl || undefined,
+        cancelUrl: cancelUrl || undefined,
+        customer: {
+          first: customerName.split(' ')[0] || '',
+          last: customerName.split(' ').slice(1).join(' ') || '',
+          phone: customerPhone,
+        },
+        billing: {
+          address: billingAddress,
+          city: billingCity,
+          state: billingState,
+          postal_code: billingZip,
+          country: billingCountry,
+        },
       };
 
       if (paymentMethod === 'card' && cardNumber) {
         payload.cardDetails = {
           number: cardNumber.replace(/\s/g, ''),
-          expMonth,
-          expYear,
-          cvc,
+          expMonth, expYear, cvc,
+          holderName: customerName,
         };
       }
 
-      const { data, error } = await supabase.functions.invoke('process-payment', {
-        body: payload,
-      });
-
+      const { data, error } = await supabase.functions.invoke('process-payment', { body: payload });
       if (error) throw error;
 
-      // Handle 3DS redirect
-      if (data?.providerResponse?.transaction_status === 'INITIATED' && data?.providerResponse?.['3d_secure_redirect_url']) {
-        setThreeDSUrl(data.providerResponse['3d_secure_redirect_url']);
+      // 3DS redirect
+      const provResp = data?.providerResponse || {};
+      const threeDsRedirect = provResp['3d_secure_redirect_url'] || provResp.redirect_url;
+      if (provResp.transaction_status === 'INITIATED' && threeDsRedirect) {
+        setThreeDSUrl(threeDsRedirect);
         setThreeDSTxId(data.transaction?.id || '');
         setShow3DS(true);
         return;
       }
 
-      // Handle decline
-      if (data?.providerResponse?.status === 'Failed' || data?.providerResponse?.transaction_status === 'FAILED') {
-        const msg = data.providerResponse?.error?.message || data.providerResponse?.gateway_message || 'Payment declined';
-        toast.error(msg);
+      // Processor decline — surface raw provider message
+      const isFailed =
+        provResp.status === 'Failed' ||
+        provResp.transaction_status === 'FAILED' ||
+        data?.transaction?.status === 'failed' ||
+        !data?.success;
+
+      if (isFailed) {
+        const procMsg =
+          provResp?.error?.message ||
+          provResp?.gateway_message ||
+          provResp?.message ||
+          data?.error ||
+          'Payment declined';
+        const procCode = provResp?.error?.code || provResp?.code || '';
+
+        setRetryCount((c) => c + 1);
+        setLastFailedProvider(data?.transaction?.provider || provResp?.provider || '');
+        setLastProcessorError(procCode ? `${procMsg} [${procCode}]` : procMsg);
+
+        if (retryCount < 2) {
+          toast.error(procCode ? `${procMsg} [${procCode}]` : procMsg, {
+            description: 'Try again or use a different payment method.',
+          });
+          setShowRetryPanel(true);
+        } else {
+          toast.error('Payment declined after multiple attempts');
+          redirectToOutcome('failed', data?.transaction?.id);
+        }
         return;
       }
-      // Send payment receipt email to customer
+
+      // Receipt email (best-effort)
       if (customerEmail && data.transaction) {
         try {
           await supabase.functions.invoke('send-transactional-email', {
@@ -112,23 +175,13 @@ export default function Checkout() {
               },
             },
           });
-          console.log('Payment receipt email sent to:', customerEmail);
         } catch (emailError) {
-          console.error('Failed to send payment receipt email:', emailError);
-          // Don't fail the payment if email fails
+          console.error('Failed to send receipt:', emailError);
         }
       }
 
       setPaymentComplete(true);
-
-      if (successUrl) {
-        const redirectUrl = new URL(successUrl);
-        redirectUrl.searchParams.set('TRANSACTION_ID', data.transaction?.id || '');
-        redirectUrl.searchParams.set('PARTNER_SESSION_ID', ref);
-        setTimeout(() => {
-          window.location.href = redirectUrl.toString();
-        }, 2000);
-      }
+      redirectToOutcome('success', data.transaction?.id || '');
     } catch (error) {
       console.error('Payment error:', error);
       toast.error('Payment failed', {
@@ -157,12 +210,9 @@ export default function Checkout() {
           {ref && (
             <p className="text-sm text-muted-foreground">Reference: <span className="font-mono">{ref}</span></p>
           )}
-          {successUrl && (
-            <p className="text-sm text-muted-foreground">Redirecting you back...</p>
-          )}
-          {!successUrl && (
-            <p className="text-sm text-muted-foreground">You can close this window.</p>
-          )}
+          {successUrl
+            ? <p className="text-sm text-muted-foreground">Redirecting you back...</p>
+            : <p className="text-sm text-muted-foreground">You can close this window.</p>}
         </div>
       </div>
     );
@@ -184,9 +234,7 @@ export default function Checkout() {
               {new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(parseFloat(displayAmount))}
             </p>
           )}
-          {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
-          )}
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
 
         {/* Payment Form */}
@@ -194,43 +242,43 @@ export default function Checkout() {
           {/* Customer Info */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label className="text-xs">Name</Label>
-              <Input
-                placeholder="John Doe"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="bg-background border-border"
-                disabled={!!name}
-                required
-              />
+              <Label className="text-xs">Full Name</Label>
+              <Input placeholder="John Doe" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="bg-background border-border" disabled={!!name} required />
             </div>
             <div className="space-y-2">
               <Label className="text-xs">Email</Label>
-              <Input
-                type="email"
-                placeholder="john@example.com"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                className="bg-background border-border"
-                disabled={!!email}
-                required
-              />
+              <Input type="email" placeholder="john@example.com" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="bg-background border-border" disabled={!!email} required />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">Phone Number</Label>
+            <Input type="tel" placeholder="+1 (555) 000-0000" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="bg-background border-border" required />
+          </div>
+
+          {/* Billing Address */}
+          <div className="space-y-3">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Billing Address</Label>
+            <Input placeholder="Street address" value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} className="bg-background border-border" required />
+            <div className="grid grid-cols-2 gap-3">
+              <Input placeholder="City" value={billingCity} onChange={(e) => setBillingCity(e.target.value)} className="bg-background border-border" required />
+              <Input placeholder="State / Province" value={billingState} onChange={(e) => setBillingState(e.target.value)} className="bg-background border-border" required />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Zip / Postal code</Label>
+                <Input placeholder="ZIP" value={billingZip} onChange={(e) => setBillingZip(e.target.value)} className="bg-background border-border" required />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Country</Label>
+                <CountrySelect value={billingCountry} onValueChange={setBillingCountry} />
+              </div>
             </div>
           </div>
 
           {!amount && (
             <div className="space-y-2">
               <Label className="text-xs">Amount ({currency})</Label>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                className="bg-background border-border font-mono text-lg"
-                min="0.01"
-                step="0.01"
-                required
-              />
+              <Input type="number" placeholder="0.00" value={customAmount} onChange={(e) => setCustomAmount(e.target.value)} className="bg-background border-border font-mono text-lg" min="0.01" step="0.01" required />
             </div>
           )}
 
@@ -238,15 +286,9 @@ export default function Checkout() {
           {method === 'all' ? (
             <Tabs value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="card" className="gap-2">
-                  <CreditCard className="h-3.5 w-3.5" /> Card
-                </TabsTrigger>
-                <TabsTrigger value="openbanking" className="gap-2">
-                  <Building2 className="h-3.5 w-3.5" /> Bank
-                </TabsTrigger>
-                <TabsTrigger value="crypto" className="gap-2">
-                  <Bitcoin className="h-3.5 w-3.5" /> Crypto
-                </TabsTrigger>
+                <TabsTrigger value="card" className="gap-2"><CreditCard className="h-3.5 w-3.5" /> Card</TabsTrigger>
+                <TabsTrigger value="openbanking" className="gap-2"><Building2 className="h-3.5 w-3.5" /> Bank</TabsTrigger>
+                <TabsTrigger value="crypto" className="gap-2"><Bitcoin className="h-3.5 w-3.5" /> Crypto</TabsTrigger>
               </TabsList>
 
               <TabsContent value="card" className="mt-4">
@@ -295,43 +337,70 @@ export default function Checkout() {
             />
           )}
 
-          <Button type="submit" className="w-full gap-2" size="lg" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
-            ) : (
-              <>
-                Pay {displayAmount ? new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(parseFloat(displayAmount)) : ''}
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </Button>
+          {paymentMethod !== 'crypto' && (
+            <Button type="submit" className="w-full gap-2" size="lg" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
+              ) : (
+                <>
+                  Pay {displayAmount ? new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(parseFloat(displayAmount)) : ''}
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          )}
 
-          {/* Security Footer */}
           <div className="flex items-center justify-center gap-4 pt-2 border-t border-border">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Lock className="h-3 w-3" /> SSL Encrypted
-            </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Shield className="h-3 w-3" /> PCI Compliant
-            </div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" /> SSL Encrypted</div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground"><Shield className="h-3 w-3" /> PCI Compliant</div>
           </div>
         </form>
 
-        {/* Footer */}
         <div className="text-center space-y-1">
           <p className="text-xs text-muted-foreground">
             Secured by <span className="font-medium text-foreground">MZZPay</span> · {DOMAIN}
           </p>
-          {ref && (
-            <p className="text-[10px] font-mono text-muted-foreground">Ref: {ref}</p>
-          )}
-          {cancelUrl && (
-            <a href={cancelUrl} className="text-xs text-primary hover:underline">
-              Cancel and return
-            </a>
-          )}
+          {ref && <p className="text-[10px] font-mono text-muted-foreground">Ref: {ref}</p>}
+          {cancelUrl && <a href={cancelUrl} className="text-xs text-primary hover:underline">Cancel and return</a>}
         </div>
       </div>
+
+      {/* Processor-error retry overlay */}
+      {showRetryPanel && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl space-y-5">
+            <div className="mx-auto h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground text-center">Payment Failed</h2>
+            <p className="text-sm text-muted-foreground text-center">
+              {lastProcessorError || `Your payment couldn't be processed${lastFailedProvider ? ` via ${lastFailedProvider}` : ''}.`}
+            </p>
+            <div className="space-y-3">
+              <Button className="w-full gap-2" onClick={() => { setShowRetryPanel(false); handleSubmit(); }}>
+                <RefreshCw className="h-4 w-4" /> Retry Payment
+              </Button>
+              <Button
+                variant="outline" className="w-full gap-2"
+                onClick={() => {
+                  setShowRetryPanel(false);
+                  setPaymentMethod(paymentMethod === 'card' ? 'openbanking' : 'card');
+                }}
+              >
+                <Building2 className="h-4 w-4" /> Try {paymentMethod === 'card' ? 'Bank Transfer' : 'Card'} Instead
+              </Button>
+              {cancelUrl && (
+                <Button variant="ghost" className="w-full text-muted-foreground" asChild>
+                  <a href={cancelUrl}>Cancel and return</a>
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-center text-muted-foreground">
+              Attempt {retryCount} of 3 · Secured by MZZPay
+            </p>
+          </div>
+        </div>
+      )}
 
       <ThreeDSecureModal
         open={show3DS}
@@ -340,12 +409,7 @@ export default function Checkout() {
         transactionId={threeDSTxId}
         onComplete={() => {
           setPaymentComplete(true);
-          if (successUrl) {
-            const redirectUrl = new URL(successUrl);
-            redirectUrl.searchParams.set('TRANSACTION_ID', threeDSTxId);
-            redirectUrl.searchParams.set('PARTNER_SESSION_ID', ref);
-            setTimeout(() => { window.location.href = redirectUrl.toString(); }, 2000);
-          }
+          redirectToOutcome('success', threeDSTxId);
         }}
       />
     </div>
@@ -366,13 +430,11 @@ function CardFields({
       <div className="space-y-2">
         <Label className="text-xs">Card Number</Label>
         <Input
-          type="text"
-          placeholder="4242 4242 4242 4242"
+          type="text" placeholder="4242 4242 4242 4242"
           value={formatCardNumber(cardNumber)}
           onChange={(e) => setCardNumber(e.target.value.replace(/\s/g, ''))}
           className="bg-background border-border font-mono"
-          maxLength={19}
-          required
+          maxLength={19} required
         />
       </div>
       <div className="grid grid-cols-3 gap-3">
@@ -382,7 +444,7 @@ function CardFields({
         </div>
         <div className="space-y-2">
           <Label className="text-xs">Year</Label>
-          <Input type="text" placeholder="2025" value={expYear} onChange={(e) => setExpYear(e.target.value)} className="bg-background border-border" maxLength={4} required />
+          <Input type="text" placeholder="2026" value={expYear} onChange={(e) => setExpYear(e.target.value)} className="bg-background border-border" maxLength={4} required />
         </div>
         <div className="space-y-2">
           <Label className="text-xs">CVC</Label>
@@ -395,20 +457,8 @@ function CardFields({
 
 function OpenBankingSection({ currency }: { currency: string }) {
   const banks = ['EUR', 'GBP'].includes(currency)
-    ? [
-        { name: 'Revolut', icon: '🏦' },
-        { name: 'Monzo', icon: '🏦' },
-        { name: 'Barclays', icon: '🏦' },
-        { name: 'HSBC', icon: '🏦' },
-        { name: 'Deutsche Bank', icon: '🏦' },
-        { name: 'ING', icon: '🏦' },
-      ]
-    : [
-        { name: 'Chase', icon: '🏦' },
-        { name: 'Bank of America', icon: '🏦' },
-        { name: 'Wells Fargo', icon: '🏦' },
-        { name: 'Citi', icon: '🏦' },
-      ];
+    ? [{ name: 'Revolut' }, { name: 'Monzo' }, { name: 'Barclays' }, { name: 'HSBC' }, { name: 'Deutsche Bank' }, { name: 'ING' }]
+    : [{ name: 'Chase' }, { name: 'Bank of America' }, { name: 'Wells Fargo' }, { name: 'Citi' }];
 
   return (
     <div className="space-y-3">
@@ -423,7 +473,7 @@ function OpenBankingSection({ currency }: { currency: string }) {
             type="button"
             className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 text-sm text-foreground hover:border-primary hover:bg-primary/5 transition-colors text-left"
           >
-            <span>{bank.icon}</span>
+            <Building2 className="h-4 w-4 text-primary" />
             <span>{bank.name}</span>
           </button>
         ))}
