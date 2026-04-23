@@ -43,7 +43,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import mzzpayIcon from "@/assets/mzzpay-icon.png";
+import { BrandLogo } from "@/components/BrandLogo";
 
 interface NavItem {
   to: string;
@@ -202,13 +202,12 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       {/* Logo */}
-      <div className="flex h-14 items-center border-b border-sidebar-border px-5">
-        <div className="flex items-center gap-2.5">
-          <img src={mzzpayIcon} alt="MzzPay" className="h-7 w-7 rounded-lg" />
-          <span className="font-logo text-xl tracking-wide text-foreground -ml-[15px]">
-            MzzPay
-          </span>
-        </div>
+      <div className="flex h-14 items-center border-b border-sidebar-border px-3">
+        <BrandLogo
+          iconSizeClassName="h-12 w-12"
+          wordmarkSizeClassName="text-xl"
+          textClassName="text-foreground"
+        />
       </div>
 
       {/* Navigation */}
