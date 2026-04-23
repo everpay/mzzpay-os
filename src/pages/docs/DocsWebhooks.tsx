@@ -13,11 +13,15 @@ import { Callout } from "@/components/docs/Callout";
 import { useToast } from "@/hooks/use-toast";
 
 const eventTypes = [
-  "payment.created", "payment.succeeded", "payment.failed",
-  "refund.created", "refund.succeeded",
+  "payment.created", "payment.completed", "payment.failed",
+  "refund.created", "refund.completed",
   "customer.created", "customer.updated",
   "payout.created", "payout.completed",
-  "dispute.created", "dispute.resolved",
+  "dispute.created", "dispute.won", "dispute.lost",
+  "subscription.renewed", "subscription.past_due",
+  "invoice.paid", "invoice.overdue",
+  "open_banking.payment.completed",
+  "crypto.charge.confirmed",
 ];
 
 const mockLogs = [
@@ -107,18 +111,22 @@ export default function DocsWebhooks() {
             <CardHeader><CardTitle className="text-lg">Event Payload Preview</CardTitle></CardHeader>
             <CardContent>
               <CodeBlock
-                code={`{
+                code={`POST /your/endpoint
+Content-Type: application/json
+X-Mzzpay-Event: ${selectedEvent}
+X-Mzzpay-Signature: <hex hmac-sha256 of body>
+
+{
   "id": "evt_test_abc123",
   "type": "${selectedEvent}",
-  "created_at": "${new Date().toISOString()}",
+  "created": ${Date.now()},
   "data": {
-    "id": "pay_test_xyz789",
+    "id": "9b1c2d3e-4f5a-6b7c-8d9e-0a1b2c3d4e5f",
     "amount": 5000,
     "currency": "usd",
-    "status": "${selectedEvent.includes('failed') ? 'failed' : 'succeeded'}",
+    "status": "${selectedEvent.includes('failed') ? 'failed' : 'completed'}",
     "merchant_id": "mer_test_123"
-  },
-  "livemode": false
+  }
 }`}
                 language="curl"
               />
@@ -160,24 +168,31 @@ export default function DocsWebhooks() {
               <CodeBlock
                 code={{
                   curl: `# MzzPay signs every webhook with HMAC-SHA256
-# X-MzzPay-Signature: t=1684789200,v1=abc123...`,
-                  node: `const crypto = require('crypto');
+# X-Mzzpay-Signature: <hex digest of the raw request body>
+# X-Mzzpay-Event:     <event type, e.g. payment.completed>`,
+                  node: `import crypto from 'node:crypto';
 
-function verify(payload, signature, secret) {
+function verify(rawBody, signature, secret) {
   const expected = crypto
     .createHmac('sha256', secret)
-    .update(payload)
+    .update(rawBody)
     .digest('hex');
   return crypto.timingSafeEqual(
-    Buffer.from(expected),
-    Buffer.from(signature)
+    Buffer.from(expected, 'hex'),
+    Buffer.from(signature, 'hex'),
   );
+}
+
+// In your handler — use the RAW body, not JSON.parse(body)
+const sig = req.headers['x-mzzpay-signature'];
+if (!verify(rawBody, sig, process.env.MZZPAY_WEBHOOK_SECRET)) {
+  return res.status(401).end();
 }`,
                   python: `import hmac, hashlib
 
-def verify(payload, signature, secret):
+def verify(raw_body: bytes, signature: str, secret: str) -> bool:
     expected = hmac.new(
-      secret.encode(), payload, hashlib.sha256
+        secret.encode(), raw_body, hashlib.sha256
     ).hexdigest()
     return hmac.compare_digest(expected, signature)`,
                 }}
