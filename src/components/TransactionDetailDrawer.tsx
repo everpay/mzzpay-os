@@ -90,15 +90,25 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
           )}
 
           {/* Customer Section */}
-          {(transaction.customer_email || transaction.customer_ip || transaction.user_agent || transaction.customer_country) && (
+          {(transaction.customer_email || transaction.customer_ip || transaction.user_agent || transaction.customer_country || transaction.customer_phone || transaction.customer_first_name) && (
             <div className="space-y-3">
               <h4 className="font-heading text-sm font-semibold text-foreground flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary" />
                 Customer
               </h4>
               <div className="grid gap-2">
+                {(transaction.customer_first_name || transaction.customer_last_name) && (
+                  <DetailRow icon={Mail} label="Name" value={
+                    `${transaction.customer_first_name || ''} ${transaction.customer_last_name || ''}`.trim()
+                  } />
+                )}
                 {transaction.customer_email && (
                   <DetailRow icon={Mail} label="Email" value={transaction.customer_email} />
+                )}
+                {transaction.customer_phone && (
+                  <DetailRow icon={Phone} label="Phone" value={
+                    <span className="font-mono text-xs">{transaction.customer_phone}</span>
+                  } />
                 )}
                 {transaction.customer_ip && (
                   <DetailRow icon={Wifi} label="IP Address" value={
@@ -107,13 +117,51 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
                 )}
                 {transaction.customer_country && (
                   <DetailRow icon={Globe} label="Country" value={
-                    <span className="text-xs">{transaction.customer_country}</span>
+                    <span className="font-mono text-xs uppercase">{transaction.customer_country}</span>
                   } />
                 )}
                 {transaction.user_agent && (
                   <DetailRow icon={Monitor} label="User Agent" value={
                     <span className="text-[10px] text-muted-foreground break-all max-w-[260px] inline-block text-right">{transaction.user_agent}</span>
                   } />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Billing Address */}
+          {transaction.billing_address && Object.keys(transaction.billing_address).length > 0 && (
+            <div className="space-y-3">
+              <h4 className="font-heading text-sm font-semibold text-foreground flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                Billing Address
+              </h4>
+              <div className="rounded-lg border border-border bg-background p-3 text-sm text-foreground space-y-0.5">
+                {transaction.billing_address.address && <p>{transaction.billing_address.address}</p>}
+                <p className="text-muted-foreground">
+                  {[transaction.billing_address.city, transaction.billing_address.state, transaction.billing_address.postal_code]
+                    .filter(Boolean).join(', ')}
+                </p>
+                {transaction.billing_address.country && (
+                  <p className="text-xs font-mono uppercase text-muted-foreground">{transaction.billing_address.country}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Processor Error */}
+          {(transaction.processor_error_message || transaction.processor_error_code) && (
+            <div className="space-y-3">
+              <h4 className="font-heading text-sm font-semibold text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Processor Decline
+              </h4>
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+                {transaction.processor_error_message && (
+                  <p className="text-sm text-foreground">{transaction.processor_error_message}</p>
+                )}
+                {transaction.processor_error_code && (
+                  <p className="text-[10px] font-mono text-muted-foreground">code: {transaction.processor_error_code}</p>
                 )}
               </div>
             </div>
