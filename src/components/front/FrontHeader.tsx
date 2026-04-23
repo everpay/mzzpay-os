@@ -296,24 +296,24 @@ export function FrontHeader({
             </motion.nav>
 
             <div className="px-6 pb-8 pt-4 border-t border-border/60">
-              <div className="flex items-center gap-5">
+              <div className="flex items-center gap-4">
                 {authLoading ? (
                   <div
-                    className="flex-1 h-12 rounded-full bg-muted animate-pulse"
+                    className="flex-1 h-14 rounded-full bg-muted animate-pulse"
                     aria-label="Loading session"
                   />
                 ) : (
                   <Link
                     to={authLink}
                     onClick={closeMenu}
-                    className="flex-1 text-center text-base font-semibold text-foreground py-3 rounded-full border-2 border-border hover:bg-muted transition-colors"
+                    className="flex-1 text-center text-lg font-semibold text-foreground py-4 rounded-full border-2 border-border hover:bg-muted transition-colors"
                   >
                     {authLabel}
                   </Link>
                 )}
                 <Link to="/demo" onClick={closeMenu} className="flex-1">
                   <Button
-                    className="w-full rounded-full h-12 text-base font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
+                    className="w-full rounded-full h-14 text-lg font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
                   >
                     Request a Demo
                   </Button>
