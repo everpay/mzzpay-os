@@ -1,13 +1,23 @@
 import { cn } from "@/lib/utils";
 
 interface BrandLogoProps {
-  /** Tailwind class controlling the wordmark + icon color (e.g. text-foreground, text-white). */
+  /**
+   * Tailwind class controlling the wordmark + icon color.
+   * Defaults to the design-system primary (teal in both light & dark themes).
+   */
   textClassName?: string;
   /** Optional extra wrapper classes. */
   className?: string;
-  /** Tailwind size class for the icon (height). Defaults to h-26. */
+  /**
+   * Tailwind size class for the icon (height).
+   * Default scales: h-26 on mobile → h-32 on md+.
+   */
   iconSizeClassName?: string;
-  /** Tailwind text-size class for the wordmark. */
+  /**
+   * Tailwind text-size class for the wordmark.
+   * Wordmark is locked at 20px via inline style — this class is kept for
+   * backwards compatibility but no longer overrides the size.
+   */
   wordmarkSizeClassName?: string;
   /** Hide the wordmark and only render the icon. */
   iconOnly?: boolean;
@@ -18,16 +28,18 @@ interface BrandLogoProps {
 /**
  * MzzPay brand lockup — single source of truth.
  *
- * Spec (from product):
- *  - Icon: bold "M" glyph rendered in **Bagel Fat One** (Google Font), rotated 22°,
- *    10px margin all around, teal color. Icon height: h-26.
- *  - Wordmark: "mzzpay" in Coolvetica at 20px, sitting 2px next to the icon.
+ * Spec:
+ *  - Icon: bold "M" glyph in **Bagel Fat One**, rotated 22°, 10px margin.
+ *    Default height: h-26 mobile, h-32 (h-32) on md+ screens.
+ *  - Wordmark: "mzzpay" in Coolvetica, locked at exactly 20px, 2px gap from icon.
+ *  - Color: inherits from --primary (design-system teal in both themes).
+ *  - iconOnly mode preserves the same icon dimensions & color.
  */
 export function BrandLogo({
-  textClassName = "text-[hsl(172,72%,42%)]",
+  textClassName = "text-primary",
   className,
-  iconSizeClassName = "h-26",
-  wordmarkSizeClassName = "text-xl",
+  iconSizeClassName = "h-26 md:h-32",
+  wordmarkSizeClassName,
   iconOnly = false,
   alt = "Mzzpay",
 }: BrandLogoProps) {
@@ -37,7 +49,7 @@ export function BrandLogo({
       role="img"
       aria-label={alt}
     >
-      {/* Icon: bold "M" glyph rendered as text so it inherits color & scales crisply */}
+      {/* Icon glyph — Bagel Fat One, rotated, scales with iconSizeClassName */}
       <span
         aria-hidden="true"
         className={cn(
@@ -52,6 +64,7 @@ export function BrandLogo({
           letterSpacing: "-0.02em",
           margin: "10px",
           transform: "rotate(22deg)",
+          transformOrigin: "center",
         }}
       >
         M
@@ -67,6 +80,7 @@ export function BrandLogo({
           )}
           style={{
             marginLeft: "2px",
+            // Locked per spec — wordmark stays exactly 20px regardless of icon size
             fontSize: "20px",
           }}
         >

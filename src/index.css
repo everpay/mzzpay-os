@@ -1,16 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Bagel+Fat+One&display=swap');
 
-/* Coolvetica font - loaded via @font-face for local hosting */
+/* Coolvetica — locally hosted to avoid CORS / CDN flakiness in production */
 @font-face {
   font-family: 'Coolvetica';
-  src: url('https://fonts.cdnfonts.com/s/14890/Coolvetica%20Rg.woff') format('woff');
+  src: url('/fonts/coolvetica-rg.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Coolvetica';
-  src: url('https://fonts.cdnfonts.com/s/14890/Coolvetica%20Hv.woff') format('woff');
+  src: url('/fonts/coolvetica-hv.woff') format('woff');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
