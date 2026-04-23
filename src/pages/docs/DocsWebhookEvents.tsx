@@ -8,88 +8,96 @@ const groups: { resource: string; events: { name: string; desc: string }[] }[] =
   {
     resource: "Payments",
     events: [
-      { name: "payment.created", desc: "A payment intent was created." },
-      { name: "payment.requires_action", desc: "Payment needs 3DS challenge or customer redirect." },
-      { name: "payment.processing", desc: "Payment was authorised and is awaiting capture or rail confirmation." },
-      { name: "payment.succeeded", desc: "Funds have been captured successfully." },
-      { name: "payment.failed", desc: "Authorisation or capture was declined. See last_error." },
-      { name: "payment.canceled", desc: "An authorised payment was canceled before capture." },
+      { name: "payment.created", desc: "A transaction row was inserted (status=pending)." },
+      { name: "payment.requires_action", desc: "3DS challenge or APM redirect required from the customer." },
+      { name: "payment.processing", desc: "Acquirer has authorised; awaiting capture/settlement." },
+      { name: "payment.completed", desc: "Funds captured. Transaction status flipped to completed." },
+      { name: "payment.failed", desc: "Authorisation or capture declined. metadata.last_error contains the reason." },
+      { name: "payment.canceled", desc: "An authorised payment was voided before capture." },
     ],
   },
   {
     resource: "Refunds",
     events: [
-      { name: "refund.created", desc: "A refund was submitted to the processor." },
-      { name: "refund.succeeded", desc: "The refund has cleared." },
-      { name: "refund.failed", desc: "The refund could not be completed; funds remain in your balance." },
+      { name: "refund.created", desc: "A refund row was inserted." },
+      { name: "refund.completed", desc: "Acquirer cleared the refund." },
+      { name: "refund.failed", desc: "Refund could not be processed; balance unaffected." },
     ],
   },
   {
     resource: "Payouts",
     events: [
-      { name: "payout.created", desc: "A payout was queued." },
-      { name: "payout.in_transit", desc: "Funds were submitted to the rail." },
-      { name: "payout.paid", desc: "Funds have arrived in the destination account." },
-      { name: "payout.failed", desc: "The rail rejected the payout." },
+      { name: "payout.created", desc: "A payout was queued for the next settlement window." },
+      { name: "payout.in_transit", desc: "Submitted to SEPA / SWIFT / ACH / FPS / on-chain rail." },
+      { name: "payout.completed", desc: "Funds confirmed in the destination account." },
+      { name: "payout.failed", desc: "Rail rejected the payout — see metadata.rail_error." },
     ],
   },
   {
     resource: "Disputes",
     events: [
-      { name: "dispute.created", desc: "A new chargeback or retrieval request was opened." },
-      { name: "dispute.updated", desc: "Network or evidence state changed." },
-      { name: "dispute.won", desc: "The dispute was decided in your favour; funds returned." },
-      { name: "dispute.lost", desc: "The dispute was decided against you; funds remain debited." },
+      { name: "dispute.created", desc: "Chargeback or retrieval request opened (synced from Chargeflow)." },
+      { name: "dispute.updated", desc: "Network state, evidence_due_date, or outcome changed." },
+      { name: "dispute.won", desc: "Decided in your favour; debit reversed." },
+      { name: "dispute.lost", desc: "Decided against you; debit remains and a fee may be assessed." },
     ],
   },
   {
     resource: "Customers",
     events: [
-      { name: "customer.created", desc: "New customer record." },
+      { name: "customer.created", desc: "New row inserted in customers." },
       { name: "customer.updated", desc: "Customer fields changed." },
-      { name: "customer.deleted", desc: "Customer was archived." },
+      { name: "customer.deleted", desc: "Customer row was removed (cascade-deletes invoices/subscriptions)." },
     ],
   },
   {
     resource: "Subscriptions",
     events: [
-      { name: "subscription.created", desc: "A subscription started (may be in trial)." },
+      { name: "subscription.created", desc: "Subscription started (status=active or trialing)." },
       { name: "subscription.updated", desc: "Plan, payment method, or schedule changed." },
       { name: "subscription.trial_will_end", desc: "Fires 3 days before trial conversion." },
       { name: "subscription.renewed", desc: "Recurring charge succeeded." },
-      { name: "subscription.past_due", desc: "Renewal failed; smart-retry is engaged." },
-      { name: "subscription.canceled", desc: "The subscription is no longer active." },
+      { name: "subscription.past_due", desc: "Renewal failed; smart-retry engaged via retry-payment." },
+      { name: "subscription.canceled", desc: "Subscription is no longer active." },
     ],
   },
   {
     resource: "Invoices",
     events: [
-      { name: "invoice.created", desc: "Draft or finalised invoice was issued." },
-      { name: "invoice.sent", desc: "Invoice email was delivered to the customer." },
-      { name: "invoice.paid", desc: "Invoice was paid in full." },
-      { name: "invoice.overdue", desc: "Due date passed without full payment." },
-      { name: "invoice.voided", desc: "Invoice was canceled." },
+      { name: "invoice.created", desc: "Draft or open invoice issued." },
+      { name: "invoice.sent", desc: "Hosted invoice email delivered." },
+      { name: "invoice.paid", desc: "Invoice fully paid; status=paid." },
+      { name: "invoice.overdue", desc: "Detected by invoice-overdue-check (runs daily)." },
+      { name: "invoice.voided", desc: "Invoice canceled." },
     ],
   },
   {
     resource: "Open Banking",
     events: [
-      { name: "open_banking.payment.created", desc: "Bank PIS request was created." },
-      { name: "open_banking.payment.authorised", desc: "Customer completed authentication in their banking app." },
-      { name: "open_banking.payment.completed", desc: "Funds settled into your account." },
-      { name: "open_banking.payment.failed", desc: "The customer abandoned or the bank rejected the payment." },
-      { name: "open_banking.refund.completed", desc: "A bank-rail refund cleared." },
+      { name: "open_banking.payment.created", desc: "PIS request issued to the ASPSP." },
+      { name: "open_banking.payment.authorised", desc: "Customer completed strong customer authentication." },
+      { name: "open_banking.payment.completed", desc: "Funds settled (FPS / SEPA Instant)." },
+      { name: "open_banking.payment.failed", desc: "Customer abandoned or bank rejected." },
+      { name: "open_banking.refund.completed", desc: "Bank-rail refund cleared." },
     ],
   },
   {
     resource: "Crypto",
     events: [
-      { name: "crypto.charge.created", desc: "Deposit address generated." },
+      { name: "crypto.charge.created", desc: "Deposit address generated by crypto-pay." },
       { name: "crypto.charge.detected", desc: "On-chain transaction observed (0 confirmations)." },
-      { name: "crypto.charge.confirmed", desc: "Required confirmations reached; funds settled." },
-      { name: "crypto.charge.expired", desc: "Window passed without sufficient funds." },
+      { name: "crypto.charge.confirmed", desc: "Required confirmations reached; status=complete." },
+      { name: "crypto.charge.expired", desc: "Window closed without sufficient funds." },
       { name: "crypto.withdrawal.broadcast", desc: "Withdrawal sent to the network." },
       { name: "crypto.withdrawal.confirmed", desc: "Withdrawal mined and confirmed." },
+    ],
+  },
+  {
+    resource: "Payment Links",
+    events: [
+      { name: "payment_link.created", desc: "Hosted checkout link issued." },
+      { name: "payment_link.completed", desc: "Customer completed checkout via the link." },
+      { name: "payment_link.expired", desc: "Link expired without payment." },
     ],
   },
 ];
@@ -102,17 +110,19 @@ export default function DocsWebhookEvents() {
           <Badge variant="secondary" className="mb-3">Reference</Badge>
           <h1 className="text-3xl font-heading font-bold tracking-tight">Webhook Events</h1>
           <p className="text-muted-foreground mt-2">
-            Every webhook MzzPay sends, grouped by resource. Subscribe to the events you need
-            in <strong>Settings → Webhooks</strong> or via the API.
+            Every event MzzPay dispatches via <code>webhook-dispatch</code>, grouped by
+            resource. Subscribe in <strong>Settings → Webhooks</strong> or by inserting into
+            the <code>webhook_endpoints</code> table.
           </p>
         </div>
         <DocsDownloadActions />
       </div>
 
       <Callout variant="info" title="One envelope, every event">
-        All webhooks share the envelope below. The <code>type</code> field tells you which
-        event fired; <code>data.object</code> contains the full resource at the time of the
-        event.
+        All webhooks share the envelope below. The <code>type</code> field identifies the
+        event; <code>data</code> contains the resource snapshot at dispatch time. Verify the{" "}
+        <code>X-Mzzpay-Signature</code> header — it is the raw HMAC-SHA256 hex digest of the
+        request body using your endpoint secret.
       </Callout>
 
       <Card>
@@ -121,17 +131,22 @@ export default function DocsWebhookEvents() {
         </CardHeader>
         <CardContent>
           <CodeBlock
-            code={`{
-  "id": "evt_4Mz9k2",
-  "object": "event",
-  "type": "payment.succeeded",
-  "api_version": "2026-04-01",
-  "created_at": "2026-04-22T10:14:00Z",
-  "livemode": true,
+            code={`POST /your/endpoint
+Content-Type: application/json
+X-Mzzpay-Event: payment.completed
+X-Mzzpay-Signature: 7c9f3a1b8d4e2c5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f
+
+{
+  "id": "4f5a6b7c-8d9e-0a1b-2c3d-4e5f6a7b8c9d",
+  "type": "payment.completed",
+  "created": 1714032840000,
   "data": {
-    "object": { /* the full resource — payment, refund, dispute, etc. */ }
-  },
-  "request": { "id": "req_8821", "idempotency_key": "..." }
+    "id": "9b1c2d3e-4f5a-6b7c-8d9e-0a1b2c3d4e5f",
+    "amount": 5000,
+    "currency": "usd",
+    "status": "completed",
+    "merchant_id": "mer_abc123"
+  }
 }`}
             language="curl"
           />
