@@ -184,10 +184,10 @@ export function FrontHeader({
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex items-center justify-between h-[68px] px-6 border-b border-border/60">
+            <div className="flex items-center justify-between h-[56px] px-4 border-b border-border/60">
               <Link to="/" className="flex items-center" onClick={closeMenu}>
                 <BrandLogo
-                  iconSizeClassName="h-20"
+                  iconSizeClassName="h-28"
                   wordmarkSizeClassName="text-2xl"
                   textClassName="text-foreground"
                 />
