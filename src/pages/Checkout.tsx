@@ -385,8 +385,8 @@ export default function Checkout() {
               {lastProcessorError || `Your payment couldn't be processed${lastFailedProvider ? ` via ${lastFailedProvider}` : ''}.`}
             </p>
             <div className="space-y-3">
-              <Button className="w-full gap-2" onClick={() => { setShowRetryPanel(false); handleSubmit(); }}>
-                <RefreshCw className="h-4 w-4" /> Retry Payment
+              <Button className="w-full gap-2" onClick={() => { setShowRetryPanel(false); handleSubmit(undefined, { isRetry: true }); }}>
+                <RefreshCw className="h-4 w-4" /> Retry Payment (same idempotency key)
               </Button>
               <Button
                 variant="outline" className="w-full gap-2"
