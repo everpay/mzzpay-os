@@ -11,14 +11,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Currency } from '@/lib/types';
 import {
   Link2, Copy, ExternalLink, Mail, MessageSquare, QrCode, Check, Code, Globe,
-  Download, Trash2, Pencil, Save, Plus, Loader2,
+  Download, Trash2, Pencil, Save, Plus, Loader2, ShieldCheck, ShieldAlert, ShieldQuestion,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { Switch } from '@/components/ui/switch';
 import { formatCurrency } from '@/lib/format';
-import { buildCheckoutUrl } from '@/lib/checkout-url';
+import { buildCheckoutUrl, currentCheckoutHost, CHECKOUT_HOSTS } from '@/lib/checkout-url';
 
 interface SavedLink {
   id: string;
