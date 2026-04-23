@@ -18,8 +18,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency } from '@/lib/format';
-
-const DOMAIN = 'mzzpay.io';
+import { buildCheckoutUrl } from '@/lib/checkout-url';
 
 interface SavedLink {
   id: string;
@@ -84,19 +83,18 @@ export default function PaymentLinks() {
   });
 
   const generatePaymentLink = () => {
-    const params = new URLSearchParams();
-    if (amount) params.set('amount', amount);
-    params.set('currency', currency);
-    if (description) params.set('description', encodeURIComponent(description));
-    if (customerEmail) params.set('email', encodeURIComponent(customerEmail));
-    if (customerName) params.set('name', encodeURIComponent(customerName));
-    params.set('ref', orderId);
-    if (paymentMethod !== 'all') params.set('method', paymentMethod);
-    if (merchantId) params.set('merchant_id', merchantId);
-    if (successUrl) params.set('success_url', encodeURIComponent(successUrl));
-    if (cancelUrl) params.set('cancel_url', encodeURIComponent(cancelUrl));
-
-    return `https://${DOMAIN}/checkout?${params.toString()}`;
+    return buildCheckoutUrl({
+      amount: amount || undefined,
+      currency,
+      description: description || undefined,
+      email: customerEmail || undefined,
+      name: customerName || undefined,
+      ref: orderId,
+      method: paymentMethod,
+      merchantId: merchantId || undefined,
+      successUrl: successUrl || undefined,
+      cancelUrl: cancelUrl || undefined,
+    });
   };
 
   const paymentLink = generatePaymentLink();
