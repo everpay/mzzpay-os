@@ -68,6 +68,59 @@ export default function PaymentLinks() {
     fetchMerchantId();
   }, []);
 
+  // Merchant-level checkout host preference. Default false → apex (always works).
+  const { data: merchantPref } = useQuery({
+    queryKey: ['merchant-checkout-pref', merchantId],
+    queryFn: async () => {
+      if (!merchantId) return false;
+      const { data, error } = await supabase
+        .from('merchants')
+        .select('prefer_checkout_subdomain')
+        .eq('id', merchantId)
+        .single();
+      if (error) throw error;
+      return Boolean((data as any)?.prefer_checkout_subdomain);
+    },
+    enabled: !!merchantId,
+  });
+  const preferSubdomain = merchantPref === true;
+
+  // Live host probe — runs against our edge function so the dashboard tells the
+  // merchant whether checkout.mzzpay.io is actually safe to use right now.
+  type HostStatus = {
+    recommended: 'subdomain' | 'apex';
+    summary: string;
+    subdomain: { status: 'active' | 'redirected' | 'broken' | 'unreachable'; preservesQuery: boolean; message: string };
+    apex: { status: 'active' | 'redirected' | 'broken' | 'unreachable'; preservesQuery: boolean; message: string };
+  };
+  const { data: hostStatus, isFetching: hostChecking, refetch: recheckHost } = useQuery<HostStatus>({
+    queryKey: ['checkout-host-status'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('checkout-host-status', {
+        body: { host: CHECKOUT_HOSTS.subdomain },
+      });
+      if (error) throw error;
+      return data as HostStatus;
+    },
+    staleTime: 60_000,
+  });
+
+  const updatePrefMutation = useMutation({
+    mutationFn: async (next: boolean) => {
+      if (!merchantId) throw new Error('No merchant');
+      const { error } = await supabase
+        .from('merchants')
+        .update({ prefer_checkout_subdomain: next } as any)
+        .eq('id', merchantId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['merchant-checkout-pref'] });
+      toast.success('Checkout host preference saved');
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to save preference'),
+  });
+
   const { data: savedLinks = [], isLoading: linksLoading } = useQuery({
     queryKey: ['payment-links', merchantId],
     queryFn: async () => {
@@ -95,9 +148,10 @@ export default function PaymentLinks() {
       merchantId: merchantId || undefined,
       successUrl: successUrl || undefined,
       cancelUrl: cancelUrl || undefined,
-    });
+    }, { merchantPreference: preferSubdomain });
   };
 
+  const activeHost = currentCheckoutHost({ merchantPreference: preferSubdomain });
   const paymentLink = generatePaymentLink();
 
   const copyToClipboard = async (link?: string) => {
