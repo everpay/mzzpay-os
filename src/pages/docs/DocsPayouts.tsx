@@ -13,139 +13,102 @@ export default function DocsPayouts() {
           <Badge variant="secondary" className="mb-3">API Reference</Badge>
           <h1 className="text-3xl font-heading font-bold tracking-tight">Payouts API</h1>
           <p className="text-muted-foreground mt-2">
-            Move funds from your MzzPay balance to a connected bank account, card, or crypto
-            wallet. Payouts route through SEPA, SWIFT, ACH, FPS, or on-chain rails based on
-            the destination.
+            Move available balance to an external bank account or crypto address. Fiat
+            payouts route through <code>moneto-wallet</code>; crypto via{" "}
+            <code>elektropay-wallet</code>. Both write a unified record into{" "}
+            <code>crypto_transactions</code> with <code>tx_type='withdrawal'</code>.
           </p>
         </div>
         <DocsDownloadActions />
       </div>
 
-      <Callout variant="warning" title="Payouts are irreversible">
-        Once a payout transitions to <code>in_transit</code> or <code>paid</code> it cannot be
-        cancelled programmatically. Always confirm the recipient ID before submitting.
+      <Callout variant="warning" title="Payouts deduct from available_balance only">
+        Pending and rolling-reserve amounts are excluded.
       </Callout>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">The Payout Object</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-lg">The Payout Object</CardTitle></CardHeader>
         <CardContent>
           <CodeBlock
             code={`{
-  "id": "po_2NxK9w",
-  "object": "payout",
-  "amount": 125000,
-  "currency": "eur",
-  "destination": "ba_iban_DE89...",
-  "rail": "sepa",
-  "status": "in_transit",
-  "estimated_arrival": "2026-04-24",
-  "fx": { "from": "usd", "to": "eur", "rate": 0.92 },
-  "fee": 250,
-  "created_at": "2026-04-22T09:30:00Z"
+  "id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+  "merchant_id": "9b1c2d3e-...",
+  "wallet_id": "1a2b3c4d-...",
+  "asset_id": "USD",
+  "tx_type": "withdrawal",
+  "amount": 1500.00,
+  "fee": 1.50,
+  "status": "pending",
+  "to_address": "GB29NWBK60161331926819",
+  "elektropay_id": "ep_8821k",
+  "metadata": { "rail": "sepa" },
+  "created_at": "2026-04-22T10:00:00Z"
 }`}
             language="curl"
           />
+          <p className="text-xs text-muted-foreground mt-2">
+            Status flow: <code>pending → processing → complete | failed</code>.
+          </p>
         </CardContent>
       </Card>
 
       <ApiEndpoint
         method="POST"
-        path="/v1/payouts"
-        title="Create a Payout"
-        description="Send funds to a registered bank account or crypto wallet. FX is applied automatically when source and destination currencies differ."
+        path="/functions/v1/moneto-wallet"
+        title="Create a Fiat Payout"
+        description="Initiate USD/EUR/GBP payout via Moneto. Settles T+1 SEPA / T+2 SWIFT."
         params={[
-          { name: "amount", type: "integer", required: true, desc: "Amount in minor units of source currency" },
-          { name: "currency", type: "string", required: true, desc: "Source currency (your wallet currency)" },
-          { name: "destination", type: "string", required: true, desc: "Bank account or crypto wallet ID" },
-          { name: "rail", type: "string", required: false, desc: "sepa, swift, ach, fps, or onchain. Auto-selected if omitted" },
-          { name: "description", type: "string", required: false, desc: "Statement descriptor / memo" },
-          { name: "metadata", type: "object", required: false, desc: "Custom key-value tags" },
+          { name: "action", type: "string", required: true, desc: "Must be 'create_payout'" },
+          { name: "amount", type: "number", required: true, desc: "Major units" },
+          { name: "currency_code", type: "string", required: true, desc: "USD | EUR | GBP" },
+          { name: "country_code", type: "string", required: true, desc: "ISO-3166 alpha-2" },
+          { name: "bank_account", type: "object", required: true, desc: "{ institution_number, transit_number, account_number, account_holder_name }" },
+          { name: "description", type: "string", required: false, desc: "Statement reference" },
         ]}
         code={{
-          curl: `curl -X POST https://api.mzzpay.io/v1/payouts \\
-  -H "Authorization: Bearer sk_test_your_key" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "amount": 125000,
-    "currency": "eur",
-    "destination": "ba_iban_DE89370400440532013000",
-    "rail": "sepa",
-    "description": "April settlement"
-  }'`,
-          node: `const payout = await mzzpay.payouts.create({
-  amount: 125000,
-  currency: 'eur',
-  destination: 'ba_iban_DE89370400440532013000',
-  rail: 'sepa',
-});`,
-          python: `payout = mzzpay.Payout.create(
-  amount=125000,
-  currency="eur",
-  destination="ba_iban_DE89370400440532013000",
-  rail="sepa",
-)`,
+          curl: `curl -X POST "https://api.mzzpay.io/functions/v1/moneto-wallet" -H "Authorization: Bearer <user_jwt>" -H "Content-Type: application/json" -d '{ "action":"create_payout", "amount":1500, "currency_code":"USD", "country_code":"US", "bank_account":{ "institution_number":"021", "transit_number":"00001", "account_number":"1234567890", "account_holder_name":"Acme Inc" } }'`,
+          node: `await supabase.functions.invoke('moneto-wallet', { body: { action:'create_payout', amount:1500, currency_code:'USD', country_code:'US', bank_account: {...} } });`,
+          python: `supabase.functions.invoke("moneto-wallet", body={"action":"create_payout", ...})`,
         }}
-        response={`{
-  "id": "po_2NxK9w",
-  "amount": 125000,
-  "currency": "eur",
-  "status": "pending",
-  "estimated_arrival": "2026-04-24"
-}`}
-      />
-
-      <ApiEndpoint
-        method="GET"
-        path="/v1/payouts/:id"
-        title="Retrieve a Payout"
-        description="Fetch the current status, rail, and tracking info for a payout."
-        code={{
-          curl: `curl https://api.mzzpay.io/v1/payouts/po_2NxK9w \\
-  -H "Authorization: Bearer sk_test_your_key"`,
-          node: `const payout = await mzzpay.payouts.retrieve('po_2NxK9w');`,
-          python: `payout = mzzpay.Payout.retrieve("po_2NxK9w")`,
-        }}
-        response={`{
-  "id": "po_2NxK9w",
-  "status": "paid",
-  "paid_at": "2026-04-24T14:02:00Z",
-  "rail_reference": "TRN-SEPA-558912"
-}`}
+        response={`{ "success": true, "payout": { "id":"2b3c...", "amount":1500, "currency":"USD", "status":"pending", "external_id":"moneto_8821" } }`}
       />
 
       <ApiEndpoint
         method="POST"
-        path="/v1/payouts/:id/cancel"
-        title="Cancel a Payout"
-        description="Cancel a payout that has not yet been submitted to the rail. Only works while status is pending."
+        path="/functions/v1/elektropay-wallet"
+        title="Create a Crypto Payout"
+        description="Withdraw crypto to an external on-chain address. Validates wallet has sufficient available balance."
+        params={[
+          { name: "action", type: "string", required: true, desc: "Must be 'withdrawal'" },
+          { name: "wallet_id", type: "uuid", required: true, desc: "Source crypto_wallets row" },
+          { name: "asset_id", type: "string", required: true, desc: "e.g. BTC, USDT_TRC20" },
+          { name: "amount", type: "number", required: true, desc: "Asset major units" },
+          { name: "to_address", type: "string", required: true, desc: "Destination address" },
+          { name: "network", type: "string", required: false, desc: "Network override" },
+        ]}
         code={{
-          curl: `curl -X POST https://api.mzzpay.io/v1/payouts/po_2NxK9w/cancel \\
-  -H "Authorization: Bearer sk_test_your_key"`,
-          node: `await mzzpay.payouts.cancel('po_2NxK9w');`,
-          python: `mzzpay.Payout.cancel("po_2NxK9w")`,
+          curl: `curl -X POST "https://api.mzzpay.io/functions/v1/elektropay-wallet" -H "Authorization: Bearer <user_jwt>" -H "Content-Type: application/json" -d '{ "action":"withdrawal", "wallet_id":"1a2b...", "asset_id":"USDT_TRC20", "amount":250, "to_address":"TXYZ...abcd" }'`,
+          node: `await supabase.functions.invoke('elektropay-wallet', { body: { action:'withdrawal', wallet_id, asset_id:'USDT_TRC20', amount:250, to_address } });`,
+          python: `supabase.functions.invoke("elektropay-wallet", body={"action":"withdrawal", ...})`,
         }}
-        response={`{ "id": "po_2NxK9w", "status": "canceled" }`}
+        response={`{ "success": true, "transaction": { "id":"2b3c...", "tx_type":"withdrawal", "amount":250, "status":"pending" } }`}
       />
 
       <ApiEndpoint
         method="GET"
-        path="/v1/payouts"
+        path="/rest/v1/crypto_transactions"
         title="List Payouts"
-        description="Paginated list of payouts. Filter by destination, status, rail, or date range."
+        description="Filter tx_type=eq.withdrawal to scope to payouts."
         params={[
-          { name: "status", type: "string", required: false, desc: "pending, in_transit, paid, failed, canceled" },
-          { name: "rail", type: "string", required: false, desc: "sepa, swift, ach, fps, onchain" },
-          { name: "limit", type: "integer", required: false, desc: "Max results (1-100, default 10)" },
+          { name: "tx_type", type: "string", required: false, desc: "eq.withdrawal" },
+          { name: "status", type: "string", required: false, desc: "eq.pending | eq.complete | eq.failed" },
         ]}
         code={{
-          curl: `curl "https://api.mzzpay.io/v1/payouts?status=in_transit" \\
-  -H "Authorization: Bearer sk_test_your_key"`,
-          node: `const payouts = await mzzpay.payouts.list({ status: 'in_transit' });`,
-          python: `payouts = mzzpay.Payout.list(status="in_transit")`,
+          curl: `curl "https://api.mzzpay.io/rest/v1/crypto_transactions?tx_type=eq.withdrawal" -H "Authorization: Bearer <user_jwt>" -H "apikey: <publishable_key>"`,
+          node: `await supabase.from('crypto_transactions').select('*').eq('tx_type','withdrawal');`,
+          python: `supabase.table("crypto_transactions").select("*").eq("tx_type","withdrawal").execute()`,
         }}
-        response={`{ "object": "list", "data": [...], "has_more": false }`}
+        response={`[ { "id":"2b3c...", "tx_type":"withdrawal", "amount":1500, "status":"complete" } ]`}
       />
     </div>
   );

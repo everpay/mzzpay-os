@@ -11,81 +11,129 @@ export default function Docs3DSecure() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <Badge variant="secondary" className="mb-3">API Reference</Badge>
-          <h1 className="text-3xl font-heading font-bold tracking-tight">3D Secure API</h1>
+          <h1 className="text-3xl font-heading font-bold tracking-tight">3D Secure</h1>
           <p className="text-muted-foreground mt-2">
-            Strong Customer Authentication (SCA) for card payments. MzzPay handles
-            challenge-vs-frictionless flows automatically; this API exposes the underlying
-            authentication objects for advanced flows.
+            Strong Customer Authentication (SCA) for card payments. MzzPay handles the
+            challenge-vs-frictionless decision automatically inside{" "}
+            <code>process-payment</code> — there is no separate authentication endpoint.
+            When a challenge is required, the response surfaces the redirect URL on the
+            transaction's <code>processor_raw_response</code> column.
           </p>
         </div>
         <DocsDownloadActions />
       </div>
 
       <Callout variant="info" title="3DS is automatic for EU/UK card flows">
-        You typically do not need to call these endpoints. Pass <code>three_d_secure: &quot;automatic&quot;</code>
-        on a payment and MzzPay will trigger the challenge when required, returning
-        <code> requires_action</code> with a <code>next_action.redirect_url</code>.
+        Card charges that need SCA come back with{" "}
+        <code>transaction.status = "pending"</code> and a redirect URL nested at{" "}
+        <code>transaction.processor_raw_response.three_ds.redirect_url</code>. After the
+        cardholder completes the challenge, the issuer posts the result back to the
+        processor and the merchant <code>webhook_url</code> receives a{" "}
+        <code>payment.completed</code> or <code>payment.failed</code> event.
       </Callout>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">3DS-aware Transaction Response</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CodeBlock
+            code={`{
+  "success": true,
+  "transaction": {
+    "id": "9b1c2d3e-...",
+    "status": "pending",
+    "amount": 50.00,
+    "currency": "EUR",
+    "provider": "mondo",
+    "card_brand": "visa",
+    "card_last4": "4242",
+    "processor_raw_response": {
+      "three_ds": {
+        "required": true,
+        "version": "2.2.0",
+        "redirect_url": "https://3ds.acs.example/challenge/abc",
+        "ds_transaction_id": "f4a83e..."
+      }
+    }
+  }
+}`}
+            language="curl"
+          />
+          <p className="text-xs text-muted-foreground mt-2">
+            On a frictionless flow the same shape returns with{" "}
+            <code>three_ds.required = false</code>, plus <code>eci</code> and{" "}
+            <code>cavv</code> values for the issuer's liability shift.
+          </p>
+        </CardContent>
+      </Card>
 
       <ApiEndpoint
         method="POST"
-        path="/v1/3ds/authentications"
-        title="Create a 3DS Authentication"
-        description="Manually start a 3DS authentication for a payment method. Returns the challenge URL when required."
+        path="/functions/v1/process-payment"
+        title="Charge with Automatic 3DS"
+        description="Standard payment endpoint. If the issuer or merchant 3DS rules require a challenge, the response status is pending with a redirect URL the cardholder must visit."
         params={[
-          { name: "payment_method", type: "string", required: true, desc: "Payment method ID" },
-          { name: "amount", type: "integer", required: true, desc: "Amount the auth is being requested for" },
-          { name: "currency", type: "string", required: true, desc: "Currency of the auth" },
-          { name: "return_url", type: "string", required: true, desc: "Where to redirect after the challenge" },
+          { name: "amount", type: "number", required: true, desc: "Major units" },
+          { name: "currency", type: "string", required: true, desc: "ISO 4217" },
+          { name: "paymentMethod", type: "string", required: true, desc: "'card'" },
+          { name: "cardDetails", type: "object", required: true, desc: "{ number, expMonth, expYear, cvc, holderName? }" },
+          { name: "billing.country", type: "string", required: false, desc: "Drives EU/UK SCA enforcement" },
+          { name: "idempotencyKey", type: "string", required: false, desc: "De-dupes retries" },
         ]}
         code={{
-          curl: `curl -X POST https://api.mzzpay.io/v1/3ds/authentications \\
-  -H "Authorization: Bearer sk_test_your_key" \\
+          curl: `curl -X POST "https://api.mzzpay.io/functions/v1/process-payment" \\
+  -H "Authorization: Bearer <user_jwt>" \\
+  -H "Content-Type: application/json" \\
   -d '{
-    "payment_method": "pm_card_visa",
-    "amount": 5000,
-    "currency": "eur",
-    "return_url": "https://shop.example.com/3ds/return"
+    "amount": 50,
+    "currency": "EUR",
+    "paymentMethod": "card",
+    "cardDetails": { "number": "4242424242424242", "expMonth": "12", "expYear": "2027", "cvc": "123" },
+    "billing": { "country": "FR" }
   }'`,
-          node: `const auth = await mzzpay.threeDS.authentications.create({
-  payment_method: 'pm_card_visa',
-  amount: 5000,
-  currency: 'eur',
-  return_url: 'https://shop.example.com/3ds/return',
-});`,
-          python: `auth = mzzpay.ThreeDS.Authentication.create(
-  payment_method="pm_card_visa",
-  amount=5000, currency="eur",
-  return_url="https://shop.example.com/3ds/return",
-)`,
+          node: `const { data } = await supabase.functions.invoke('process-payment', {
+  body: { amount: 50, currency: 'EUR', paymentMethod: 'card', cardDetails: {...}, billing: { country: 'FR' } },
+});
+if (data?.transaction?.processor_raw_response?.three_ds?.redirect_url) {
+  window.location.href = data.transaction.processor_raw_response.three_ds.redirect_url;
+}`,
+          python: `data = supabase.functions.invoke("process-payment", body={...})`,
         }}
         response={`{
-  "id": "tds_8KqL2",
-  "status": "challenge_required",
-  "redirect_url": "https://3ds.acs.example/challenge/abc",
-  "eci": null,
-  "cavv": null
+  "success": true,
+  "transaction": {
+    "id": "9b1c...",
+    "status": "pending",
+    "processor_raw_response": {
+      "three_ds": { "required": true, "redirect_url": "https://3ds.acs.example/...", "version": "2.2.0" }
+    }
+  }
 }`}
       />
 
       <ApiEndpoint
         method="GET"
-        path="/v1/3ds/authentications/:id"
-        title="Retrieve an Authentication"
-        description="Poll for the outcome of a 3DS challenge. Returns ECI/CAVV values when frictionless or successful."
+        path="/rest/v1/transactions?id=eq.{id}&select=id,status,processor_raw_response"
+        title="Poll for 3DS Outcome"
+        description="After redirecting the cardholder, poll the transaction (or — preferred — listen for the payment.completed / payment.failed webhook). The processor_raw_response gains eci, cavv and ds_transaction_id once the issuer confirms."
         code={{
-          curl: `curl https://api.mzzpay.io/v1/3ds/authentications/tds_8KqL2 \\
-  -H "Authorization: Bearer sk_test_your_key"`,
-          node: `const auth = await mzzpay.threeDS.authentications.retrieve('tds_8KqL2');`,
-          python: `auth = mzzpay.ThreeDS.Authentication.retrieve("tds_8KqL2")`,
+          curl: `curl "https://api.mzzpay.io/rest/v1/transactions?id=eq.9b1c...&select=id,status,processor_raw_response" \\
+  -H "Authorization: Bearer <user_jwt>" \\
+  -H "apikey: <publishable_key>"`,
+          node: `const { data } = await supabase.from('transactions')
+  .select('id,status,processor_raw_response').eq('id', txnId).single();`,
+          python: `supabase.table("transactions").select("id,status,processor_raw_response").eq("id", txn_id).single().execute()`,
         }}
-        response={`{
-  "id": "tds_8KqL2",
-  "status": "succeeded",
-  "eci": "05",
-  "cavv": "AAABBg...",
-  "ds_transaction_id": "f4a83e..."
-}`}
+        response={`[
+  {
+    "id": "9b1c...",
+    "status": "completed",
+    "processor_raw_response": {
+      "three_ds": { "required": true, "eci": "05", "cavv": "AAABBg...", "ds_transaction_id": "f4a83e..." }
+    }
+  }
+]`}
       />
     </div>
   );
