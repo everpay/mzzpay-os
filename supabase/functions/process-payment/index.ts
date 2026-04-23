@@ -138,9 +138,17 @@ serve(async (req) => {
       vgsVaultPromise = vaultToVGS(cardDetails);
     }
 
-    if (['EUR', 'GBP'].includes(currency)) {
+    // ROUTING POLICY:
+    // - CARD payments: ALWAYS routed to MzzPay USD (Mondo card path is disabled).
+    // - OPEN_BANKING payments in EUR/GBP: routed to Mondo (OpenBanking endpoint stays enabled).
+    // - Everything else: MzzPay USD.
+    if (paymentMethod === 'open_banking' && ['EUR', 'GBP'].includes(currency)) {
       provider = 'mondo';
       providerResponse = await processMondoPayment(paymentData);
+    } else if (paymentMethod === 'card') {
+      // Mondo card processing is disabled — always use MzzPay USD for card transactions.
+      provider = 'mzzpay';
+      providerResponse = await processMzzPayPayment(paymentData);
     } else {
       provider = 'mzzpay';
       providerResponse = await processMzzPayPayment(paymentData);
@@ -193,6 +201,18 @@ serve(async (req) => {
     else if (['DECLINED', 'FAILED', 'REJECTED', 'ERROR'].includes(ps)) txStatus = 'failed';
     else if (['REDIRECT', 'PENDING', '3DS', 'PROCESSING', 'INITIATED'].includes(ps)) txStatus = 'processing';
 
+    // Surface processor error code/message + raw response on the transaction row
+    const procErrorMessage =
+      providerResponse?.error?.message ||
+      providerResponse?.gateway_message ||
+      providerResponse?.message ||
+      null;
+    const procErrorCode =
+      providerResponse?.error?.code ||
+      providerResponse?.code ||
+      providerResponse?.gateway_code ||
+      null;
+
     const { data: transaction, error: txError } = await supabase
       .from('transactions')
       .insert({
@@ -210,6 +230,15 @@ serve(async (req) => {
         fx_rate: fxRate,
         settlement_amount: settlementAmount,
         settlement_currency: settlementCurrency,
+        billing_address: paymentData.billing || null,
+        customer_phone: paymentData.customer?.phone || null,
+        customer_first_name: paymentData.customer?.first || null,
+        customer_last_name: paymentData.customer?.last || null,
+        customer_ip: paymentData.customer?.ip || null,
+        customer_country: paymentData.billing?.country || null,
+        processor_error_code: txStatus === 'failed' ? procErrorCode : null,
+        processor_error_message: txStatus === 'failed' ? procErrorMessage : null,
+        processor_raw_response: providerResponse,
       })
       .select()
       .single();
