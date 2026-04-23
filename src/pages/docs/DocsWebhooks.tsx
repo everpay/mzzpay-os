@@ -186,6 +186,13 @@ def verify(payload, signature, secret):
           </Card>
         </TabsContent>
       </Tabs>
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Delivery, signatures & idempotent consumers
+        </h2>
+        <DocsContentSection sectionId="webhooks" />
+      </section>
     </div>
   );
 }
