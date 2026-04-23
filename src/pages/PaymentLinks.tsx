@@ -163,6 +163,15 @@ export default function PaymentLinks() {
 
   const savePaymentLink = async () => {
     if (!merchantId) { toast.error('Merchant not found'); return; }
+    // If the merchant has the subdomain turned on but our live probe shows it
+    // is broken, refuse to save — this is the senior-eng safety net that stops
+    // bad links from ever reaching customers.
+    if (preferSubdomain && hostStatus && hostStatus.subdomain.status !== 'active' && hostStatus.subdomain.status !== 'redirected') {
+      toast.error('Checkout subdomain is not safe to use', {
+        description: hostStatus.subdomain.message + ' Switch to the apex host or fix DNS first.',
+      });
+      return;
+    }
     setSaving(true);
     try {
       const linkData = {
