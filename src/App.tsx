@@ -47,6 +47,7 @@ import Recipients from "./pages/Recipients";
 import Treasury from "./pages/Treasury";
 import AuditTrail from "./pages/AuditTrail";
 import EmailDnsBundle from "./pages/EmailDnsBundle";
+import LlmsTxt from "./pages/LlmsTxt";
 
 import Products from "./pages/Products";
 import Integrations from "./pages/Integrations";
@@ -142,6 +143,8 @@ const AppRoutes = () => (
       <Route path="api-keys" element={<DocsApiKeys />} />
       <Route path="sdks" element={<DocsSdks />} />
     </Route>
+    {/* LLM-friendly developer docs (paste into ChatGPT / Claude / Cursor) */}
+    <Route path="/llms.txt" element={<LlmsTxt />} />
     {/* Legacy /docs → /developers redirects */}
     <Route path="/docs" element={<Navigate to="/developers" replace />} />
     <Route path="/docs/*" element={<Navigate to="/developers" replace />} />
