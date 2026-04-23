@@ -10,23 +10,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { CountrySelect } from '@/components/CountrySelect';
+import { validateCheckoutParams } from '@/lib/checkout-params';
 
 const DOMAIN = 'mzzpay.io';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
 
-  const amount = searchParams.get('amount') || '';
-  const currency = searchParams.get('currency') || 'USD';
-  const description = searchParams.get('description') ? decodeURIComponent(searchParams.get('description')!) : '';
-  const email = searchParams.get('email') ? decodeURIComponent(searchParams.get('email')!) : '';
-  const name = searchParams.get('name') ? decodeURIComponent(searchParams.get('name')!) : '';
-  const ref = searchParams.get('ref') || '';
-  const orderId = searchParams.get('order_id') || ref;
-  const method = searchParams.get('method') || 'all';
-  const merchantId = searchParams.get('merchant_id') || undefined;
-  const successUrl = searchParams.get('success_url') ? decodeURIComponent(searchParams.get('success_url')!) : '';
-  const cancelUrl = searchParams.get('cancel_url') ? decodeURIComponent(searchParams.get('cancel_url')!) : '';
+  // Validate + normalize all incoming query parameters in one place. Any error
+  // is surfaced via a banner above the form so the merchant/customer knows
+  // why checkout cannot proceed instead of seeing a silently-broken page.
+  const validation = validateCheckoutParams(searchParams);
+  const {
+    amount, currency, description, email, name, ref, orderId,
+    method, merchantId, successUrl, cancelUrl,
+  } = validation.values;
+  const blockingIssues = validation.issues.filter((i) => i.severity === 'error');
+  const warningIssues = validation.issues.filter((i) => i.severity === 'warn');
+  const checkoutBlocked = blockingIssues.length > 0;
 
   const [customAmount, setCustomAmount] = useState(amount);
   const [customerEmail, setCustomerEmail] = useState(email);
