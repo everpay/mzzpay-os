@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronRight, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import mzzpayIcon from "@/assets/mzzpay-icon.png";
+import { BrandLogo } from "@/components/BrandLogo";
 import { useAuth } from "@/contexts/AuthContext";
 
 const PRIMARY = "hsl(var(--brand-teal))";
@@ -126,15 +126,11 @@ export function FrontHeader({
       >
         <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
           <Link to="/" className="flex items-center" onClick={closeMenu}>
-            <img
-              src={mzzpayIcon}
-              alt="MzzPay"
-              className="h-20 w-20 rotate-[33deg] drop-shadow-lg"
-              style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
+            <BrandLogo
+              iconSizeClassName="h-28 w-28"
+              wordmarkSizeClassName="text-2xl"
+              textClassName={`transition-colors ${logoTextClass}`}
             />
-            <span className={`font-logo text-2xl tracking-wide transition-colors -ml-[15px] ${logoTextClass}`}>
-              MzzPay
-            </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-9 font-body">
@@ -189,14 +185,12 @@ export function FrontHeader({
             aria-modal="true"
           >
             <div className="flex items-center justify-between h-[68px] px-6 border-b border-border/60">
-              <Link to="/" className="flex items-center gap-5" onClick={closeMenu}>
-                <img
-                  src={mzzpayIcon}
-                  alt="MzzPay"
-                  className="h-20 w-20 rotate-[33deg] drop-shadow-lg"
-                  style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
+              <Link to="/" className="flex items-center" onClick={closeMenu}>
+                <BrandLogo
+                  iconSizeClassName="h-28 w-28"
+                  wordmarkSizeClassName="text-2xl"
+                  textClassName="text-foreground"
                 />
-                <span className="font-logo text-2xl tracking-wide text-foreground -ml-[15px]">MzzPay</span>
               </Link>
               <button
                 className="p-2 rounded-full text-foreground hover:bg-muted transition-colors"

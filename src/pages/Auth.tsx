@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CountrySelect } from '@/components/CountrySelect';
 import { Mail, Lock, User, ArrowRight, Building2, Phone, Globe, Zap, CreditCard, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
-import mzzpayIcon from '@/assets/mzzpay-icon.png';
+import { BrandLogo } from '@/components/BrandLogo';
 
 interface AuthProps {
   defaultMode?: 'login' | 'signup';
@@ -129,13 +129,11 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
       <div className="gradient-glow pointer-events-none fixed inset-0" />
       <div className="relative w-full max-w-md">
         <Link to="/" className="flex items-center justify-center mb-8">
-          <img
-            src={mzzpayIcon}
-            alt="MzzPay"
-            className="h-16 w-16 rotate-[33deg] drop-shadow-lg"
-            style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
+          <BrandLogo
+            iconSizeClassName="h-28 w-28"
+            wordmarkSizeClassName="text-3xl"
+            textClassName="text-foreground"
           />
-          <span className="font-logo text-3xl tracking-wide text-foreground -ml-[15px]">MzzPay</span>
         </Link>
 
         {isLogin ? (

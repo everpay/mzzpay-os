@@ -54,9 +54,13 @@ export default function DocsLayout() {
       >
         <div className="flex items-center justify-between px-4 h-14 border-b border-sidebar-border shrink-0">
           {open && (
-            <Link to="/developers" className="flex items-center gap-2">
-              <img src={mzzpayIcon} alt="MzzPay" className="h-7 w-7 rounded-lg" />
-              <span className="font-logo text-lg tracking-wide text-sidebar-foreground -ml-[15px]">MzzPay Developers</span>
+            <Link to="/developers" className="flex items-center">
+              <BrandLogo
+                iconSizeClassName="h-12 w-12"
+                wordmarkSizeClassName="text-lg"
+                textClassName="text-sidebar-foreground"
+              />
+              <span className="font-logo text-lg tracking-wide text-sidebar-foreground ml-1">Developers</span>
             </Link>
           )}
           <button onClick={() => setOpen(!open)} className="p-1.5 rounded-full hover:bg-sidebar-accent/60 transition-colors">

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import mzzpayIcon from '@/assets/mzzpay-icon.png';
+import { BrandLogo } from '@/components/BrandLogo';
 import { Link } from 'react-router-dom';
 
 export default function ResetPassword() {
@@ -34,13 +34,11 @@ export default function ResetPassword() {
       <div className="gradient-glow pointer-events-none fixed inset-0" />
       <div className="relative w-full max-w-md">
         <Link to="/" className="flex items-center justify-center mb-8">
-          <img
-            src={mzzpayIcon}
-            alt="MzzPay"
-            className="h-16 w-16 rotate-[33deg] drop-shadow-lg"
-            style={{ filter: "contrast(1.35) saturate(1.2) brightness(1.05)" }}
+          <BrandLogo
+            iconSizeClassName="h-28 w-28"
+            wordmarkSizeClassName="text-2xl"
+            textClassName="text-foreground"
           />
-          <span className="font-logo text-2xl tracking-wide text-foreground -ml-[15px]">MzzPay</span>
         </Link>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-card">
