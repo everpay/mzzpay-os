@@ -1,6 +1,11 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+// Sign the user out after this many ms of inactivity (no mouse / key / touch / scroll).
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const IDLE_WARNING_MS = 60 * 1000; // warn 60s before sign-out
 
 interface AuthContextType {
   session: Session | null;
