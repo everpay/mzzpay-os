@@ -11,93 +11,102 @@ export default function DocsFx() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <Badge variant="secondary" className="mb-3">API Reference</Badge>
-          <h1 className="text-3xl font-heading font-bold tracking-tight">FX &amp; Currency Conversion</h1>
+          <h1 className="text-3xl font-heading font-bold tracking-tight">FX &amp; Conversions API</h1>
           <p className="text-muted-foreground mt-2">
-            Quote and execute currency conversions between supported wallet currencies. Quotes
-            are valid for 60 seconds.
+            Convert between fiat currencies using MzzPay's mid-market rates. Rates are refreshed
+            every 60 seconds by the <code>fx-rate-updater</code> worker and cached in the{" "}
+            <code>fx_rates</code> table.
           </p>
         </div>
         <DocsDownloadActions />
       </div>
 
-      <Callout variant="info" title="Quotes lock the rate">
-        Always create a quote first, then execute it within the validity window. Direct
-        conversion without a quote applies the spot rate at execution time, which may be less
-        favourable.
+      <Callout variant="info" title="Mid-market quote, no spread">
+        <code>fx-convert</code> returns the latest cached mid-market rate. The merchant FX
+        spread (default 1.5%, configurable via <code>custom_markup_percentage</code> on the
+        merchant) is applied at settlement, never on quotes.
       </Callout>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">The FX Rate Object</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CodeBlock
+            code={`{
+  "id": "f1a2b3c4-...",
+  "base_currency": "usd",
+  "quote_currency": "eur",
+  "rate": 0.9215,
+  "source": "ecb",
+  "fetched_at": "2026-04-22T10:00:03Z"
+}`}
+            language="curl"
+          />
+        </CardContent>
+      </Card>
+
+      <ApiEndpoint
+        method="POST"
+        path="/functions/v1/fx-convert"
+        title="Convert an Amount"
+        description="Returns the converted amount and the rate used. If base equals quote, rate is 1 and converted equals amount."
+        params={[
+          { name: "amount", type: "number", required: true, desc: "Amount in the base currency, major units" },
+          { name: "from", type: "string", required: true, desc: "ISO 4217 base currency code" },
+          { name: "to", type: "string", required: true, desc: "ISO 4217 quote currency code" },
+        ]}
+        code={{
+          curl: `curl -X POST https://api.mzzpay.io/functions/v1/fx-convert \\
+  -H "Authorization: Bearer <user_jwt>" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "amount": 100, "from": "usd", "to": "eur" }'`,
+          node: `const { data } = await supabase.functions.invoke('fx-convert', {
+  body: { amount: 100, from: 'usd', to: 'eur' },
+});`,
+          python: `data = supabase.functions.invoke("fx-convert", body={"amount": 100, "from": "usd", "to": "eur"})`,
+        }}
+        response={`{
+  "amount": 100,
+  "converted": 92.15,
+  "rate": 0.9215,
+  "from": "usd",
+  "to": "eur"
+}`}
+      />
 
       <ApiEndpoint
         method="GET"
-        path="/v1/fx/rate"
-        title="Get a Spot Rate"
-        description="Indicative mid-market rate. Not guaranteed for execution — use POST /v1/fx/quotes to lock a price."
+        path="/rest/v1/fx_rates"
+        title="List Recent Rates"
+        description="Query the rate cache directly via PostgREST. Useful for displaying rate history charts or auditing settlement conversions."
         params={[
-          { name: "from", type: "string", required: true, desc: "Source currency (e.g. usd)" },
-          { name: "to", type: "string", required: true, desc: "Destination currency (e.g. eur)" },
+          { name: "base_currency", type: "string", required: false, desc: "eq.usd to filter base" },
+          { name: "quote_currency", type: "string", required: false, desc: "eq.eur to filter quote" },
+          { name: "order", type: "string", required: false, desc: "fetched_at.desc recommended" },
+          { name: "limit", type: "integer", required: false, desc: "Default 1000 cap" },
         ]}
         code={{
-          curl: `curl "https://api.mzzpay.io/v1/fx/rate?from=usd&to=eur" \\
-  -H "Authorization: Bearer sk_test_your_key"`,
-          node: `const rate = await mzzpay.fx.rate({ from: 'usd', to: 'eur' });`,
-          python: `rate = mzzpay.FX.rate(**{"from": "usd", "to": "eur"})`,
+          curl: `curl "https://api.mzzpay.io/rest/v1/fx_rates?base_currency=eq.usd&order=fetched_at.desc&limit=24" \\
+  -H "Authorization: Bearer <user_jwt>" \\
+  -H "apikey: <publishable_key>"`,
+          node: `const { data } = await supabase
+  .from('fx_rates')
+  .select('*')
+  .eq('base_currency', 'usd')
+  .order('fetched_at', { ascending: false })
+  .limit(24);`,
+          python: `data = supabase.table("fx_rates").select("*").eq("base_currency", "usd").order("fetched_at", desc=True).limit(24).execute()`,
         }}
-        response={`{
-  "from": "usd",
-  "to": "eur",
-  "rate": 0.9241,
-  "as_of": "2026-04-22T10:14:00Z"
-}`}
-      />
-
-      <ApiEndpoint
-        method="POST"
-        path="/v1/fx/quotes"
-        title="Create a Quote"
-        description="Locks an FX rate for 60 seconds. Execute via POST /v1/fx/quotes/:id/execute."
-        params={[
-          { name: "from", type: "string", required: true, desc: "Source currency" },
-          { name: "to", type: "string", required: true, desc: "Destination currency" },
-          { name: "amount", type: "integer", required: true, desc: "Amount in minor units of the source currency" },
-        ]}
-        code={{
-          curl: `curl -X POST https://api.mzzpay.io/v1/fx/quotes \\
-  -H "Authorization: Bearer sk_test_your_key" \\
-  -d '{"from":"usd","to":"eur","amount":100000}'`,
-          node: `const quote = await mzzpay.fx.quotes.create({
-  from: 'usd', to: 'eur', amount: 100000,
-});`,
-          python: `quote = mzzpay.FX.Quote.create(
-  **{"from": "usd"}, to="eur", amount=100000,
-)`,
-        }}
-        response={`{
-  "id": "fxq_3yPp",
-  "from": "usd", "to": "eur",
-  "rate": 0.9238,
-  "source_amount": 100000,
-  "target_amount": 92380,
-  "expires_at": "2026-04-22T10:15:00Z"
-}`}
-      />
-
-      <ApiEndpoint
-        method="POST"
-        path="/v1/fx/quotes/:id/execute"
-        title="Execute a Quote"
-        description="Atomically debits the source wallet and credits the destination wallet at the locked rate."
-        code={{
-          curl: `curl -X POST https://api.mzzpay.io/v1/fx/quotes/fxq_3yPp/execute \\
-  -H "Authorization: Bearer sk_test_your_key"`,
-          node: `const conversion = await mzzpay.fx.quotes.execute('fxq_3yPp');`,
-          python: `conversion = mzzpay.FX.Quote.execute("fxq_3yPp")`,
-        }}
-        response={`{
-  "id": "fx_8821",
-  "quote_id": "fxq_3yPp",
-  "status": "settled",
-  "source_amount": 100000,
-  "target_amount": 92380
-}`}
+        response={`[
+  {
+    "base_currency": "usd",
+    "quote_currency": "eur",
+    "rate": 0.9215,
+    "source": "ecb",
+    "fetched_at": "2026-04-22T10:00:03Z"
+  }
+]`}
       />
     </div>
   );
