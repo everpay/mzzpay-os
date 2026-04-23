@@ -1906,6 +1906,71 @@ export type Database = {
           },
         ]
       }
+      payment_links: {
+        Row: {
+          amount: number | null
+          cancel_url: string | null
+          created_at: string
+          currency: string
+          customer_email: string | null
+          customer_name: string | null
+          description: string | null
+          id: string
+          merchant_id: string
+          order_id: string | null
+          payment_method: string | null
+          products: Json | null
+          status: string
+          success_url: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          amount?: number | null
+          cancel_url?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          description?: string | null
+          id?: string
+          merchant_id: string
+          order_id?: string | null
+          payment_method?: string | null
+          products?: Json | null
+          status?: string
+          success_url?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          amount?: number | null
+          cancel_url?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          description?: string | null
+          id?: string
+          merchant_id?: string
+          order_id?: string | null
+          payment_method?: string | null
+          products?: Json | null
+          status?: string
+          success_url?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_links_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_methods: {
         Row: {
           card_brand: string | null
@@ -3002,44 +3067,127 @@ export type Database = {
           },
         ]
       }
+      subscription_plan_prices: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          is_default: boolean
+          plan_id: string
+          subscription_price: number
+          trial_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency: string
+          id?: string
+          is_default?: boolean
+          plan_id: string
+          subscription_price?: number
+          trial_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          is_default?: boolean
+          plan_id?: string
+          subscription_price?: number
+          trial_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_plan_prices_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           amount: number
+          billing_period_unit: string
           created_at: string
           currency: string
           description: string | null
+          ends_after_count: number
+          ends_after_unit: string
+          ends_type: string
           id: string
           interval: string
           interval_count: number
           merchant_id: string
           name: string
+          retry_logic: string
+          starts_day: number
+          starts_weekday: string
+          starts_weekday_occurrence: number
+          status: string
+          subscription_starts: string
           trial_days: number | null
+          trial_duration: number
+          trial_enabled: boolean
+          trial_price: number
+          trial_unit: string
           updated_at: string
         }
         Insert: {
           amount: number
+          billing_period_unit?: string
           created_at?: string
           currency: string
           description?: string | null
+          ends_after_count?: number
+          ends_after_unit?: string
+          ends_type?: string
           id?: string
           interval: string
           interval_count?: number
           merchant_id: string
           name: string
+          retry_logic?: string
+          starts_day?: number
+          starts_weekday?: string
+          starts_weekday_occurrence?: number
+          status?: string
+          subscription_starts?: string
           trial_days?: number | null
+          trial_duration?: number
+          trial_enabled?: boolean
+          trial_price?: number
+          trial_unit?: string
           updated_at?: string
         }
         Update: {
           amount?: number
+          billing_period_unit?: string
           created_at?: string
           currency?: string
           description?: string | null
+          ends_after_count?: number
+          ends_after_unit?: string
+          ends_type?: string
           id?: string
           interval?: string
           interval_count?: number
           merchant_id?: string
           name?: string
+          retry_logic?: string
+          starts_day?: number
+          starts_weekday?: string
+          starts_weekday_occurrence?: number
+          status?: string
+          subscription_starts?: string
           trial_days?: number | null
+          trial_duration?: number
+          trial_enabled?: boolean
+          trial_price?: number
+          trial_unit?: string
           updated_at?: string
         }
         Relationships: [
@@ -3316,6 +3464,7 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          billing_address: Json | null
           card_bin: string | null
           card_brand: string | null
           card_last4: string | null
@@ -3323,13 +3472,19 @@ export type Database = {
           currency: string
           customer_country: string | null
           customer_email: string | null
+          customer_first_name: string | null
           customer_ip: unknown
+          customer_last_name: string | null
+          customer_phone: string | null
           description: string | null
           fx_rate: number | null
           id: string
           idempotency_key: string | null
           merchant_id: string
           payment_method_type: string | null
+          processor_error_code: string | null
+          processor_error_message: string | null
+          processor_raw_response: Json | null
           provider: string
           provider_ref: string | null
           settlement_amount: number | null
@@ -3342,6 +3497,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          billing_address?: Json | null
           card_bin?: string | null
           card_brand?: string | null
           card_last4?: string | null
@@ -3349,13 +3505,19 @@ export type Database = {
           currency: string
           customer_country?: string | null
           customer_email?: string | null
+          customer_first_name?: string | null
           customer_ip?: unknown
+          customer_last_name?: string | null
+          customer_phone?: string | null
           description?: string | null
           fx_rate?: number | null
           id?: string
           idempotency_key?: string | null
           merchant_id: string
           payment_method_type?: string | null
+          processor_error_code?: string | null
+          processor_error_message?: string | null
+          processor_raw_response?: Json | null
           provider: string
           provider_ref?: string | null
           settlement_amount?: number | null
@@ -3368,6 +3530,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          billing_address?: Json | null
           card_bin?: string | null
           card_brand?: string | null
           card_last4?: string | null
@@ -3375,13 +3538,19 @@ export type Database = {
           currency?: string
           customer_country?: string | null
           customer_email?: string | null
+          customer_first_name?: string | null
           customer_ip?: unknown
+          customer_last_name?: string | null
+          customer_phone?: string | null
           description?: string | null
           fx_rate?: number | null
           id?: string
           idempotency_key?: string | null
           merchant_id?: string
           payment_method_type?: string | null
+          processor_error_code?: string | null
+          processor_error_message?: string | null
+          processor_raw_response?: Json | null
           provider?: string
           provider_ref?: string | null
           settlement_amount?: number | null
