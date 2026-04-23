@@ -76,12 +76,16 @@ export default function Transactions() {
     providerFilter !== 'all' ||
     statusFilter !== 'all' ||
     currencyFilter !== 'all' ||
+    countryFilter !== 'all' ||
+    paymentMethodFilter !== 'all' ||
     dateRange !== '30d' ||
     !!search;
   const clearFilters = () => {
     setProviderFilter('all');
     setStatusFilter('all');
     setCurrencyFilter('all');
+    setCountryFilter('all');
+    setPaymentMethodFilter('all');
     setDateRange('30d');
     setSearch('');
   };
