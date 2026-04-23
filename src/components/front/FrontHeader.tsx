@@ -234,7 +234,7 @@ export function FrontHeader({
                           <button
                             onClick={() => setExpanded(isExpanded ? null : item.label)}
                             aria-expanded={isExpanded}
-                            className="w-full flex items-center justify-between py-3.5 text-xl font-semibold text-foreground hover:text-primary transition-colors"
+                            className="w-full flex items-center justify-between py-5 text-2xl font-semibold text-foreground hover:text-primary transition-colors"
                           >
                             <span>{item.label}</span>
                             <ChevronDown
@@ -283,7 +283,7 @@ export function FrontHeader({
                         <Link
                           to={item.to!}
                           onClick={closeMenu}
-                          className="flex items-center justify-between py-3.5 text-xl font-semibold text-foreground hover:text-primary transition-colors"
+                          className="flex items-center justify-between py-5 text-2xl font-semibold text-foreground hover:text-primary transition-colors"
                         >
                           <span>{item.label}</span>
                           <ChevronRight className="h-5 w-5 text-muted-foreground" />
