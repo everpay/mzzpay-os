@@ -91,7 +91,8 @@ export default function Transactions() {
   };
 
   const exportCsv = () => {
-    const header = 'id,created_at,customer,amount,currency,status,provider,description\n';
+    const escape = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = 'id,created_at,customer,amount,currency,status,provider,payment_method,country,customer_ip,processor_error_code,processor_error_message,description\n';
     const rows = filtered
       .map((tx) =>
         [
@@ -102,8 +103,13 @@ export default function Transactions() {
           tx.currency,
           tx.status,
           tx.provider,
-          (tx.description || '').replace(/,/g, ' '),
-        ].join(',')
+          tx.card_brand || tx.payment_method_type || '',
+          tx.customer_country || '',
+          tx.customer_ip || '',
+          tx.processor_error_code || '',
+          tx.processor_error_message || '',
+          tx.description || '',
+        ].map(escape).join(',')
       )
       .join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv' });
@@ -120,7 +126,7 @@ export default function Transactions() {
       title: 'Transactions Report',
       filename: 'transactions',
       subtitle: `${filtered.length} transactions`,
-      headers: ['Date', 'ID', 'Customer', 'Amount', 'Currency', 'Status', 'Provider', 'Description'],
+      headers: ['Date', 'ID', 'Customer', 'Amount', 'Currency', 'Status', 'Provider', 'Method', 'Country', 'IP', 'Error'],
       rows: filtered.map((tx) => [
         new Date(tx.created_at).toLocaleString(),
         tx.id.slice(0, 12),
@@ -129,7 +135,10 @@ export default function Transactions() {
         tx.currency,
         tx.status,
         tx.provider,
-        tx.description || '',
+        tx.card_brand || tx.payment_method_type || '',
+        tx.customer_country || '',
+        tx.customer_ip || '',
+        tx.processor_error_message ? `${tx.processor_error_code || ''} ${tx.processor_error_message}`.trim() : '',
       ]),
     });
   };
