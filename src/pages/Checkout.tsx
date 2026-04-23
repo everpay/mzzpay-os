@@ -84,6 +84,12 @@ export default function Checkout() {
 
   const handleSubmit = async (e?: React.FormEvent, opts?: { isRetry?: boolean }) => {
     e?.preventDefault();
+    if (checkoutBlocked) {
+      toast.error('This checkout link is incomplete', {
+        description: blockingIssues.map((i) => i.message).join(' '),
+      });
+      return;
+    }
     if (paymentMethod === 'crypto') return; // handled by CryptoPaymentPanel
     setIsSubmitting(true);
 
