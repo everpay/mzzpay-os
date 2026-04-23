@@ -2,17 +2,29 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CodeBlock } from "@/components/docs/CodeBlock";
 import { ApiEndpoint } from "@/components/docs/ApiEndpoint";
+import { DocsContentSection } from "@/components/docs/DocsContentSection";
+import { DocsDownloadActions } from "@/components/docs/DocsDownloadActions";
+import { Callout } from "@/components/docs/Callout";
 
 export default function DocsPayments() {
   return (
     <div className="max-w-4xl mx-auto space-y-10">
-      <div>
-        <Badge variant="secondary" className="mb-3">API Reference</Badge>
-        <h1 className="text-3xl font-heading font-bold tracking-tight">Payments API</h1>
-        <p className="text-muted-foreground mt-2">
-          Create, capture, and manage payments across multiple processors and payment methods.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <Badge variant="secondary" className="mb-3">API Reference</Badge>
+          <h1 className="text-3xl font-heading font-bold tracking-tight">Payments API</h1>
+          <p className="text-muted-foreground mt-2">
+            Create, capture, and manage payments across multiple processors and payment methods.
+          </p>
+        </div>
+        <DocsDownloadActions />
       </div>
+
+      <Callout variant="info" title="A 200 means accepted, not settled">
+        Always inspect the <code>status</code> field. <code>requires_action</code> needs a 3DS
+        redirect; <code>processing</code> is in flight; only <code>succeeded</code> means funds
+        are captured.
+      </Callout>
 
       <Card>
         <CardHeader>
@@ -176,6 +188,27 @@ export default function DocsPayments() {
   "reason": "requested_by_customer"
 }`}
       />
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Lifecycle, routing & refund semantics
+        </h2>
+        <DocsContentSection sectionId="payments" />
+      </section>
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Errors
+        </h2>
+        <DocsContentSection sectionId="errors" />
+      </section>
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Pagination, filtering, expansion
+        </h2>
+        <DocsContentSection sectionId="pagination" />
+      </section>
     </div>
   );
 }

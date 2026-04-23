@@ -1,16 +1,28 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CodeBlock } from "@/components/docs/CodeBlock";
+import { DocsContentSection } from "@/components/docs/DocsContentSection";
+import { DocsDownloadActions } from "@/components/docs/DocsDownloadActions";
+import { Callout } from "@/components/docs/Callout";
 import { Shield, AlertTriangle } from "lucide-react";
 
 export default function DocsAuthentication() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        <Badge variant="secondary" className="mb-3">API Reference</Badge>
-        <h1 className="text-3xl font-heading font-bold tracking-tight">Authentication</h1>
-        <p className="text-muted-foreground mt-2">Authenticate API requests with bearer tokens.</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <Badge variant="secondary" className="mb-3">API Reference</Badge>
+          <h1 className="text-3xl font-heading font-bold tracking-tight">Authentication</h1>
+          <p className="text-muted-foreground mt-2">Authenticate API requests with bearer tokens or HMAC-signed payloads.</p>
+        </div>
+        <DocsDownloadActions />
       </div>
+
+      <Callout variant="warning" title="Never embed secret keys client-side">
+        <code>sk_live_…</code> and <code>sk_test_…</code> keys must stay server-side. If a key
+        leaks, rotate it from the dashboard immediately — old keys keep working for 24 hours
+        after rotation to give you a clean cutover.
+      </Callout>
 
       <Card>
         <CardHeader>
@@ -92,6 +104,13 @@ payments = mzzpay.Payment.list()`,
           />
         </CardContent>
       </Card>
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Bearer tokens & HMAC request signing
+        </h2>
+        <DocsContentSection sectionId="authentication" />
+      </section>
     </div>
   );
 }

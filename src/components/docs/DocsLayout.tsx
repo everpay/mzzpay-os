@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { DocsDownloadActions } from "@/components/docs/DocsDownloadActions";
 import mzzpayIcon from "@/assets/mzzpay-icon.png";
 
 const navSections = [
@@ -118,6 +119,7 @@ export default function DocsLayout() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <DocsDownloadActions className="hidden sm:flex" />
             <ThemeToggle />
             <Link to="/dashboard">
               <Button variant="ghost" size="sm" className="gap-1.5 rounded-full">
