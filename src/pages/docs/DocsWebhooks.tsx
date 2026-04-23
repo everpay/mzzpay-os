@@ -7,6 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Webhook, Plus, Send, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { CodeBlock } from "@/components/docs/CodeBlock";
+import { DocsContentSection } from "@/components/docs/DocsContentSection";
+import { DocsDownloadActions } from "@/components/docs/DocsDownloadActions";
+import { Callout } from "@/components/docs/Callout";
 import { useToast } from "@/hooks/use-toast";
 
 const eventTypes = [
@@ -51,8 +54,17 @@ export default function DocsWebhooks() {
           <h1 className="text-3xl font-heading font-bold tracking-tight">Webhooks</h1>
           <p className="text-muted-foreground mt-2">Configure endpoints, test events, and view delivery logs.</p>
         </div>
-        <Button className="gap-2"><Plus className="w-4 h-4" /> Add Endpoint</Button>
+        <div className="flex items-center gap-2">
+          <DocsDownloadActions />
+          <Button className="gap-2"><Plus className="w-4 h-4" /> Add Endpoint</Button>
+        </div>
       </div>
+
+      <Callout variant="success" title="Treat webhooks as the source of truth">
+        Don't poll our API for state. Subscribe to events, verify the signature, dedupe by
+        <code> event.id</code>, and respond <code>2xx</code> within 10 seconds — anything
+        slower is retried.
+      </Callout>
 
       <Tabs defaultValue="test">
         <TabsList>

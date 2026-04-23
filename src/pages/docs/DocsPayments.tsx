@@ -188,6 +188,27 @@ export default function DocsPayments() {
   "reason": "requested_by_customer"
 }`}
       />
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Lifecycle, routing & refund semantics
+        </h2>
+        <DocsContentSection sectionId="payments" />
+      </section>
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Errors
+        </h2>
+        <DocsContentSection sectionId="errors" />
+      </section>
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Pagination, filtering, expansion
+        </h2>
+        <DocsContentSection sectionId="pagination" />
+      </section>
     </div>
   );
 }
