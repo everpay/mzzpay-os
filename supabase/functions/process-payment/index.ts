@@ -9,10 +9,12 @@ const corsHeaders = {
 interface PaymentRequest {
   amount: number;
   currency: string;
-  paymentMethod: 'card' | 'pix' | 'boleto' | 'apple_pay' | 'open_banking';
+  paymentMethod: 'card' | 'pix' | 'boleto' | 'apple_pay' | 'open_banking' | 'openbanking' | 'crypto';
   customerEmail?: string;
   description?: string;
   idempotencyKey?: string;
+  /** Force a brand-new attempt even if the idempotency key already has a cached response (used by the retry overlay after a decline). */
+  retry?: boolean;
   /**
    * VGS POLICY: Card data is sent DIRECTLY to the processor (Mondo / MzzPay).
    * VGS is ONLY used to vault cards when the merchant intends to charge again
@@ -77,8 +79,9 @@ serve(async (req) => {
     const paymentData: PaymentRequest = await req.json();
     const { amount, currency, paymentMethod, customerEmail, description, idempotencyKey, cardDetails } = paymentData;
 
-    // Check idempotency
-    if (idempotencyKey) {
+    // Check idempotency — but if the cached response was a decline AND the
+    // client is explicitly retrying, bypass the cache and re-run the charge.
+    if (idempotencyKey && !paymentData.retry) {
       const { data: existingKey } = await supabase
         .from('idempotency_keys')
         .select('response')
@@ -87,10 +90,16 @@ serve(async (req) => {
         .single();
 
       if (existingKey?.response) {
-        return new Response(
-          JSON.stringify(existingKey.response),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        const cached: any = existingKey.response;
+        const cachedTxStatus = cached?.transaction?.status;
+        const cachedFailed = cachedTxStatus === 'failed' || cached?.error;
+        if (!cachedFailed) {
+          return new Response(
+            JSON.stringify(cached),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        // Otherwise fall through and reattempt under the same key.
       }
     }
 
