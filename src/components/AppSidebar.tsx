@@ -204,7 +204,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       {/* Logo */}
       <div className="flex h-14 items-center border-b border-sidebar-border px-3">
         <BrandLogo
-          iconSizeClassName="h-12 w-12"
+          iconSizeClassName="h-12"
           wordmarkSizeClassName="text-xl"
           textClassName="text-foreground"
         />

@@ -130,7 +130,7 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
       <div className="relative w-full max-w-md">
         <Link to="/" className="flex items-center justify-center mb-8">
           <BrandLogo
-            iconSizeClassName="h-28 w-28"
+            iconSizeClassName="h-20"
             wordmarkSizeClassName="text-3xl"
             textClassName="text-foreground"
           />

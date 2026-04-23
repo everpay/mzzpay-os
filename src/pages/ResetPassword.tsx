@@ -35,7 +35,7 @@ export default function ResetPassword() {
       <div className="relative w-full max-w-md">
         <Link to="/" className="flex items-center justify-center mb-8">
           <BrandLogo
-            iconSizeClassName="h-28 w-28"
+            iconSizeClassName="h-20"
             wordmarkSizeClassName="text-2xl"
             textClassName="text-foreground"
           />
