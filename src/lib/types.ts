@@ -42,6 +42,15 @@ export interface Transaction {
   customer_ip?: string | null;
   user_agent?: string | null;
   customer_country?: string | null;
+  customer_phone?: string | null;
+  customer_first_name?: string | null;
+  customer_last_name?: string | null;
+  billing_address?: Record<string, any> | null;
+  processor_error_code?: string | null;
+  processor_error_message?: string | null;
+  processor_raw_response?: Record<string, any> | null;
+  surcharge_amount?: number | null;
+  total_amount?: number | null;
   created_at: string;
   updated_at: string;
 }

@@ -9,10 +9,12 @@ const corsHeaders = {
 interface PaymentRequest {
   amount: number;
   currency: string;
-  paymentMethod: 'card' | 'pix' | 'boleto' | 'apple_pay' | 'open_banking';
+  paymentMethod: 'card' | 'pix' | 'boleto' | 'apple_pay' | 'open_banking' | 'openbanking' | 'crypto';
   customerEmail?: string;
   description?: string;
   idempotencyKey?: string;
+  /** Force a brand-new attempt even if the idempotency key already has a cached response (used by the retry overlay after a decline). */
+  retry?: boolean;
   /**
    * VGS POLICY: Card data is sent DIRECTLY to the processor (Mondo / MzzPay).
    * VGS is ONLY used to vault cards when the merchant intends to charge again
@@ -75,10 +77,15 @@ serve(async (req) => {
     }
 
     const paymentData: PaymentRequest = await req.json();
+    // Normalize 'openbanking' (from web checkout) to 'open_banking' (provider value).
+    if ((paymentData as any).paymentMethod === 'openbanking') {
+      paymentData.paymentMethod = 'open_banking';
+    }
     const { amount, currency, paymentMethod, customerEmail, description, idempotencyKey, cardDetails } = paymentData;
 
-    // Check idempotency
-    if (idempotencyKey) {
+    // Check idempotency — but if the cached response was a decline AND the
+    // client is explicitly retrying, bypass the cache and re-run the charge.
+    if (idempotencyKey && !paymentData.retry) {
       const { data: existingKey } = await supabase
         .from('idempotency_keys')
         .select('response')
@@ -87,10 +94,16 @@ serve(async (req) => {
         .single();
 
       if (existingKey?.response) {
-        return new Response(
-          JSON.stringify(existingKey.response),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        const cached: any = existingKey.response;
+        const cachedTxStatus = cached?.transaction?.status;
+        const cachedFailed = cachedTxStatus === 'failed' || cached?.error;
+        if (!cachedFailed) {
+          return new Response(
+            JSON.stringify(cached),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        // Otherwise fall through and reattempt under the same key.
       }
     }
 
@@ -138,9 +151,17 @@ serve(async (req) => {
       vgsVaultPromise = vaultToVGS(cardDetails);
     }
 
-    if (['EUR', 'GBP'].includes(currency)) {
+    // ROUTING POLICY:
+    // - CARD payments: ALWAYS routed to MzzPay USD (Mondo card path is disabled).
+    // - OPEN_BANKING payments in EUR/GBP: routed to Mondo (OpenBanking endpoint stays enabled).
+    // - Everything else: MzzPay USD.
+    if (paymentMethod === 'open_banking' && ['EUR', 'GBP'].includes(currency)) {
       provider = 'mondo';
       providerResponse = await processMondoPayment(paymentData);
+    } else if (paymentMethod === 'card') {
+      // Mondo card processing is disabled — always use MzzPay USD for card transactions.
+      provider = 'mzzpay';
+      providerResponse = await processMzzPayPayment(paymentData);
     } else {
       provider = 'mzzpay';
       providerResponse = await processMzzPayPayment(paymentData);
@@ -193,6 +214,18 @@ serve(async (req) => {
     else if (['DECLINED', 'FAILED', 'REJECTED', 'ERROR'].includes(ps)) txStatus = 'failed';
     else if (['REDIRECT', 'PENDING', '3DS', 'PROCESSING', 'INITIATED'].includes(ps)) txStatus = 'processing';
 
+    // Surface processor error code/message + raw response on the transaction row
+    const procErrorMessage =
+      providerResponse?.error?.message ||
+      providerResponse?.gateway_message ||
+      providerResponse?.message ||
+      null;
+    const procErrorCode =
+      providerResponse?.error?.code ||
+      providerResponse?.code ||
+      providerResponse?.gateway_code ||
+      null;
+
     const { data: transaction, error: txError } = await supabase
       .from('transactions')
       .insert({
@@ -210,6 +243,15 @@ serve(async (req) => {
         fx_rate: fxRate,
         settlement_amount: settlementAmount,
         settlement_currency: settlementCurrency,
+        billing_address: paymentData.billing || null,
+        customer_phone: paymentData.customer?.phone || null,
+        customer_first_name: paymentData.customer?.first || null,
+        customer_last_name: paymentData.customer?.last || null,
+        customer_ip: paymentData.customer?.ip || null,
+        customer_country: paymentData.billing?.country || null,
+        processor_error_code: txStatus === 'failed' ? procErrorCode : null,
+        processor_error_message: txStatus === 'failed' ? procErrorMessage : null,
+        processor_raw_response: providerResponse,
       })
       .select()
       .single();
@@ -268,13 +310,13 @@ serve(async (req) => {
       }
     }
 
-    // Store idempotency response
+    // Store / refresh idempotency response (upsert so retries overwrite a previous decline)
     if (idempotencyKey) {
-      await supabase.from('idempotency_keys').insert({
+      await supabase.from('idempotency_keys').upsert({
         merchant_id: merchant.id,
         key: idempotencyKey,
-        response: { transaction },
-      });
+        response: { transaction, providerResponse },
+      }, { onConflict: 'merchant_id,key' });
     }
 
     return new Response(

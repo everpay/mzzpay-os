@@ -18,28 +18,45 @@ export default function Transactions() {
   const [providerFilter, setProviderFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currencyFilter, setCurrencyFilter] = useState<string>('all');
+  const [countryFilter, setCountryFilter] = useState<string>('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<PeriodValue>('30d');
   const [search, setSearch] = useState('');
 
   const allProviders = useMemo(() => [...new Set(transactions.map((tx) => tx.provider))], [transactions]);
+  const allCountries = useMemo(
+    () => [...new Set(transactions.map((tx) => tx.customer_country).filter(Boolean) as string[])].sort(),
+    [transactions]
+  );
+  const allPaymentMethods = useMemo(
+    () => [...new Set(transactions.map((tx) => tx.card_brand || tx.payment_method_type).filter(Boolean) as string[])].sort(),
+    [transactions]
+  );
 
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
       if (providerFilter !== 'all' && tx.provider !== providerFilter) return false;
       if (statusFilter !== 'all' && tx.status !== statusFilter) return false;
       if (currencyFilter !== 'all' && tx.currency !== currencyFilter) return false;
+      if (countryFilter !== 'all' && tx.customer_country !== countryFilter) return false;
+      if (paymentMethodFilter !== 'all') {
+        const pm = tx.card_brand || tx.payment_method_type;
+        if (pm !== paymentMethodFilter) return false;
+      }
       const cutoff = getPeriodCutoff(dateRange);
       if (cutoff && new Date(tx.created_at) < cutoff) return false;
       if (
         search &&
         !tx.id.includes(search) &&
         !tx.description?.toLowerCase().includes(search.toLowerCase()) &&
-        !tx.customer_email?.toLowerCase().includes(search.toLowerCase())
+        !tx.customer_email?.toLowerCase().includes(search.toLowerCase()) &&
+        !(tx.customer_ip || '').includes(search) &&
+        !(tx.processor_error_message || '').toLowerCase().includes(search.toLowerCase())
       )
         return false;
       return true;
     });
-  }, [transactions, providerFilter, statusFilter, currencyFilter, dateRange, search]);
+  }, [transactions, providerFilter, statusFilter, currencyFilter, countryFilter, paymentMethodFilter, dateRange, search]);
 
   const providerCounts = useMemo(
     () =>
@@ -59,18 +76,23 @@ export default function Transactions() {
     providerFilter !== 'all' ||
     statusFilter !== 'all' ||
     currencyFilter !== 'all' ||
+    countryFilter !== 'all' ||
+    paymentMethodFilter !== 'all' ||
     dateRange !== '30d' ||
     !!search;
   const clearFilters = () => {
     setProviderFilter('all');
     setStatusFilter('all');
     setCurrencyFilter('all');
+    setCountryFilter('all');
+    setPaymentMethodFilter('all');
     setDateRange('30d');
     setSearch('');
   };
 
   const exportCsv = () => {
-    const header = 'id,created_at,customer,amount,currency,status,provider,description\n';
+    const escape = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = 'id,created_at,customer,amount,currency,status,provider,payment_method,country,customer_ip,processor_error_code,processor_error_message,description\n';
     const rows = filtered
       .map((tx) =>
         [
@@ -81,8 +103,13 @@ export default function Transactions() {
           tx.currency,
           tx.status,
           tx.provider,
-          (tx.description || '').replace(/,/g, ' '),
-        ].join(',')
+          tx.card_brand || tx.payment_method_type || '',
+          tx.customer_country || '',
+          tx.customer_ip || '',
+          tx.processor_error_code || '',
+          tx.processor_error_message || '',
+          tx.description || '',
+        ].map(escape).join(',')
       )
       .join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv' });
@@ -99,7 +126,7 @@ export default function Transactions() {
       title: 'Transactions Report',
       filename: 'transactions',
       subtitle: `${filtered.length} transactions`,
-      headers: ['Date', 'ID', 'Customer', 'Amount', 'Currency', 'Status', 'Provider', 'Description'],
+      headers: ['Date', 'ID', 'Customer', 'Amount', 'Currency', 'Status', 'Provider', 'Method', 'Country', 'IP', 'Error'],
       rows: filtered.map((tx) => [
         new Date(tx.created_at).toLocaleString(),
         tx.id.slice(0, 12),
@@ -108,7 +135,10 @@ export default function Transactions() {
         tx.currency,
         tx.status,
         tx.provider,
-        tx.description || '',
+        tx.card_brand || tx.payment_method_type || '',
+        tx.customer_country || '',
+        tx.customer_ip || '',
+        tx.processor_error_message ? `${tx.processor_error_code || ''} ${tx.processor_error_message}`.trim() : '',
       ]),
     });
   };
@@ -216,6 +246,28 @@ export default function Transactions() {
           </SelectContent>
         </Select>
         <CurrencySelector value={currencyFilter} onValueChange={setCurrencyFilter} />
+        <Select value={countryFilter} onValueChange={setCountryFilter}>
+          <SelectTrigger className="w-[140px] bg-card border-border">
+            <SelectValue placeholder="Country" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Countries</SelectItem>
+            {allCountries.map((c) => (
+              <SelectItem key={c} value={c} className="font-mono uppercase">{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+          <SelectTrigger className="w-[150px] bg-card border-border">
+            <SelectValue placeholder="Method" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Methods</SelectItem>
+            {allPaymentMethods.map((m) => (
+              <SelectItem key={m} value={m} className="capitalize">{m.replace(/_/g, ' ')}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <PeriodSelector value={dateRange} onValueChange={setDateRange} />
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs gap-1">

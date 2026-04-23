@@ -57,6 +57,12 @@ export default function Checkout() {
   const [lastFailedProvider, setLastFailedProvider] = useState('');
   const [lastProcessorError, setLastProcessorError] = useState('');
   const [showRetryPanel, setShowRetryPanel] = useState(false);
+  // Stable idempotency key for the lifetime of this checkout session.
+  // Reusing the same key on retry guarantees the processor (and our DB) treats
+  // attempts as the SAME logical payment instead of new ones.
+  const [idempotencyKey] = useState(
+    () => `link_${ref || crypto.randomUUID()}_${Date.now()}`
+  );
 
   const displayAmount = amount || customAmount;
 
@@ -75,7 +81,7 @@ export default function Checkout() {
     setTimeout(() => { window.location.href = url.toString(); }, 1500);
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent, opts?: { isRetry?: boolean }) => {
     e?.preventDefault();
     if (paymentMethod === 'crypto') return; // handled by CryptoPaymentPanel
     setIsSubmitting(true);
@@ -87,7 +93,9 @@ export default function Checkout() {
         paymentMethod,
         customerEmail,
         description: description || `Payment ${ref}`,
-        idempotencyKey: `link_${ref}_${Date.now()}`,
+        // Stable idempotency key — same key on first attempt AND retries.
+        idempotencyKey,
+        retry: !!opts?.isRetry,
         merchantId,
         orderId,
         successUrl: successUrl || undefined,
@@ -377,8 +385,8 @@ export default function Checkout() {
               {lastProcessorError || `Your payment couldn't be processed${lastFailedProvider ? ` via ${lastFailedProvider}` : ''}.`}
             </p>
             <div className="space-y-3">
-              <Button className="w-full gap-2" onClick={() => { setShowRetryPanel(false); handleSubmit(); }}>
-                <RefreshCw className="h-4 w-4" /> Retry Payment
+              <Button className="w-full gap-2" onClick={() => { setShowRetryPanel(false); handleSubmit(undefined, { isRetry: true }); }}>
+                <RefreshCw className="h-4 w-4" /> Retry Payment (same idempotency key)
               </Button>
               <Button
                 variant="outline" className="w-full gap-2"
@@ -395,9 +403,14 @@ export default function Checkout() {
                 </Button>
               )}
             </div>
-            <p className="text-xs text-center text-muted-foreground">
-              Attempt {retryCount} of 3 · Secured by MZZPay
-            </p>
+            <div className="space-y-1 text-center">
+              <p className="text-xs text-muted-foreground">
+                Attempt {retryCount} of 3 · Secured by MZZPay
+              </p>
+              <p className="text-[10px] font-mono text-muted-foreground/70 break-all">
+                key: {idempotencyKey}
+              </p>
+            </div>
           </div>
         </div>
       )}
