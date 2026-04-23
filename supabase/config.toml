@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.email-rpc-test]
 verify_jwt = false
+
+[functions.checkout-host-status]
+verify_jwt = false
