@@ -246,6 +246,28 @@ export default function Transactions() {
           </SelectContent>
         </Select>
         <CurrencySelector value={currencyFilter} onValueChange={setCurrencyFilter} />
+        <Select value={countryFilter} onValueChange={setCountryFilter}>
+          <SelectTrigger className="w-[140px] bg-card border-border">
+            <SelectValue placeholder="Country" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Countries</SelectItem>
+            {allCountries.map((c) => (
+              <SelectItem key={c} value={c} className="font-mono uppercase">{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+          <SelectTrigger className="w-[150px] bg-card border-border">
+            <SelectValue placeholder="Method" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Methods</SelectItem>
+            {allPaymentMethods.map((m) => (
+              <SelectItem key={m} value={m} className="capitalize">{m.replace(/_/g, ' ')}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <PeriodSelector value={dateRange} onValueChange={setDateRange} />
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs gap-1">
