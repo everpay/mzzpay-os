@@ -5,7 +5,7 @@ interface BrandLogoProps {
   textClassName?: string;
   /** Optional extra wrapper classes. */
   className?: string;
-  /** Tailwind size class for the icon (height). Defaults to h-20 per brand spec. */
+  /** Tailwind size class for the icon (height). Defaults to h-24. */
   iconSizeClassName?: string;
   /** Tailwind text-size class for the wordmark. */
   wordmarkSizeClassName?: string;
@@ -29,10 +29,10 @@ interface BrandLogoProps {
 export function BrandLogo({
   textClassName = "text-foreground",
   className,
-  iconSizeClassName = "h-20",
+  iconSizeClassName = "h-24",
   wordmarkSizeClassName = "text-3xl",
   iconOnly = false,
-  alt = "MzzPay",
+  alt = "Mzzpay",
 }: BrandLogoProps) {
   return (
     <div
@@ -40,38 +40,38 @@ export function BrandLogo({
       role="img"
       aria-label={alt}
     >
-      {/* Icon: bold rotated "R" rendered as text so it inherits color & scales crisply */}
+      {/* Icon: bold "M" glyph rendered as text so it inherits color & scales crisply */}
       <span
         aria-hidden="true"
         className={cn(
           "font-logo font-black leading-none select-none",
-          "rotate-[30deg] m-[2px] inline-flex items-center justify-center",
+          "inline-flex items-center justify-center",
           iconSizeClassName,
           textClassName,
         )}
         style={{
-          // Match the icon visual size to the height class via 1em sizing.
           fontSize: "1em",
           lineHeight: 1,
-          // Optical tightening so the R reads as a mark, not a letter.
-          letterSpacing: "-0.05em",
+          letterSpacing: "-0.02em",
+          margin: "10px",
         }}
       >
-        R
+        M
       </span>
 
       {!iconOnly && (
         <span
           className={cn(
             "font-logo font-bold leading-none",
-            // -2px gap from the icon per spec, then a little tracking so
-            // "MzzPay" doesn't feel cramped (matches Recurly-style reference).
-            "ml-[-2px] tracking-[0.01em]",
+            "tracking-[0.01em]",
             wordmarkSizeClassName,
             textClassName,
           )}
+          style={{
+            marginLeft: "10px",
+          }}
         >
-          MzzPay
+          Mzzpay
         </span>
       )}
     </div>
