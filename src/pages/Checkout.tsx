@@ -10,23 +10,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { CountrySelect } from '@/components/CountrySelect';
+import { validateCheckoutParams } from '@/lib/checkout-params';
 
 const DOMAIN = 'mzzpay.io';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
 
-  const amount = searchParams.get('amount') || '';
-  const currency = searchParams.get('currency') || 'USD';
-  const description = searchParams.get('description') ? decodeURIComponent(searchParams.get('description')!) : '';
-  const email = searchParams.get('email') ? decodeURIComponent(searchParams.get('email')!) : '';
-  const name = searchParams.get('name') ? decodeURIComponent(searchParams.get('name')!) : '';
-  const ref = searchParams.get('ref') || '';
-  const orderId = searchParams.get('order_id') || ref;
-  const method = searchParams.get('method') || 'all';
-  const merchantId = searchParams.get('merchant_id') || undefined;
-  const successUrl = searchParams.get('success_url') ? decodeURIComponent(searchParams.get('success_url')!) : '';
-  const cancelUrl = searchParams.get('cancel_url') ? decodeURIComponent(searchParams.get('cancel_url')!) : '';
+  // Validate + normalize all incoming query parameters in one place. Any error
+  // is surfaced via a banner above the form so the merchant/customer knows
+  // why checkout cannot proceed instead of seeing a silently-broken page.
+  const validation = validateCheckoutParams(searchParams);
+  const {
+    amount, currency, description, email, name, ref, orderId,
+    method, merchantId, successUrl, cancelUrl,
+  } = validation.values;
+  const blockingIssues = validation.issues.filter((i) => i.severity === 'error');
+  const warningIssues = validation.issues.filter((i) => i.severity === 'warn');
+  const checkoutBlocked = blockingIssues.length > 0;
 
   const [customAmount, setCustomAmount] = useState(amount);
   const [customerEmail, setCustomerEmail] = useState(email);
@@ -83,6 +84,12 @@ export default function Checkout() {
 
   const handleSubmit = async (e?: React.FormEvent, opts?: { isRetry?: boolean }) => {
     e?.preventDefault();
+    if (checkoutBlocked) {
+      toast.error('This checkout link is incomplete', {
+        description: blockingIssues.map((i) => i.message).join(' '),
+      });
+      return;
+    }
     if (paymentMethod === 'crypto') return; // handled by CryptoPaymentPanel
     setIsSubmitting(true);
 
@@ -244,6 +251,49 @@ export default function Checkout() {
           )}
           {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
+
+        {/* Validation banner — shown when the inbound payment-link query string
+            is incomplete or malformed. We deliberately show this BEFORE the
+            form so a customer never enters card data into a broken link. */}
+        {checkoutBlocked && (
+          <div
+            data-testid="checkout-error-banner"
+            role="alert"
+            className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="font-semibold">This payment link is incomplete</p>
+                <ul className="list-disc pl-5 space-y-0.5 text-destructive/90">
+                  {blockingIssues.map((i) => (
+                    <li key={`${i.field}-${i.message}`}>
+                      <span className="font-mono text-xs">{i.field}</span>: {i.message}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-destructive/80 pt-1">
+                  Please contact the merchant for an updated link.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!checkoutBlocked && warningIssues.length > 0 && (
+          <div
+            data-testid="checkout-warning-banner"
+            role="status"
+            className="rounded-xl border border-warning/40 bg-warning/5 p-3 text-xs text-warning-foreground"
+          >
+            <p className="font-medium mb-1">Heads up</p>
+            <ul className="list-disc pl-5 space-y-0.5">
+              {warningIssues.map((i) => (
+                <li key={`${i.field}-${i.message}`}>{i.message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">

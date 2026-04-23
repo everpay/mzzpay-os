@@ -11,14 +11,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Currency } from '@/lib/types';
 import {
   Link2, Copy, ExternalLink, Mail, MessageSquare, QrCode, Check, Code, Globe,
-  Download, Trash2, Pencil, Save, Plus, Loader2,
+  Download, Trash2, Pencil, Save, Plus, Loader2, ShieldCheck, ShieldAlert, ShieldQuestion,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { Switch } from '@/components/ui/switch';
 import { formatCurrency } from '@/lib/format';
-import { buildCheckoutUrl } from '@/lib/checkout-url';
+import { buildCheckoutUrl, currentCheckoutHost, CHECKOUT_HOSTS } from '@/lib/checkout-url';
 
 interface SavedLink {
   id: string;
@@ -67,6 +68,59 @@ export default function PaymentLinks() {
     fetchMerchantId();
   }, []);
 
+  // Merchant-level checkout host preference. Default false → apex (always works).
+  const { data: merchantPref } = useQuery({
+    queryKey: ['merchant-checkout-pref', merchantId],
+    queryFn: async () => {
+      if (!merchantId) return false;
+      const { data, error } = await supabase
+        .from('merchants')
+        .select('prefer_checkout_subdomain')
+        .eq('id', merchantId)
+        .single();
+      if (error) throw error;
+      return Boolean((data as any)?.prefer_checkout_subdomain);
+    },
+    enabled: !!merchantId,
+  });
+  const preferSubdomain = merchantPref === true;
+
+  // Live host probe — runs against our edge function so the dashboard tells the
+  // merchant whether checkout.mzzpay.io is actually safe to use right now.
+  type HostStatus = {
+    recommended: 'subdomain' | 'apex';
+    summary: string;
+    subdomain: { status: 'active' | 'redirected' | 'broken' | 'unreachable'; preservesQuery: boolean; message: string };
+    apex: { status: 'active' | 'redirected' | 'broken' | 'unreachable'; preservesQuery: boolean; message: string };
+  };
+  const { data: hostStatus, isFetching: hostChecking, refetch: recheckHost } = useQuery<HostStatus>({
+    queryKey: ['checkout-host-status'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('checkout-host-status', {
+        body: { host: CHECKOUT_HOSTS.subdomain },
+      });
+      if (error) throw error;
+      return data as HostStatus;
+    },
+    staleTime: 60_000,
+  });
+
+  const updatePrefMutation = useMutation({
+    mutationFn: async (next: boolean) => {
+      if (!merchantId) throw new Error('No merchant');
+      const { error } = await supabase
+        .from('merchants')
+        .update({ prefer_checkout_subdomain: next } as any)
+        .eq('id', merchantId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['merchant-checkout-pref'] });
+      toast.success('Checkout host preference saved');
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to save preference'),
+  });
+
   const { data: savedLinks = [], isLoading: linksLoading } = useQuery({
     queryKey: ['payment-links', merchantId],
     queryFn: async () => {
@@ -94,9 +148,10 @@ export default function PaymentLinks() {
       merchantId: merchantId || undefined,
       successUrl: successUrl || undefined,
       cancelUrl: cancelUrl || undefined,
-    });
+    }, { merchantPreference: preferSubdomain });
   };
 
+  const activeHost = currentCheckoutHost({ merchantPreference: preferSubdomain });
   const paymentLink = generatePaymentLink();
 
   const copyToClipboard = async (link?: string) => {
@@ -108,6 +163,15 @@ export default function PaymentLinks() {
 
   const savePaymentLink = async () => {
     if (!merchantId) { toast.error('Merchant not found'); return; }
+    // If the merchant has the subdomain turned on but our live probe shows it
+    // is broken, refuse to save — this is the senior-eng safety net that stops
+    // bad links from ever reaching customers.
+    if (preferSubdomain && hostStatus && hostStatus.subdomain.status !== 'active' && hostStatus.subdomain.status !== 'redirected') {
+      toast.error('Checkout subdomain is not safe to use', {
+        description: hostStatus.subdomain.message + ' Switch to the apex host or fix DNS first.',
+      });
+      return;
+    }
     setSaving(true);
     try {
       const linkData = {
@@ -217,6 +281,66 @@ export default function PaymentLinks() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Configuration Panel */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Checkout host preference + live status */}
+          <Card data-testid="checkout-host-panel">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary" />
+                Checkout host
+              </CardTitle>
+              <CardDescription>
+                Links are currently generated against{' '}
+                <span className="font-mono text-foreground">{activeHost}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Prefer checkout subdomain</p>
+                  <p className="text-xs text-muted-foreground">
+                    Use <span className="font-mono">checkout.mzzpay.io</span> instead of the apex.
+                  </p>
+                </div>
+                <Switch
+                  checked={preferSubdomain}
+                  disabled={updatePrefMutation.isPending}
+                  onCheckedChange={(v) => updatePrefMutation.mutate(v)}
+                  aria-label="Prefer checkout subdomain"
+                />
+              </div>
+
+              <div className="rounded-lg border border-border p-3 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-sm">Live status</span>
+                  <Button size="sm" variant="ghost" onClick={() => recheckHost()} disabled={hostChecking}>
+                    {hostChecking ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Re-check'}
+                  </Button>
+                </div>
+                {!hostStatus && hostChecking && <p className="text-muted-foreground">Checking…</p>}
+                {hostStatus && (
+                  <>
+                    <div className="flex items-start gap-2">
+                      {hostStatus.subdomain.status === 'active' ? (
+                        <ShieldCheck className="h-4 w-4 text-primary mt-0.5" />
+                      ) : hostStatus.subdomain.status === 'redirected' ? (
+                        <ShieldQuestion className="h-4 w-4 text-warning mt-0.5" />
+                      ) : (
+                        <ShieldAlert className="h-4 w-4 text-destructive mt-0.5" />
+                      )}
+                      <p className="text-muted-foreground">{hostStatus.summary}</p>
+                    </div>
+                    {!hostStatus.subdomain.preservesQuery &&
+                      hostStatus.subdomain.status !== 'active' && (
+                        <p className="text-destructive">
+                          The subdomain currently strips the query string. Saving links against it is blocked until DNS is fixed.
+                        </p>
+                      )}
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

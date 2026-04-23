@@ -1656,6 +1656,7 @@ export type Database = {
           id: string
           name: string
           phone_number: string | null
+          prefer_checkout_subdomain: boolean
           receipt_enabled_by_admin: boolean | null
           receipt_enabled_by_merchant: boolean | null
           receipt_logo_url: string | null
@@ -1679,6 +1680,7 @@ export type Database = {
           id?: string
           name: string
           phone_number?: string | null
+          prefer_checkout_subdomain?: boolean
           receipt_enabled_by_admin?: boolean | null
           receipt_enabled_by_merchant?: boolean | null
           receipt_logo_url?: string | null
@@ -1702,6 +1704,7 @@ export type Database = {
           id?: string
           name?: string
           phone_number?: string | null
+          prefer_checkout_subdomain?: boolean
           receipt_enabled_by_admin?: boolean | null
           receipt_enabled_by_merchant?: boolean | null
           receipt_logo_url?: string | null
