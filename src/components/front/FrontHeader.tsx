@@ -146,9 +146,16 @@ export function FrontHeader({
           </nav>
 
           <div className="hidden md:flex items-center gap-5">
-            <Link to={authLink} className={signInClass}>
-              {authLabel}
-            </Link>
+            {authLoading ? (
+              <div
+                className="h-5 w-16 rounded-md bg-foreground/10 animate-pulse"
+                aria-label="Loading session"
+              />
+            ) : (
+              <Link to={authLink} className={signInClass}>
+                {authLabel}
+              </Link>
+            )}
             <Link to="/demo">
               <Button
                 className="rounded-full px-6 h-11 text-base font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
