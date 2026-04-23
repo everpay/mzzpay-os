@@ -61,9 +61,10 @@ const buildBundle = (fqdn: string): ExpectedRecord[] => [
   { type: "CNAME", host: `send.${fqdn}`, value: "send.lovable.cloud", label: "Tracking host (CNAME)" },
 ];
 
-// Hostinger expects "Name" relative to the root zone (no trailing root domain).
-const hostinger = (host: string, root: string) => {
-  if (host === root) return "@-equivalent: leave the Name as the subdomain prefix only";
+// Cloudflare accepts either the full FQDN or the subdomain prefix in the "Name" field
+// and auto-appends the zone root. We show the prefix form for clarity.
+const cloudflare = (host: string, root: string) => {
+  if (host === root) return "@";
   return host.endsWith(`.${root}`) ? host.slice(0, -1 - root.length) : host;
 };
 
@@ -92,7 +93,7 @@ const RecordTable = ({ records, root }: { records: ExpectedRecord[]; root: strin
       <TableHeader>
         <TableRow>
           <TableHead className="w-[80px]">Type</TableHead>
-          <TableHead>Name (Hostinger)</TableHead>
+          <TableHead>Name (Cloudflare)</TableHead>
           <TableHead>Value / Points to</TableHead>
           <TableHead className="w-[100px]">Priority</TableHead>
           <TableHead className="w-[60px] text-right">Copy</TableHead>
@@ -100,7 +101,7 @@ const RecordTable = ({ records, root }: { records: ExpectedRecord[]; root: strin
       </TableHeader>
       <TableBody>
         {records.map((r) => {
-          const name = hostinger(r.host, root);
+          const name = cloudflare(r.host, root);
           return (
             <TableRow key={`${r.type}-${r.host}`}>
               <TableCell>
@@ -123,7 +124,7 @@ const RecordTable = ({ records, root }: { records: ExpectedRecord[]; root: strin
 const bundleAsText = (records: ExpectedRecord[], root: string) =>
   records
     .map((r) => {
-      const name = hostinger(r.host, root);
+      const name = cloudflare(r.host, root);
       const prio = r.priority !== undefined ? `\tpriority=${r.priority}` : "";
       return `${r.type}\t${name}\t${r.value}${prio}`;
     })
@@ -167,7 +168,7 @@ export default function EmailDnsBundle() {
             <h1 className="font-display text-3xl font-bold tracking-tight">Email DNS Bundle</h1>
           </div>
           <p className="text-muted-foreground">
-            Copy-paste the MX, TXT, and CNAME records below into Hostinger DNS, then run validation
+            Copy-paste the MX, TXT, and CNAME records below into Cloudflare DNS, then run validation
             to confirm everything is correct and flag conflicting records.
           </p>
         </div>
@@ -223,11 +224,12 @@ export default function EmailDnsBundle() {
           <TabsContent value="bundle" className="space-y-4 pt-4">
             <Alert>
               <Info className="h-4 w-4" />
-              <AlertTitle>Hostinger tip</AlertTitle>
+              <AlertTitle>Cloudflare tip</AlertTitle>
               <AlertDescription>
-                In Hostinger's "Name" field, enter only the prefix shown below — Hostinger
-                automatically appends <span className="font-mono">.{root}</span>. Do not add NS
-                records; Hostinger doesn't support NS delegation on subdomains.
+                In Cloudflare's "Name" field, enter the prefix shown below — Cloudflare
+                automatically appends <span className="font-mono">.{root}</span>. Make sure proxy
+                status is set to <strong>DNS only</strong> (grey cloud) for MX and CNAME records;
+                orange-cloud proxying breaks email delivery.
               </AlertDescription>
             </Alert>
             <RecordTable records={records} root={root} />
