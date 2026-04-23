@@ -98,15 +98,21 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 
 // When the app is served from checkout.mzzpay.io, the root URL should
 // land directly on the hosted checkout page instead of the marketing site.
+// Preserve the query string so payment-link parameters survive the redirect.
 const isCheckoutSubdomain =
   typeof window !== "undefined" &&
   window.location.hostname.startsWith("checkout.");
+
+const CheckoutRootRedirect = () => {
+  const search = typeof window !== "undefined" ? window.location.search : "";
+  return <Navigate to={`/checkout${search}`} replace />;
+};
 
 const AppRoutes = () => (
   <Routes>
     <Route
       path="/"
-      element={isCheckoutSubdomain ? <Navigate to="/checkout" replace /> : <Landing />}
+      element={isCheckoutSubdomain ? <CheckoutRootRedirect /> : <Landing />}
     />
     <Route path="/pricing" element={<FrontPricing />} />
     <Route path="/demo" element={<FrontDemo />} />
