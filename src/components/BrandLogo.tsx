@@ -5,10 +5,10 @@ interface BrandLogoProps {
   textClassName?: string;
   /** Optional extra wrapper classes. */
   className?: string;
-  /** Tailwind size class for the icon (height). Defaults to h-24. */
+  /** Tailwind size class for the icon (height). Defaults to h-26 (104px). */
   iconSizeClassName?: string;
-  /** Tailwind text-size class for the wordmark. */
-  wordmarkSizeClassName?: string;
+  /** Font size for the wordmark in pixels. Defaults to 20px. */
+  wordmarkSizePx?: number;
   /** Hide the wordmark and only render the icon. */
   iconOnly?: boolean;
   /** Alt text override (for screen readers). */
@@ -20,17 +20,14 @@ interface BrandLogoProps {
  *
  * Spec (from product):
  *  - Icon: bold "M" glyph rendered in **Bagel Fat One** (Google Font), rotated 22°,
- *    10px margin all around. Color matches the surrounding text (so it inherits
- *    light/dark theme correctly).
- *  - Icon height: h-24 by default.
- *  - Wordmark: "mzzpay" in Bagel Fat One, sitting 2px next to the icon, with a touch
- *    of letter-spacing so the m / z / z / p / a / y don't crowd each other.
+ *    10px margin all around, teal color. Icon height: h-26 (104px).
+ *  - Wordmark: "mzzpay" in Coolvetica at 20px, sitting 2px next to the icon.
  */
 export function BrandLogo({
-  textClassName = "text-foreground",
+  textClassName = "text-[hsl(172,72%,42%)]",
   className,
-  iconSizeClassName = "h-24",
-  wordmarkSizeClassName = "text-3xl",
+  iconSizeClassName = "h-26",
+  wordmarkSizePx = 20,
   iconOnly = false,
   alt = "Mzzpay",
 }: BrandLogoProps) {
@@ -63,13 +60,13 @@ export function BrandLogo({
       {!iconOnly && (
         <span
           className={cn(
-            "font-logo font-bold leading-none",
+            "font-wordmark font-bold leading-none",
             "tracking-[0.01em]",
-            wordmarkSizeClassName,
             textClassName,
           )}
           style={{
             marginLeft: "2px",
+            fontSize: `${wordmarkSizePx}px`,
           }}
         >
           mzzpay
