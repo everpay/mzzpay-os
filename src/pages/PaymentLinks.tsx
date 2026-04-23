@@ -281,6 +281,66 @@ export default function PaymentLinks() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Configuration Panel */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Checkout host preference + live status */}
+          <Card data-testid="checkout-host-panel">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary" />
+                Checkout host
+              </CardTitle>
+              <CardDescription>
+                Links are currently generated against{' '}
+                <span className="font-mono text-foreground">{activeHost}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Prefer checkout subdomain</p>
+                  <p className="text-xs text-muted-foreground">
+                    Use <span className="font-mono">checkout.mzzpay.io</span> instead of the apex.
+                  </p>
+                </div>
+                <Switch
+                  checked={preferSubdomain}
+                  disabled={updatePrefMutation.isPending}
+                  onCheckedChange={(v) => updatePrefMutation.mutate(v)}
+                  aria-label="Prefer checkout subdomain"
+                />
+              </div>
+
+              <div className="rounded-lg border border-border p-3 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-sm">Live status</span>
+                  <Button size="sm" variant="ghost" onClick={() => recheckHost()} disabled={hostChecking}>
+                    {hostChecking ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Re-check'}
+                  </Button>
+                </div>
+                {!hostStatus && hostChecking && <p className="text-muted-foreground">Checking…</p>}
+                {hostStatus && (
+                  <>
+                    <div className="flex items-start gap-2">
+                      {hostStatus.subdomain.status === 'active' ? (
+                        <ShieldCheck className="h-4 w-4 text-primary mt-0.5" />
+                      ) : hostStatus.subdomain.status === 'redirected' ? (
+                        <ShieldQuestion className="h-4 w-4 text-warning mt-0.5" />
+                      ) : (
+                        <ShieldAlert className="h-4 w-4 text-destructive mt-0.5" />
+                      )}
+                      <p className="text-muted-foreground">{hostStatus.summary}</p>
+                    </div>
+                    {!hostStatus.subdomain.preservesQuery &&
+                      hostStatus.subdomain.status !== 'active' && (
+                        <p className="text-destructive">
+                          The subdomain currently strips the query string. Saving links against it is blocked until DNS is fixed.
+                        </p>
+                      )}
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
