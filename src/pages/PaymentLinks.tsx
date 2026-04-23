@@ -492,7 +492,7 @@ export default function PaymentLinks() {
                   </div>
                   <div>
                     <p className="font-medium text-foreground">MZZPay Checkout</p>
-                    <p className="text-xs text-muted-foreground">{DOMAIN}</p>
+                    <p className="text-xs text-muted-foreground">mzzpay.io</p>
                   </div>
                 </div>
 
