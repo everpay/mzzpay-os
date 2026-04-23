@@ -150,14 +150,16 @@ export default function DocsLayout() {
               />
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <DocsDownloadActions className="hidden sm:flex" />
+          <div className="flex items-center gap-4">
+            <DocsDownloadActions />
+            <div className="hidden sm:block h-4 w-px bg-border" />
             <ThemeToggle />
-            <Link to="/dashboard">
-              <Button variant="ghost" size="sm" className="gap-1.5 rounded-full">
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Dashboard
-              </Button>
+            <Link
+              to="/dashboard"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Dashboard
             </Link>
             <div className="px-2.5 py-1 rounded-full bg-[hsl(172_72%_48%_/_0.15)] text-[hsl(172_72%_38%)] text-xs font-semibold">v1</div>
           </div>
