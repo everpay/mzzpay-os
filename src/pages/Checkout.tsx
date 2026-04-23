@@ -284,7 +284,7 @@ export default function Checkout() {
           <div
             data-testid="checkout-warning-banner"
             role="status"
-            className="rounded-xl border border-yellow-500/40 bg-yellow-500/5 p-3 text-xs text-yellow-700 dark:text-yellow-300"
+            className="rounded-xl border border-warning/40 bg-warning/5 p-3 text-xs text-warning-foreground"
           >
             <p className="font-medium mb-1">Heads up</p>
             <ul className="list-disc pl-5 space-y-0.5">
