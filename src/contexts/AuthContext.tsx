@@ -116,10 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }, IDLE_TIMEOUT_MS);
     };
 
-    const events: (keyof WindowEventMap)[] = [
+    const events: string[] = [
       'mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel', 'visibilitychange',
     ];
-    events.forEach((e) => window.addEventListener(e, resetTimers, { passive: true }));
+    events.forEach((e) => window.addEventListener(e, resetTimers, { passive: true } as AddEventListenerOptions));
     resetTimers();
 
     return () => {
