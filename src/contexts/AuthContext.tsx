@@ -85,6 +85,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  // ----- Idle timeout auto sign-out -----
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!session) {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
+      return;
+    }
+
+    const resetTimers = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
+
+      warnTimerRef.current = setTimeout(() => {
+        toast({
+          title: 'You will be signed out soon',
+          description: 'You\'ve been inactive. Move your mouse or press a key to stay signed in.',
+        });
+      }, IDLE_TIMEOUT_MS - IDLE_WARNING_MS);
+
+      idleTimerRef.current = setTimeout(async () => {
+        await supabase.auth.signOut();
+        toast({
+          title: 'Signed out',
+          description: 'You were signed out due to inactivity.',
+        });
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const events: (keyof WindowEventMap)[] = [
+      'mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel', 'visibilitychange',
+    ];
+    events.forEach((e) => window.addEventListener(e, resetTimers, { passive: true }));
+    resetTimers();
+
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, resetTimers));
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
+    };
+  }, [session]);
+
   return (
     <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, signOut }}>
       {children}
