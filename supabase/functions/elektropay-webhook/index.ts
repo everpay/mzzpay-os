@@ -134,20 +134,22 @@ serve(async (req) => {
 
     // 4. Sync underlying crypto_transactions + wallet balance, capture merchant_id
     let merchantId: string | null = null;
-    let txRowId: string | null = null;
-    if (normalized.external_id) {
-      const { data: tx } = await supabase.from('crypto_transactions')
-        .select('id, wallet_id, amount, asset_id, merchant_id')
-        .eq('elektropay_id', normalized.external_id).maybeSingle();
-      merchantId = tx?.merchant_id ?? null;
-      txRowId = tx?.id ?? null;
+    let resolveSource = 'none';
 
+    // Tier 1: crypto_transactions.elektropay_id
+    if (normalized.external_id) {
+      const { data: txs } = await supabase.from('crypto_transactions')
+        .select('id, wallet_id, amount, asset_id, merchant_id')
+        .eq('elektropay_id', normalized.external_id);
+      const unique = [...new Set((txs ?? []).map((t: any) => t.merchant_id).filter(Boolean))];
+      if (unique.length > 1) {
+        throw new Error(`AMBIGUOUS merchant_id: ${normalized.external_id} maps to ${unique.length} merchants via crypto_transactions`);
+      }
+      if (unique.length === 1) { merchantId = unique[0] as string; resolveSource = 'crypto_transactions.elektropay_id'; }
+
+      const tx = txs?.[0];
       await supabase.from('crypto_transactions')
-        .update({
-          status: normalized.status,
-          tx_hash: normalized.tx_hash,
-          metadata: { webhook: payload, normalized },
-        })
+        .update({ status: normalized.status, tx_hash: normalized.tx_hash, metadata: { webhook: payload, normalized } })
         .eq('elektropay_id', normalized.external_id);
 
       if (normalized.status === 'complete' && payload.payment_id && tx?.wallet_id) {
@@ -158,16 +160,35 @@ serve(async (req) => {
       }
     }
 
+    // Tier 2: crypto_stores.elektropay_store_id from payload
+    if (!merchantId && (payload.store_id || payload.elektropay_store_id)) {
+      const sid = payload.store_id || payload.elektropay_store_id;
+      const { data: stores } = await supabase.from('crypto_stores').select('merchant_id').eq('elektropay_store_id', sid);
+      const unique = [...new Set((stores ?? []).map((s: any) => s.merchant_id).filter(Boolean))];
+      if (unique.length > 1) throw new Error(`AMBIGUOUS merchant_id: store_id=${sid} maps to ${unique.length} merchants`);
+      if (unique.length === 1) { merchantId = unique[0] as string; resolveSource = 'crypto_stores.elektropay_store_id'; }
+    }
+
+    // Tier 3: crypto_wallets.address
+    if (!merchantId && (payload.address || payload.to_address)) {
+      const addr = payload.address || payload.to_address;
+      const { data: wallets } = await supabase.from('crypto_wallets').select('merchant_id').eq('address', addr);
+      const unique = [...new Set((wallets ?? []).map((w: any) => w.merchant_id).filter(Boolean))];
+      if (unique.length > 1) throw new Error(`AMBIGUOUS merchant_id: address=${addr} maps to ${unique.length} merchants`);
+      if (unique.length === 1) { merchantId = unique[0] as string; resolveSource = 'crypto_wallets.address'; }
+    }
+
     // 5. Insert normalized event into provider_events (common dashboard schema)
     if (merchantId) {
+      console.log(`[elektropay-webhook] merchant=${merchantId} resolved via ${resolveSource}`);
       await supabase.from('provider_events').insert({
         provider: 'elektropay',
         event_type: normalized.event_type,
         merchant_id: merchantId,
-        payload: { ...normalized, raw: payload },
+        payload: { ...normalized, raw: payload, _resolve_source: resolveSource },
       });
     } else {
-      console.log('[elektropay-webhook] no merchant_id resolved — skipping provider_events insert');
+      console.warn(`[elektropay-webhook] UNRESOLVED merchant for event=${normalized.external_id} type=${normalized.event_type} — skipping provider_events insert`);
     }
 
     await supabase.from('elektropay_webhook_events')
