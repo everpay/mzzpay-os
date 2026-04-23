@@ -104,6 +104,13 @@ payments = mzzpay.Payment.list()`,
           />
         </CardContent>
       </Card>
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Bearer tokens & HMAC request signing
+        </h2>
+        <DocsContentSection sectionId="authentication" />
+      </section>
     </div>
   );
 }
