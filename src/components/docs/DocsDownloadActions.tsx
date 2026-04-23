@@ -1,40 +1,43 @@
-import { Button } from "@/components/ui/button";
 import { Download, FileText } from "lucide-react";
 import { downloadDocsPdf } from "@/lib/docs-pdf";
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface Props {
   className?: string;
 }
 
 /**
- * Pair of buttons used at the top of the developer docs:
+ * Lightweight inline text links for the docs header:
  *  - Download the full reference as a branded PDF
- *  - Open the LLM-friendly /llms.txt version (great for ChatGPT / Claude / Cursor)
+ *  - Open the LLM-friendly /llms.txt version
+ *
+ * Rendered as text links (not buttons) so they sit quietly next to the
+ * search bar and theme toggle without competing with primary CTAs.
  */
 export const DocsDownloadActions = ({ className }: Props) => {
+  const linkClass =
+    "inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors";
+
   return (
-    <div className={`flex flex-wrap items-center gap-2 ${className ?? ""}`}>
-      <Button
-        size="sm"
-        variant="default"
+    <div className={cn("flex items-center gap-5", className)}>
+      <button
+        type="button"
         onClick={() => downloadDocsPdf()}
-        className="gap-1.5 rounded-full"
+        className={linkClass}
       >
         <Download className="w-3.5 h-3.5" />
         Download PDF
-      </Button>
-      <Button
-        asChild
-        size="sm"
-        variant="outline"
-        className="gap-1.5 rounded-full"
+      </button>
+      <Link
+        to="/llms.txt"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={linkClass}
       >
-        <Link to="/llms.txt" target="_blank" rel="noopener noreferrer">
-          <FileText className="w-3.5 h-3.5" />
-          LLM version
-        </Link>
-      </Button>
+        <FileText className="w-3.5 h-3.5" />
+        LLM version
+      </Link>
     </div>
   );
 };
