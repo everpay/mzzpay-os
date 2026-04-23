@@ -63,7 +63,7 @@ export function FrontHeader({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const signedIn = !!user;
   const authLink = signedIn ? "/dashboard" : "/login";
   const authLabel = signedIn ? "Dashboard" : "Sign In";
@@ -146,9 +146,16 @@ export function FrontHeader({
           </nav>
 
           <div className="hidden md:flex items-center gap-5">
-            <Link to={authLink} className={signInClass}>
-              {authLabel}
-            </Link>
+            {authLoading ? (
+              <div
+                className="h-5 w-16 rounded-md bg-foreground/10 animate-pulse"
+                aria-label="Loading session"
+              />
+            ) : (
+              <Link to={authLink} className={signInClass}>
+                {authLabel}
+              </Link>
+            )}
             <Link to="/demo">
               <Button
                 className="rounded-full px-6 h-11 text-base font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
@@ -290,13 +297,20 @@ export function FrontHeader({
 
             <div className="px-6 pb-8 pt-4 border-t border-border/60">
               <div className="flex items-center gap-5">
-                <Link
-                  to={authLink}
-                  onClick={closeMenu}
-                  className="flex-1 text-center text-base font-semibold text-foreground py-3 rounded-full border-2 border-border hover:bg-muted transition-colors"
-                >
-                  {authLabel}
-                </Link>
+                {authLoading ? (
+                  <div
+                    className="flex-1 h-12 rounded-full bg-muted animate-pulse"
+                    aria-label="Loading session"
+                  />
+                ) : (
+                  <Link
+                    to={authLink}
+                    onClick={closeMenu}
+                    className="flex-1 text-center text-base font-semibold text-foreground py-3 rounded-full border-2 border-border hover:bg-muted transition-colors"
+                  >
+                    {authLabel}
+                  </Link>
+                )}
                 <Link to="/demo" onClick={closeMenu} className="flex-1">
                   <Button
                     className="w-full rounded-full h-12 text-base font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"

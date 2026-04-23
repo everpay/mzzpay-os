@@ -1,6 +1,11 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+// Sign the user out after this many ms of inactivity (no mouse / key / touch / scroll).
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const IDLE_WARNING_MS = 60 * 1000; // warn 60s before sign-out
 
 interface AuthContextType {
   session: Session | null;
@@ -79,6 +84,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
   };
+
+  // ----- Idle timeout auto sign-out -----
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!session) {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
+      return;
+    }
+
+    const resetTimers = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
+
+      warnTimerRef.current = setTimeout(() => {
+        toast({
+          title: 'You will be signed out soon',
+          description: 'You\'ve been inactive. Move your mouse or press a key to stay signed in.',
+        });
+      }, IDLE_TIMEOUT_MS - IDLE_WARNING_MS);
+
+      idleTimerRef.current = setTimeout(async () => {
+        await supabase.auth.signOut();
+        toast({
+          title: 'Signed out',
+          description: 'You were signed out due to inactivity.',
+        });
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const events: string[] = [
+      'mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel', 'visibilitychange',
+    ];
+    events.forEach((e) => window.addEventListener(e, resetTimers, { passive: true } as AddEventListenerOptions));
+    resetTimers();
+
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, resetTimers));
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
+    };
+  }, [session]);
 
   return (
     <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, signOut }}>
