@@ -214,7 +214,7 @@ export function FrontHeader({
                 hidden: {},
                 visible: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
               }}
-              className="flex-1 overflow-y-auto px-6 py-4"
+              className="flex-1 overflow-y-auto px-6 py-2"
             >
               <ul className="flex flex-col divide-y divide-border/60">
                 {NAV_ITEMS.map((item) => {
