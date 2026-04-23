@@ -11,39 +11,43 @@ export default function DocsCrypto() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <Badge variant="secondary" className="mb-3">API Reference</Badge>
-          <h1 className="text-3xl font-heading font-bold tracking-tight">Crypto Payments API</h1>
+          <h1 className="text-3xl font-heading font-bold tracking-tight">Crypto API</h1>
           <p className="text-muted-foreground mt-2">
-            Accept BTC, ETH, USDT, USDC, and other supported assets. MzzPay generates a
-            unique deposit address per charge and auto-converts to your settlement currency.
+            Accept stablecoin and native-asset payments through MzzPay's Elektropay-backed
+            crypto rails. Charges are recorded as <code>crypto_transactions</code> rows and
+            settled to your <code>crypto_wallets</code> on confirmation.
           </p>
         </div>
         <DocsDownloadActions />
       </div>
 
-      <Callout variant="info" title="Confirmations are network-dependent">
-        BTC requires <strong>2 confirmations</strong>, ETH/ERC-20 requires <strong>12</strong>,
-        Polygon and BSC require <strong>20</strong>. The
-        <code> crypto.charge.confirmed</code> webhook fires once the threshold is met.
+      <Callout variant="info" title="Public endpoint — no merchant JWT required">
+        <code>crypto-pay</code> is callable from hosted checkout and invoice payment pages.
+        The receiving merchant is resolved from <code>invoice_id</code> or an explicit{" "}
+        <code>merchant_id</code>. A store and wallet are auto-provisioned on first use.
       </Callout>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">The Crypto Charge Object</CardTitle>
+          <CardTitle className="text-lg">The Crypto Transaction Object</CardTitle>
         </CardHeader>
         <CardContent>
           <CodeBlock
             code={`{
-  "id": "cch_2xLp9",
-  "object": "crypto_charge",
-  "asset": "usdt",
-  "network": "tron",
-  "address": "TRX9KpMs...QcL2",
-  "amount_crypto": "199.50",
-  "amount_fiat": 199.50,
-  "fiat_currency": "usd",
-  "status": "awaiting_payment",
-  "expires_at": "2026-04-22T10:45:00Z",
-  "settlement": { "currency": "usd", "auto_convert": true }
+  "id": "c1a2b3c4-...",
+  "merchant_id": "mer_abc123",
+  "store_id": "str_x8s2",
+  "wallet_id": "wal_usdt",
+  "asset_id": "USDT",
+  "tx_type": "deposit",
+  "status": "pending",
+  "amount": 49.99,
+  "fee": 0.50,
+  "to_address": "0x742d35Cc6634C0532925a3b8D697...",
+  "tx_hash": null,
+  "elektropay_id": "ep_dep_8821",
+  "metadata": { "asset_network": "tron" },
+  "created_at": "2026-04-22T12:00:00Z"
 }`}
             language="curl"
           />
@@ -52,97 +56,120 @@ export default function DocsCrypto() {
 
       <ApiEndpoint
         method="POST"
-        path="/v1/crypto/charges"
+        path="/functions/v1/crypto-pay"
         title="Create a Crypto Charge"
-        description="Generate a unique address for the customer to send funds to. Funds are auto-converted to your settlement currency on confirmation."
+        description="Generate a deposit address for a customer to send funds. The webhook from elektropay-webhook will flip status to complete once enough confirmations are reached."
         params={[
-          { name: "amount", type: "number", required: true, desc: "Fiat amount (e.g. 199.50)" },
-          { name: "currency", type: "string", required: true, desc: "Fiat currency (usd, eur, gbp)" },
-          { name: "asset", type: "string", required: true, desc: "btc, eth, usdt, usdc, sol, matic" },
-          { name: "network", type: "string", required: false, desc: "Required for multi-network assets (tron, ethereum, polygon, bsc)" },
-          { name: "auto_convert", type: "boolean", required: false, desc: "Auto-settle to fiat. Defaults to true" },
-          { name: "metadata", type: "object", required: false, desc: "Custom key-value tags" },
+          { name: "asset_id", type: "string", required: true, desc: "USDT, USDC, BTC, ETH, TRX, etc." },
+          { name: "amount", type: "number", required: true, desc: "Amount in fiat currency major units" },
+          { name: "currency", type: "string", required: true, desc: "Fiat currency to quote against (e.g. USD)" },
+          { name: "merchant_id", type: "uuid", required: false, desc: "Receiving merchant. Required if invoice_id is omitted" },
+          { name: "invoice_id", type: "uuid", required: false, desc: "Pay-this-invoice flow. Resolves merchant_id automatically" },
+          { name: "description", type: "string", required: false, desc: "Note saved on the crypto_transactions row" },
+          { name: "reference", type: "string", required: false, desc: "External reference (order id, etc.)" },
         ]}
         code={{
-          curl: `curl -X POST https://api.mzzpay.io/v1/crypto/charges \\
-  -H "Authorization: Bearer sk_test_your_key" \\
+          curl: `curl -X POST https://api.mzzpay.io/functions/v1/crypto-pay \\
+  -H "Content-Type: application/json" \\
   -d '{
-    "amount": 199.50,
-    "currency": "usd",
-    "asset": "usdt",
-    "network": "tron"
+    "merchant_id": "mer_abc123",
+    "asset_id": "USDT",
+    "amount": 49.99,
+    "currency": "USD",
+    "reference": "order_42"
   }'`,
-          node: `const charge = await mzzpay.crypto.charges.create({
-  amount: 199.50,
-  currency: 'usd',
-  asset: 'usdt',
-  network: 'tron',
+          node: `const { data } = await supabase.functions.invoke('crypto-pay', {
+  body: {
+    merchant_id: 'mer_abc123',
+    asset_id: 'USDT',
+    amount: 49.99,
+    currency: 'USD',
+  },
 });`,
-          python: `charge = mzzpay.Crypto.Charge.create(
-  amount=199.50, currency="usd",
-  asset="usdt", network="tron",
-)`,
+          python: `data = supabase.functions.invoke("crypto-pay", body={
+    "merchant_id": "mer_abc123",
+    "asset_id": "USDT",
+    "amount": 49.99,
+    "currency": "USD",
+})`,
         }}
         response={`{
-  "id": "cch_2xLp9",
-  "address": "TRX9KpMs...QcL2",
-  "amount_crypto": "199.50",
-  "status": "awaiting_payment",
-  "expires_at": "2026-04-22T10:45:00Z"
-}`}
-      />
-
-      <ApiEndpoint
-        method="GET"
-        path="/v1/crypto/charges/:id"
-        title="Retrieve a Crypto Charge"
-        description="Returns the latest state including on-chain confirmations and settlement amount."
-        code={{
-          curl: `curl https://api.mzzpay.io/v1/crypto/charges/cch_2xLp9 \\
-  -H "Authorization: Bearer sk_test_your_key"`,
-          node: `const charge = await mzzpay.crypto.charges.retrieve('cch_2xLp9');`,
-          python: `charge = mzzpay.Crypto.Charge.retrieve("cch_2xLp9")`,
-        }}
-        response={`{
-  "id": "cch_2xLp9",
-  "status": "confirmed",
-  "tx_hash": "0x4c...8a",
-  "confirmations": 12,
-  "settled_amount": 199.18,
-  "settled_currency": "usd"
+  "success": true,
+  "transaction_id": "c1a2b3c4-...",
+  "deposit_address": "0x742d35Cc6634C0532925a3b8D697...",
+  "asset_id": "USDT",
+  "amount": 49.99,
+  "currency": "USD",
+  "expires_at": "2026-04-22T13:00:00Z"
 }`}
       />
 
       <ApiEndpoint
         method="POST"
-        path="/v1/crypto/withdrawals"
-        title="Create a Crypto Withdrawal"
-        description="Send crypto from your wallet to an external address. Subject to per-asset withdrawal limits."
+        path="/functions/v1/elektropay-wallet"
+        title="Withdraw to External Wallet"
+        description="Submit an on-chain withdrawal from a merchant's crypto_wallet. Validates min/max withdrawal amounts on crypto_assets and records a withdrawal entry in crypto_transactions."
         params={[
-          { name: "asset", type: "string", required: true, desc: "Asset to withdraw" },
-          { name: "network", type: "string", required: false, desc: "Required for multi-network assets" },
-          { name: "amount", type: "string", required: true, desc: "Amount as a string to preserve precision" },
-          { name: "address", type: "string", required: true, desc: "Destination wallet address" },
+          { name: "wallet_id", type: "uuid", required: true, desc: "Source wallet" },
+          { name: "to_address", type: "string", required: true, desc: "Destination on-chain address" },
+          { name: "amount", type: "number", required: true, desc: "Amount in the asset's base unit" },
+          { name: "network", type: "string", required: false, desc: "Override network (e.g. tron, eth) when the asset supports multiple chains" },
         ]}
         code={{
-          curl: `curl -X POST https://api.mzzpay.io/v1/crypto/withdrawals \\
-  -H "Authorization: Bearer sk_test_your_key" \\
-  -d '{"asset":"usdc","network":"polygon","amount":"500.00","address":"0xAbc..."}'`,
-          node: `await mzzpay.crypto.withdrawals.create({
-  asset: 'usdc', network: 'polygon',
-  amount: '500.00', address: '0xAbc...',
+          curl: `curl -X POST https://api.mzzpay.io/functions/v1/elektropay-wallet \\
+  -H "Authorization: Bearer <user_jwt>" \\
+  -d '{
+    "wallet_id": "wal_usdt",
+    "to_address": "0x742d35...",
+    "amount": 100,
+    "network": "tron"
+  }'`,
+          node: `await supabase.functions.invoke('elektropay-wallet', {
+  body: { wallet_id: 'wal_usdt', to_address: '0x742d35...', amount: 100, network: 'tron' },
 });`,
-          python: `mzzpay.Crypto.Withdrawal.create(
-  asset="usdc", network="polygon",
-  amount="500.00", address="0xAbc...",
-)`,
+          python: `supabase.functions.invoke("elektropay-wallet", body={ "wallet_id": "wal_usdt", "to_address": "0x742d35...", "amount": 100 })`,
         }}
         response={`{
-  "id": "cwd_71zQ",
-  "status": "broadcasting",
-  "tx_hash": null,
-  "estimated_arrival": "2026-04-22T10:18:00Z"
+  "success": true,
+  "withdrawal": {
+    "id": "c2b3c4d5-...",
+    "tx_type": "withdrawal",
+    "status": "pending",
+    "elektropay_id": "ep_wd_4421"
+  }
 }`}
+      />
+
+      <ApiEndpoint
+        method="GET"
+        path="/rest/v1/crypto_wallets"
+        title="List Wallets"
+        description="Returns one row per merchant + store + asset combination."
+        params={[
+          { name: "merchant_id", type: "uuid", required: false, desc: "eq.<id>" },
+          { name: "asset_id", type: "string", required: false, desc: "eq.USDT" },
+          { name: "is_active", type: "boolean", required: false, desc: "eq.true" },
+        ]}
+        code={{
+          curl: `curl "https://api.mzzpay.io/rest/v1/crypto_wallets?is_active=eq.true" \\
+  -H "Authorization: Bearer <user_jwt>" \\
+  -H "apikey: <publishable_key>"`,
+          node: `const { data } = await supabase
+  .from('crypto_wallets')
+  .select('*')
+  .eq('is_active', true);`,
+          python: `data = supabase.table("crypto_wallets").select("*").eq("is_active", True).execute()`,
+        }}
+        response={`[
+  {
+    "id": "wal_usdt",
+    "asset_id": "USDT",
+    "balance": 1842.50,
+    "available": 1750.50,
+    "on_hold": 92.00,
+    "address": "0x742d35..."
+  }
+]`}
       />
     </div>
   );

@@ -14,37 +14,44 @@ export default function DocsPayments() {
           <Badge variant="secondary" className="mb-3">API Reference</Badge>
           <h1 className="text-3xl font-heading font-bold tracking-tight">Payments API</h1>
           <p className="text-muted-foreground mt-2">
-            Create, capture, and manage payments across multiple processors and payment methods.
+            Charge cards, accept Open Banking, Crypto, and APMs through a single endpoint.
+            MzzPay routes each transaction to the optimal acquirer based on currency, BIN,
+            risk profile, and merchant routing rules.
           </p>
         </div>
         <DocsDownloadActions />
       </div>
 
-      <Callout variant="info" title="A 200 means accepted, not settled">
-        Always inspect the <code>status</code> field. <code>requires_action</code> needs a 3DS
-        redirect; <code>processing</code> is in flight; only <code>succeeded</code> means funds
-        are captured.
+      <Callout variant="info" title="Status semantics">
+        A 200 response means the request was <em>accepted</em>. Inspect{" "}
+        <code>transaction.status</code>: <code>completed</code> means funds captured,
+        <code>pending</code> awaits processor confirmation or 3DS,{" "}
+        <code>failed</code> includes a <code>last_error</code> with the decline reason.
       </Callout>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">The Payment Object</CardTitle>
+          <CardTitle className="text-lg">The Transaction Object</CardTitle>
         </CardHeader>
         <CardContent>
           <CodeBlock
             code={`{
-  "id": "pay_abc123xyz",
-  "object": "payment",
+  "id": "9b1c2d3e-4f5a-6b7c-8d9e-0a1b2c3d4e5f",
+  "object": "transaction",
+  "merchant_id": "mer_abc123",
   "amount": 5000,
   "currency": "usd",
-  "status": "succeeded",
-  "payment_method": "pm_card_visa",
+  "status": "completed",
+  "payment_method": "card",
+  "provider": "mzzpay-usd",
+  "processor_transaction_id": "txn_8821k",
+  "card_brand": "visa",
+  "card_last4": "4242",
+  "customer_email": "jane@example.com",
   "description": "Order #1234",
-  "merchant_id": "mer_abc123",
-  "processor": "mzzpay",
   "metadata": {},
-  "created_at": "2026-04-09T12:00:00Z",
-  "updated_at": "2026-04-09T12:00:00Z"
+  "created_at": "2026-04-22T12:00:00Z",
+  "updated_at": "2026-04-22T12:00:01Z"
 }`}
             language="curl"
           />
@@ -53,140 +60,132 @@ export default function DocsPayments() {
 
       <ApiEndpoint
         method="POST"
-        path="/v1/payments"
+        path="/functions/v1/process-payment"
         title="Create a Payment"
-        description="Create a new payment and charge the customer."
+        description="Charge a customer. Card data is sent directly to the acquirer; set saveCard:true to vault the PAN through VGS for future recurring charges."
         params={[
-          { name: "amount", type: "integer", required: true, desc: "Amount in smallest currency unit (e.g., cents)" },
-          { name: "currency", type: "string", required: true, desc: "Three-letter ISO currency code" },
-          { name: "payment_method", type: "string", required: true, desc: "Payment method ID or type" },
-          { name: "description", type: "string", required: false, desc: "Description of the payment" },
-          { name: "metadata", type: "object", required: false, desc: "Additional key-value metadata" },
-          { name: "capture", type: "boolean", required: false, desc: "Auto-capture. Defaults to true" },
+          { name: "amount", type: "number", required: true, desc: "Amount in major units of currency (e.g. 49.99)" },
+          { name: "currency", type: "string", required: true, desc: "ISO 4217 code: usd, eur, gbp, cad, aud" },
+          { name: "paymentMethod", type: "string", required: true, desc: "card, open_banking, crypto, pix, boleto, apple_pay" },
+          { name: "cardDetails", type: "object", required: false, desc: "{ number, expMonth, expYear, cvc, holderName } — required when paymentMethod=card" },
+          { name: "customerEmail", type: "string", required: false, desc: "Email for receipt + reconciliation" },
+          { name: "customer", type: "object", required: false, desc: "{ first, last, phone, ip } enrichment for risk scoring" },
+          { name: "billing", type: "object", required: false, desc: "{ address, postal_code, city, state, country }" },
+          { name: "description", type: "string", required: false, desc: "Statement descriptor / order reference" },
+          { name: "idempotencyKey", type: "string", required: false, desc: "Dedupe key — repeat requests return the cached response" },
+          { name: "saveCard", type: "boolean", required: false, desc: "Vault the PAN via VGS for recurring billing" },
+          { name: "retry", type: "boolean", required: false, desc: "Force a fresh attempt under the same idempotencyKey after a decline" },
         ]}
         code={{
-          curl: `curl -X POST https://api.mzzpay.io/v1/payments \\
-  -H "Authorization: Bearer sk_test_your_key" \\
+          curl: `curl -X POST https://api.mzzpay.io/functions/v1/process-payment \\
+  -H "Authorization: Bearer <user_jwt>" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "amount": 5000,
+    "amount": 50.00,
     "currency": "usd",
-    "payment_method": "pm_card_visa",
-    "description": "Order #1234"
+    "paymentMethod": "card",
+    "customerEmail": "jane@example.com",
+    "description": "Order #1234",
+    "cardDetails": {
+      "number": "4242424242424242",
+      "expMonth": "12",
+      "expYear": "2028",
+      "cvc": "123"
+    }
   }'`,
-          node: `const payment = await mzzpay.payments.create({
-  amount: 5000,
-  currency: 'usd',
-  payment_method: 'pm_card_visa',
-  description: 'Order #1234',
+          node: `const { data, error } = await supabase.functions.invoke('process-payment', {
+  body: {
+    amount: 50,
+    currency: 'usd',
+    paymentMethod: 'card',
+    customerEmail: 'jane@example.com',
+    description: 'Order #1234',
+    cardDetails: { number: '4242...', expMonth: '12', expYear: '2028', cvc: '123' },
+    idempotencyKey: crypto.randomUUID(),
+  },
 });`,
-          python: `payment = mzzpay.Payment.create(
-  amount=5000,
-  currency="usd",
-  payment_method="pm_card_visa",
-  description="Order #1234",
-)`,
+          python: `payment = supabase.functions.invoke("process-payment", body={
+    "amount": 50,
+    "currency": "usd",
+    "paymentMethod": "card",
+    "customerEmail": "jane@example.com",
+    "cardDetails": { "number": "4242...", "expMonth": "12", "expYear": "2028", "cvc": "123" },
+})`,
         }}
         response={`{
-  "id": "pay_abc123xyz",
-  "object": "payment",
-  "amount": 5000,
-  "currency": "usd",
-  "status": "succeeded",
-  "payment_method": "pm_card_visa",
-  "description": "Order #1234",
-  "created_at": "2026-04-09T12:00:00Z"
+  "success": true,
+  "transaction": {
+    "id": "9b1c2d3e-4f5a-6b7c-8d9e-0a1b2c3d4e5f",
+    "amount": 5000,
+    "currency": "usd",
+    "status": "completed",
+    "provider": "mzzpay-usd",
+    "card_last4": "4242",
+    "card_brand": "visa"
+  }
+}`}
+      />
+
+      <ApiEndpoint
+        method="POST"
+        path="/functions/v1/retry-payment"
+        title="Retry a Past-Due Subscription Charge"
+        description="Manually triggers smart-retry for a past_due subscription. The retry engine respects max_attempts, backoff_strategy (linear / exponential / fibonacci), and the merchant's allowed retry_decline_codes."
+        params={[
+          { name: "subscription_id", type: "string", required: false, desc: "Limit retry to a single subscription. Omit to retry every past_due subscription" },
+          { name: "force", type: "boolean", required: false, desc: "Bypass attempt-count and backoff guards" },
+        ]}
+        code={{
+          curl: `curl -X POST https://api.mzzpay.io/functions/v1/retry-payment \\
+  -H "Authorization: Bearer <service_role>" \\
+  -d '{ "subscription_id": "sub_5hKp2" }'`,
+          node: `const { data } = await supabase.functions.invoke('retry-payment', {
+  body: { subscription_id: 'sub_5hKp2' },
+});`,
+          python: `data = supabase.functions.invoke("retry-payment", body={"subscription_id": "sub_5hKp2"})`,
+        }}
+        response={`{
+  "success": true,
+  "processed": 1,
+  "results": [
+    { "subscription_id": "sub_5hKp2", "status": "succeeded", "attempt": 2 }
+  ]
 }`}
       />
 
       <ApiEndpoint
         method="GET"
-        path="/v1/payments"
-        title="List Payments"
-        description="Retrieve a paginated list of payments."
+        path="/rest/v1/transactions"
+        title="List Transactions"
+        description="Query the transactions table directly via PostgREST. Apply filters with PostgREST query syntax."
         params={[
-          { name: "limit", type: "integer", required: false, desc: "Number of results (1-100, default 10)" },
-          { name: "offset", type: "integer", required: false, desc: "Pagination offset" },
-          { name: "status", type: "string", required: false, desc: "Filter by status" },
+          { name: "select", type: "string", required: false, desc: "Comma-separated columns. Default *" },
+          { name: "status", type: "string", required: false, desc: "eq.completed, eq.pending, eq.failed, eq.refunded" },
+          { name: "order", type: "string", required: false, desc: "Sort: created_at.desc" },
+          { name: "limit", type: "integer", required: false, desc: "1-1000 (Supabase default cap)" },
         ]}
         code={{
-          curl: `curl https://api.mzzpay.io/v1/payments?limit=10 \\
-  -H "Authorization: Bearer sk_test_your_key"`,
-          node: `const payments = await mzzpay.payments.list({
-  limit: 10,
-  status: 'succeeded',
-});`,
-          python: `payments = mzzpay.Payment.list(
-  limit=10,
-  status="succeeded",
-)`,
+          curl: `curl "https://api.mzzpay.io/rest/v1/transactions?status=eq.completed&order=created_at.desc&limit=10" \\
+  -H "Authorization: Bearer <user_jwt>" \\
+  -H "apikey: <publishable_key>"`,
+          node: `const { data } = await supabase
+  .from('transactions')
+  .select('*')
+  .eq('status', 'completed')
+  .order('created_at', { ascending: false })
+  .limit(10);`,
+          python: `data = supabase.table("transactions").select("*").eq("status", "completed").limit(10).execute()`,
         }}
-        response={`{
-  "object": "list",
-  "data": [...],
-  "has_more": true,
-  "total_count": 142
-}`}
-      />
-
-      <ApiEndpoint
-        method="POST"
-        path="/v1/payments/:id/capture"
-        title="Capture a Payment"
-        description="Capture a previously authorized payment."
-        params={[
-          { name: "amount", type: "integer", required: false, desc: "Partial capture amount (defaults to full)" },
-        ]}
-        code={{
-          curl: `curl -X POST https://api.mzzpay.io/v1/payments/pay_abc123/capture \\
-  -H "Authorization: Bearer sk_test_your_key" \\
-  -d '{"amount": 3000}'`,
-          node: `const captured = await mzzpay.payments.capture('pay_abc123', {
-  amount: 3000,
-});`,
-          python: `captured = mzzpay.Payment.capture(
-  "pay_abc123",
-  amount=3000,
-)`,
-        }}
-        response={`{
-  "id": "pay_abc123",
-  "status": "succeeded",
-  "amount": 3000,
-  "captured": true
-}`}
-      />
-
-      <ApiEndpoint
-        method="POST"
-        path="/v1/payments/:id/refund"
-        title="Refund a Payment"
-        description="Issue a full or partial refund."
-        params={[
-          { name: "amount", type: "integer", required: false, desc: "Partial refund amount. Omit for full refund" },
-          { name: "reason", type: "string", required: false, desc: "duplicate, fraudulent, requested_by_customer" },
-        ]}
-        code={{
-          curl: `curl -X POST https://api.mzzpay.io/v1/payments/pay_abc123/refund \\
-  -H "Authorization: Bearer sk_test_your_key" \\
-  -d '{"amount": 2500, "reason": "requested_by_customer"}'`,
-          node: `const refund = await mzzpay.payments.refund('pay_abc123', {
-  amount: 2500,
-  reason: 'requested_by_customer',
-});`,
-          python: `refund = mzzpay.Payment.refund(
-  "pay_abc123",
-  amount=2500,
-  reason="requested_by_customer",
-)`,
-        }}
-        response={`{
-  "id": "ref_xyz789",
-  "payment_id": "pay_abc123",
-  "amount": 2500,
-  "status": "succeeded",
-  "reason": "requested_by_customer"
-}`}
+        response={`[
+  {
+    "id": "9b1c...",
+    "amount": 5000,
+    "currency": "usd",
+    "status": "completed",
+    "provider": "mzzpay-usd",
+    "created_at": "2026-04-22T12:00:00Z"
+  }
+]`}
       />
 
       <section className="space-y-4 pt-4 border-t border-border">
@@ -197,9 +196,7 @@ export default function DocsPayments() {
       </section>
 
       <section className="space-y-4 pt-4 border-t border-border">
-        <h2 className="text-2xl font-heading font-semibold tracking-tight">
-          Errors
-        </h2>
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">Errors</h2>
         <DocsContentSection sectionId="errors" />
       </section>
 
