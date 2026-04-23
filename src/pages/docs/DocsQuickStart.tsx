@@ -1,6 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CodeBlock } from "@/components/docs/CodeBlock";
+import { DocsContentSection } from "@/components/docs/DocsContentSection";
+import { DocsDownloadActions } from "@/components/docs/DocsDownloadActions";
+import { Callout } from "@/components/docs/Callout";
 
 const steps = [
   {
@@ -38,11 +41,20 @@ const steps = [
 export default function DocsQuickStart() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        <Badge variant="secondary" className="mb-3">Quick Start</Badge>
-        <h1 className="text-3xl font-heading font-bold tracking-tight">Get started in 5 minutes</h1>
-        <p className="text-muted-foreground mt-2">Follow these steps to integrate MzzPay into your application.</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <Badge variant="secondary" className="mb-3">Quick Start</Badge>
+          <h1 className="text-3xl font-heading font-bold tracking-tight">Get started in 5 minutes</h1>
+          <p className="text-muted-foreground mt-2">Follow these steps to integrate MzzPay into your application.</p>
+        </div>
+        <DocsDownloadActions />
       </div>
+
+      <Callout variant="tip" title="Read the long-form guide">
+        The walkthrough below is the fast path. For the production-ready version with key
+        rotation, webhook verification and KYB notes, scroll to the full quick start at the
+        bottom of this page.
+      </Callout>
 
       {steps.map((step) => (
         <Card key={step.num} className="overflow-hidden">
@@ -62,6 +74,16 @@ export default function DocsQuickStart() {
           </CardContent>
         </Card>
       ))}
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">The full quick start</h2>
+        <DocsContentSection sectionId="quick-start" />
+      </section>
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">Idempotency</h2>
+        <DocsContentSection sectionId="idempotency" />
+      </section>
     </div>
   );
 }
