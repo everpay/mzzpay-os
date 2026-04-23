@@ -31,6 +31,17 @@ import DocsApiKeys from "./pages/docs/DocsApiKeys";
 import DocsSdks from "./pages/docs/DocsSdks";
 import DocsInvoices from "./pages/docs/DocsInvoices";
 import DocsProducts from "./pages/docs/DocsProducts";
+import DocsRefunds from "./pages/docs/DocsRefunds";
+import DocsPayouts from "./pages/docs/DocsPayouts";
+import DocsSubscriptionsApi from "./pages/docs/DocsSubscriptions";
+import DocsDisputes from "./pages/docs/DocsDisputes";
+import DocsOpenBanking from "./pages/docs/DocsOpenBanking";
+import DocsWallets from "./pages/docs/DocsWallets";
+import DocsFx from "./pages/docs/DocsFx";
+import DocsCrypto from "./pages/docs/DocsCrypto";
+import DocsPaymentLinks from "./pages/docs/DocsPaymentLinks";
+import Docs3DSecure from "./pages/docs/Docs3DSecure";
+import DocsWebhookEvents from "./pages/docs/DocsWebhookEvents";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
 import ResellerPortal from "./pages/ResellerPortal";
@@ -146,7 +157,18 @@ const AppRoutes = () => (
       <Route path="api/customers" element={<DocsCustomers />} />
       <Route path="api/invoices" element={<DocsInvoices />} />
       <Route path="api/products" element={<DocsProducts />} />
+      <Route path="api/refunds" element={<DocsRefunds />} />
+      <Route path="api/payouts" element={<DocsPayouts />} />
+      <Route path="api/subscriptions" element={<DocsSubscriptionsApi />} />
+      <Route path="api/disputes" element={<DocsDisputes />} />
+      <Route path="api/open-banking" element={<DocsOpenBanking />} />
+      <Route path="api/wallets" element={<DocsWallets />} />
+      <Route path="api/fx" element={<DocsFx />} />
+      <Route path="api/crypto" element={<DocsCrypto />} />
+      <Route path="api/payment-links" element={<DocsPaymentLinks />} />
+      <Route path="api/3d-secure" element={<Docs3DSecure />} />
       <Route path="webhooks" element={<DocsWebhooks />} />
+      <Route path="webhooks/events" element={<DocsWebhookEvents />} />
       <Route path="api-keys" element={<DocsApiKeys />} />
       <Route path="sdks" element={<DocsSdks />} />
     </Route>

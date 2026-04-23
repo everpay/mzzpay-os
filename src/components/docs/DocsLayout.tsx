@@ -4,7 +4,9 @@ import { cn } from "@/lib/utils";
 import {
   BookOpen, Code2, Key, Webhook, Download, Compass,
   CreditCard, UserCircle, Zap, ChevronLeft, Menu,
-  ArrowLeft, Search, FileText, Package,
+  ArrowLeft, Search, FileText, Package, Undo2, Send,
+  Repeat, ShieldAlert, Landmark, Wallet, ArrowLeftRight,
+  Bitcoin, Link2, ShieldCheck, Radio,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,20 +23,46 @@ const navSections = [
     ],
   },
   {
-    title: "API Reference",
+    title: "Core Resources",
     items: [
       { label: "Authentication", icon: Key, to: "/developers/api/authentication" },
       { label: "Payments", icon: CreditCard, to: "/developers/api/payments" },
+      { label: "Refunds", icon: Undo2, to: "/developers/api/refunds" },
       { label: "Customers", icon: UserCircle, to: "/developers/api/customers" },
-      { label: "Invoices", icon: FileText, to: "/developers/api/invoices" },
       { label: "Products", icon: Package, to: "/developers/api/products" },
+      { label: "Invoices", icon: FileText, to: "/developers/api/invoices" },
+      { label: "Subscriptions", icon: Repeat, to: "/developers/api/subscriptions" },
+      { label: "Payment Links", icon: Link2, to: "/developers/api/payment-links" },
+      { label: "Disputes", icon: ShieldAlert, to: "/developers/api/disputes" },
+    ],
+  },
+  {
+    title: "Payment Methods",
+    items: [
+      { label: "Open Banking", icon: Landmark, to: "/developers/api/open-banking" },
+      { label: "Crypto", icon: Bitcoin, to: "/developers/api/crypto" },
+      { label: "3D Secure", icon: ShieldCheck, to: "/developers/api/3d-secure" },
+    ],
+  },
+  {
+    title: "Money Movement",
+    items: [
+      { label: "Payouts", icon: Send, to: "/developers/api/payouts" },
+      { label: "Wallets & Balances", icon: Wallet, to: "/developers/api/wallets" },
+      { label: "FX & Conversion", icon: ArrowLeftRight, to: "/developers/api/fx" },
+    ],
+  },
+  {
+    title: "Webhooks",
+    items: [
+      { label: "Configure", icon: Webhook, to: "/developers/webhooks" },
+      { label: "Event Reference", icon: Radio, to: "/developers/webhooks/events" },
     ],
   },
   {
     title: "Tools",
     items: [
       { label: "API Keys", icon: Key, to: "/developers/api-keys" },
-      { label: "Webhooks", icon: Webhook, to: "/developers/webhooks" },
       { label: "SDKs", icon: Download, to: "/developers/sdks" },
     ],
   },
