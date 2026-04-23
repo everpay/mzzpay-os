@@ -252,6 +252,49 @@ export default function Checkout() {
           {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
 
+        {/* Validation banner — shown when the inbound payment-link query string
+            is incomplete or malformed. We deliberately show this BEFORE the
+            form so a customer never enters card data into a broken link. */}
+        {checkoutBlocked && (
+          <div
+            data-testid="checkout-error-banner"
+            role="alert"
+            className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="font-semibold">This payment link is incomplete</p>
+                <ul className="list-disc pl-5 space-y-0.5 text-destructive/90">
+                  {blockingIssues.map((i) => (
+                    <li key={`${i.field}-${i.message}`}>
+                      <span className="font-mono text-xs">{i.field}</span>: {i.message}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-destructive/80 pt-1">
+                  Please contact the merchant for an updated link.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!checkoutBlocked && warningIssues.length > 0 && (
+          <div
+            data-testid="checkout-warning-banner"
+            role="status"
+            className="rounded-xl border border-yellow-500/40 bg-yellow-500/5 p-3 text-xs text-yellow-700 dark:text-yellow-300"
+          >
+            <p className="font-medium mb-1">Heads up</p>
+            <ul className="list-disc pl-5 space-y-0.5">
+              {warningIssues.map((i) => (
+                <li key={`${i.field}-${i.message}`}>{i.message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">
           {/* Customer Info */}
