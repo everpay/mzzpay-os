@@ -38,7 +38,7 @@ interface BrandLogoProps {
 export function BrandLogo({
   textClassName = "text-primary",
   className,
-  iconSizeClassName = "h-26 md:h-32",
+  iconSizeClassName = "h-32 md:h-36",
   wordmarkSizeClassName,
   iconOnly = false,
   alt = "Mzzpay",
@@ -49,7 +49,7 @@ export function BrandLogo({
       role="img"
       aria-label={alt}
     >
-      {/* Icon glyph — Bagel Fat One, rotated, scales with iconSizeClassName */}
+      {/* Icon glyph — Bagel Fat One, rotated 30°, design-system teal */}
       <span
         aria-hidden="true"
         className={cn(
@@ -63,7 +63,7 @@ export function BrandLogo({
           lineHeight: 1,
           letterSpacing: "-0.02em",
           margin: "10px",
-          transform: "rotate(22deg)",
+          transform: "rotate(30deg)",
           transformOrigin: "center",
         }}
       >
@@ -79,7 +79,8 @@ export function BrandLogo({
             textClassName,
           )}
           style={{
-            marginLeft: "2px",
+            // -2px overlap per spec — wordmark sits tight against the glyph
+            marginLeft: "-2px",
             // Locked per spec — wordmark stays exactly 20px regardless of icon size
             fontSize: "20px",
           }}

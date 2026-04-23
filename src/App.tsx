@@ -48,6 +48,7 @@ import Treasury from "./pages/Treasury";
 import AuditTrail from "./pages/AuditTrail";
 import EmailDnsBundle from "./pages/EmailDnsBundle";
 import LlmsTxt from "./pages/LlmsTxt";
+import BrandGlyph from "./pages/BrandGlyph";
 
 import Products from "./pages/Products";
 import Integrations from "./pages/Integrations";
@@ -151,6 +152,7 @@ const AppRoutes = () => (
     </Route>
     {/* LLM-friendly developer docs (paste into ChatGPT / Claude / Cursor) */}
     <Route path="/llms.txt" element={<LlmsTxt />} />
+    <Route path="/brand/glyph" element={<BrandGlyph />} />
     {/* Legacy /docs → /developers redirects */}
     <Route path="/docs" element={<Navigate to="/developers" replace />} />
     <Route path="/docs/*" element={<Navigate to="/developers" replace />} />
