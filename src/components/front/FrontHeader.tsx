@@ -63,6 +63,10 @@ export function FrontHeader({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { user } = useAuth();
+  const signedIn = !!user;
+  const authLink = signedIn ? "/dashboard" : "/login";
+  const authLabel = signedIn ? "Dashboard" : "Sign In";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > scrollThreshold);
