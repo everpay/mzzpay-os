@@ -85,45 +85,122 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  // ----- Idle timeout auto sign-out -----
+  // ----- Idle timeout auto sign-out (persisted across refresh) -----
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const LAST_ACTIVITY_KEY = 'mzz.lastActivity';
+  const IDLE_STATE_KEY = 'mzz.idleState';
 
   useEffect(() => {
     if (!session) {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
+      try {
+        localStorage.removeItem(LAST_ACTIVITY_KEY);
+        localStorage.removeItem(IDLE_STATE_KEY);
+      } catch {}
       return;
     }
 
-    const resetTimers = () => {
+    const readLastActivity = (): number => {
+      try {
+        const raw = localStorage.getItem(LAST_ACTIVITY_KEY);
+        const n = raw ? parseInt(raw, 10) : NaN;
+        return Number.isFinite(n) ? n : Date.now();
+      } catch {
+        return Date.now();
+      }
+    };
+
+    const writeLastActivity = (ts: number) => {
+      try {
+        localStorage.setItem(LAST_ACTIVITY_KEY, String(ts));
+      } catch {}
+    };
+
+    const writeIdleState = (state: 'active' | 'warning' | 'expired') => {
+      try {
+        localStorage.setItem(IDLE_STATE_KEY, state);
+      } catch {}
+    };
+
+    const scheduleFromLastActivity = () => {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
 
-      warnTimerRef.current = setTimeout(() => {
+      const last = readLastActivity();
+      const elapsed = Date.now() - last;
+      const remaining = IDLE_TIMEOUT_MS - elapsed;
+
+      // Already expired -> sign out immediately.
+      if (remaining <= 0) {
+        writeIdleState('expired');
+        supabase.auth.signOut().then(() => {
+          toast({
+            title: 'Signed out',
+            description: 'You were signed out due to inactivity.',
+          });
+        });
+        return;
+      }
+
+      const warnIn = remaining - IDLE_WARNING_MS;
+      if (warnIn > 0) {
+        warnTimerRef.current = setTimeout(() => {
+          writeIdleState('warning');
+          toast({
+            title: 'You will be signed out soon',
+            description: 'You\'ve been inactive. Move your mouse or press a key to stay signed in.',
+          });
+        }, warnIn);
+      } else {
+        // Past warning threshold but not expired — warn now.
+        writeIdleState('warning');
         toast({
           title: 'You will be signed out soon',
           description: 'You\'ve been inactive. Move your mouse or press a key to stay signed in.',
         });
-      }, IDLE_TIMEOUT_MS - IDLE_WARNING_MS);
+      }
 
       idleTimerRef.current = setTimeout(async () => {
+        writeIdleState('expired');
         await supabase.auth.signOut();
         toast({
           title: 'Signed out',
           description: 'You were signed out due to inactivity.',
         });
-      }, IDLE_TIMEOUT_MS);
+      }, remaining);
     };
+
+    const onActivity = () => {
+      writeLastActivity(Date.now());
+      writeIdleState('active');
+      scheduleFromLastActivity();
+    };
+
+    // Sync across tabs: if another tab updates activity, reschedule here too.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === LAST_ACTIVITY_KEY) scheduleFromLastActivity();
+    };
+
+    // Seed last-activity if missing (fresh sign-in).
+    try {
+      if (!localStorage.getItem(LAST_ACTIVITY_KEY)) writeLastActivity(Date.now());
+    } catch {}
 
     const events: string[] = [
       'mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel', 'visibilitychange',
     ];
-    events.forEach((e) => window.addEventListener(e, resetTimers, { passive: true } as AddEventListenerOptions));
-    resetTimers();
+    events.forEach((e) =>
+      window.addEventListener(e, onActivity, { passive: true } as AddEventListenerOptions)
+    );
+    window.addEventListener('storage', onStorage);
+
+    scheduleFromLastActivity();
 
     return () => {
-      events.forEach((e) => window.removeEventListener(e, resetTimers));
+      events.forEach((e) => window.removeEventListener(e, onActivity));
+      window.removeEventListener('storage', onStorage);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
     };
