@@ -146,8 +146,8 @@ export function FrontHeader({
           </nav>
 
           <div className="hidden md:flex items-center gap-5">
-            <Link to="/login" className={signInClass}>
-              Sign In
+            <Link to={authLink} className={signInClass}>
+              {authLabel}
             </Link>
             <Link to="/demo">
               <Button
