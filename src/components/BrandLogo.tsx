@@ -5,7 +5,7 @@ interface BrandLogoProps {
   textClassName?: string;
   /** Optional extra wrapper classes. */
   className?: string;
-  /** Tailwind size class for the icon (height). Defaults to h-20 per brand spec. */
+  /** Tailwind size class for the icon (height). Defaults to h-24. */
   iconSizeClassName?: string;
   /** Tailwind text-size class for the wordmark. */
   wordmarkSizeClassName?: string;
