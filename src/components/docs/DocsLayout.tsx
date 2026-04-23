@@ -56,7 +56,7 @@ export default function DocsLayout() {
           {open && (
             <Link to="/developers" className="flex items-center">
               <BrandLogo
-                iconSizeClassName="h-12 w-12"
+                iconSizeClassName="h-12"
                 wordmarkSizeClassName="text-lg"
                 textClassName="text-sidebar-foreground"
               />
