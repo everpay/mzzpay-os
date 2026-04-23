@@ -234,11 +234,11 @@ export function FrontHeader({
                           <button
                             onClick={() => setExpanded(isExpanded ? null : item.label)}
                             aria-expanded={isExpanded}
-                            className="w-full flex items-center justify-between py-5 text-2xl font-semibold text-foreground hover:text-primary transition-colors"
+                            className="w-full flex items-center justify-between py-3.5 text-xl font-semibold text-foreground hover:text-primary transition-colors"
                           >
                             <span>{item.label}</span>
                             <ChevronDown
-                              className={`h-6 w-6 text-muted-foreground transition-transform duration-200 ${
+                              className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
                                 isExpanded ? "rotate-180" : ""
                               }`}
                             />
@@ -252,20 +252,20 @@ export function FrontHeader({
                                 transition={{ duration: 0.2, ease: "easeOut" }}
                                 className="overflow-hidden"
                               >
-                                <ul className="pb-4 pl-1 space-y-1">
+                                <ul className="pb-3 pl-1 space-y-0.5">
                                   {item.children!.map((sub) => (
                                     <li key={sub.to}>
                                       <Link
                                         to={sub.to}
                                         onClick={closeMenu}
-                                        className="flex items-center justify-between py-3 px-3 -mx-3 rounded-lg hover:bg-muted transition-colors"
+                                        className="flex items-center justify-between py-2.5 px-3 -mx-3 rounded-lg hover:bg-muted transition-colors"
                                       >
                                         <span>
                                           <span className="block text-base font-semibold text-foreground">
                                             {sub.label}
                                           </span>
                                           {sub.description && (
-                                            <span className="block text-sm text-muted-foreground mt-0.5">
+                                            <span className="block text-xs text-muted-foreground mt-0.5">
                                               {sub.description}
                                             </span>
                                           )}
@@ -283,10 +283,10 @@ export function FrontHeader({
                         <Link
                           to={item.to!}
                           onClick={closeMenu}
-                          className="flex items-center justify-between py-5 text-2xl font-semibold text-foreground hover:text-primary transition-colors"
+                          className="flex items-center justify-between py-3.5 text-xl font-semibold text-foreground hover:text-primary transition-colors"
                         >
                           <span>{item.label}</span>
-                          <ChevronRight className="h-6 w-6 text-muted-foreground" />
+                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
                         </Link>
                       )}
                     </motion.li>
