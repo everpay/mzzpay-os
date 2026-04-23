@@ -19,12 +19,12 @@ interface BrandLogoProps {
  * MzzPay brand lockup — single source of truth.
  *
  * Spec (from product):
- *  - Icon: bold "R" glyph rendered in **Raleway 900** (Google Font), rotated 30°,
- *    2px margin all around. Color matches the surrounding text (so it inherits
+ *  - Icon: bold "M" glyph rendered in **Bagel Fat One** (Google Font), rotated 22°,
+ *    10px margin all around. Color matches the surrounding text (so it inherits
  *    light/dark theme correctly).
- *  - Icon height: h-20 by default.
- *  - Wordmark: "MzzPay" in Raleway, sitting -2px next to the icon, with a touch
- *    of letter-spacing so the M / z / z / P / a / y don't crowd each other.
+ *  - Icon height: h-24 by default.
+ *  - Wordmark: "mzzpay" in Bagel Fat One, sitting 2px next to the icon, with a touch
+ *    of letter-spacing so the m / z / z / p / a / y don't crowd each other.
  */
 export function BrandLogo({
   textClassName = "text-foreground",
@@ -54,6 +54,7 @@ export function BrandLogo({
           lineHeight: 1,
           letterSpacing: "-0.02em",
           margin: "10px",
+          transform: "rotate(22deg)",
         }}
       >
         M
@@ -68,10 +69,10 @@ export function BrandLogo({
             textClassName,
           )}
           style={{
-            marginLeft: "10px",
+            marginLeft: "2px",
           }}
         >
-          Mzzpay
+          mzzpay
         </span>
       )}
     </div>

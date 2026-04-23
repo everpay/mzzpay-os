@@ -17,7 +17,7 @@ export default {
         heading: ['Manrope', 'system-ui', 'sans-serif'],
         body: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
-        logo: ['Raleway', '"Helvetica Neue"', 'Arial', 'system-ui', 'sans-serif'],
+        logo: ['"Bagel Fat One"', '"Helvetica Neue"', 'Arial', 'system-ui', 'sans-serif'],
         display: ['Manrope', 'system-ui', 'sans-serif'],
       },
       colors: {
