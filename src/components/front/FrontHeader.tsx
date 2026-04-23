@@ -214,7 +214,7 @@ export function FrontHeader({
                 hidden: {},
                 visible: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
               }}
-              className="flex-1 overflow-y-auto px-6 py-4"
+              className="flex-1 overflow-y-auto px-6 py-2"
             >
               <ul className="flex flex-col divide-y divide-border/60">
                 {NAV_ITEMS.map((item) => {
@@ -234,11 +234,11 @@ export function FrontHeader({
                           <button
                             onClick={() => setExpanded(isExpanded ? null : item.label)}
                             aria-expanded={isExpanded}
-                            className="w-full flex items-center justify-between py-5 text-2xl font-semibold text-foreground hover:text-primary transition-colors"
+                            className="w-full flex items-center justify-between py-3.5 text-xl font-semibold text-foreground hover:text-primary transition-colors"
                           >
                             <span>{item.label}</span>
                             <ChevronDown
-                              className={`h-6 w-6 text-muted-foreground transition-transform duration-200 ${
+                              className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
                                 isExpanded ? "rotate-180" : ""
                               }`}
                             />
@@ -252,20 +252,20 @@ export function FrontHeader({
                                 transition={{ duration: 0.2, ease: "easeOut" }}
                                 className="overflow-hidden"
                               >
-                                <ul className="pb-4 pl-1 space-y-1">
+                                <ul className="pb-3 pl-1 space-y-0.5">
                                   {item.children!.map((sub) => (
                                     <li key={sub.to}>
                                       <Link
                                         to={sub.to}
                                         onClick={closeMenu}
-                                        className="flex items-center justify-between py-3 px-3 -mx-3 rounded-lg hover:bg-muted transition-colors"
+                                        className="flex items-center justify-between py-2.5 px-3 -mx-3 rounded-lg hover:bg-muted transition-colors"
                                       >
                                         <span>
                                           <span className="block text-base font-semibold text-foreground">
                                             {sub.label}
                                           </span>
                                           {sub.description && (
-                                            <span className="block text-sm text-muted-foreground mt-0.5">
+                                            <span className="block text-xs text-muted-foreground mt-0.5">
                                               {sub.description}
                                             </span>
                                           )}
@@ -283,10 +283,10 @@ export function FrontHeader({
                         <Link
                           to={item.to!}
                           onClick={closeMenu}
-                          className="flex items-center justify-between py-5 text-2xl font-semibold text-foreground hover:text-primary transition-colors"
+                          className="flex items-center justify-between py-3.5 text-xl font-semibold text-foreground hover:text-primary transition-colors"
                         >
                           <span>{item.label}</span>
-                          <ChevronRight className="h-6 w-6 text-muted-foreground" />
+                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
                         </Link>
                       )}
                     </motion.li>
@@ -296,24 +296,24 @@ export function FrontHeader({
             </motion.nav>
 
             <div className="px-6 pb-8 pt-4 border-t border-border/60">
-              <div className="flex items-center gap-5">
+              <div className="flex items-center gap-4">
                 {authLoading ? (
                   <div
-                    className="flex-1 h-12 rounded-full bg-muted animate-pulse"
+                    className="flex-1 h-14 rounded-full bg-muted animate-pulse"
                     aria-label="Loading session"
                   />
                 ) : (
                   <Link
                     to={authLink}
                     onClick={closeMenu}
-                    className="flex-1 text-center text-base font-semibold text-foreground py-3 rounded-full border-2 border-border hover:bg-muted transition-colors"
+                    className="flex-1 text-center text-lg font-semibold text-foreground py-4 rounded-full border-2 border-border hover:bg-muted transition-colors"
                   >
                     {authLabel}
                   </Link>
                 )}
                 <Link to="/demo" onClick={closeMenu} className="flex-1">
                   <Button
-                    className="w-full rounded-full h-12 text-base font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
+                    className="w-full rounded-full h-14 text-lg font-bold shadow-md bg-brand-teal text-white hover:bg-brand-teal/90"
                   >
                     Request a Demo
                   </Button>
