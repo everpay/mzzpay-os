@@ -403,9 +403,14 @@ export default function Checkout() {
                 </Button>
               )}
             </div>
-            <p className="text-xs text-center text-muted-foreground">
-              Attempt {retryCount} of 3 · Secured by MZZPay
-            </p>
+            <div className="space-y-1 text-center">
+              <p className="text-xs text-muted-foreground">
+                Attempt {retryCount} of 3 · Secured by MZZPay
+              </p>
+              <p className="text-[10px] font-mono text-muted-foreground/70 break-all">
+                key: {idempotencyKey}
+              </p>
+            </div>
           </div>
         </div>
       )}
