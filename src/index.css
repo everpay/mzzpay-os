@@ -1,5 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Bagel+Fat+One&display=swap');
 
+/* Coolvetica font - loaded via @font-face for local hosting */
+@font-face {
+  font-family: 'Coolvetica';
+  src: url('https://fonts.cdnfonts.com/s/14890/Coolvetica%20Rg.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Coolvetica';
+  src: url('https://fonts.cdnfonts.com/s/14890/Coolvetica%20Hv.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -80,6 +96,7 @@
     --font-body: 'Inter', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
     --font-logo: 'Bagel Fat One', 'Helvetica Neue', 'Arial', system-ui, sans-serif;
+    --font-wordmark: 'Coolvetica', 'Manrope', system-ui, sans-serif;
 
     /* Wise-inspired radius scale */
     --radius-pill: 9999px;
