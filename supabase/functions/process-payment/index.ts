@@ -306,13 +306,13 @@ serve(async (req) => {
       }
     }
 
-    // Store idempotency response
+    // Store / refresh idempotency response (upsert so retries overwrite a previous decline)
     if (idempotencyKey) {
-      await supabase.from('idempotency_keys').insert({
+      await supabase.from('idempotency_keys').upsert({
         merchant_id: merchant.id,
         key: idempotencyKey,
-        response: { transaction },
-      });
+        response: { transaction, providerResponse },
+      }, { onConflict: 'merchant_id,key' });
     }
 
     return new Response(
