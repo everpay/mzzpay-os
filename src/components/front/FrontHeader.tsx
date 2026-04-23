@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronRight, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import mzzpayIcon from "@/assets/mzzpay-icon.png";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PRIMARY = "hsl(var(--brand-teal))";
 
