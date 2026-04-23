@@ -77,6 +77,10 @@ serve(async (req) => {
     }
 
     const paymentData: PaymentRequest = await req.json();
+    // Normalize 'openbanking' (from web checkout) to 'open_banking' (provider value).
+    if ((paymentData as any).paymentMethod === 'openbanking') {
+      paymentData.paymentMethod = 'open_banking';
+    }
     const { amount, currency, paymentMethod, customerEmail, description, idempotencyKey, cardDetails } = paymentData;
 
     // Check idempotency — but if the cached response was a decline AND the
