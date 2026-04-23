@@ -18,28 +18,45 @@ export default function Transactions() {
   const [providerFilter, setProviderFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currencyFilter, setCurrencyFilter] = useState<string>('all');
+  const [countryFilter, setCountryFilter] = useState<string>('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<PeriodValue>('30d');
   const [search, setSearch] = useState('');
 
   const allProviders = useMemo(() => [...new Set(transactions.map((tx) => tx.provider))], [transactions]);
+  const allCountries = useMemo(
+    () => [...new Set(transactions.map((tx) => tx.customer_country).filter(Boolean) as string[])].sort(),
+    [transactions]
+  );
+  const allPaymentMethods = useMemo(
+    () => [...new Set(transactions.map((tx) => tx.card_brand || tx.payment_method_type).filter(Boolean) as string[])].sort(),
+    [transactions]
+  );
 
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
       if (providerFilter !== 'all' && tx.provider !== providerFilter) return false;
       if (statusFilter !== 'all' && tx.status !== statusFilter) return false;
       if (currencyFilter !== 'all' && tx.currency !== currencyFilter) return false;
+      if (countryFilter !== 'all' && tx.customer_country !== countryFilter) return false;
+      if (paymentMethodFilter !== 'all') {
+        const pm = tx.card_brand || tx.payment_method_type;
+        if (pm !== paymentMethodFilter) return false;
+      }
       const cutoff = getPeriodCutoff(dateRange);
       if (cutoff && new Date(tx.created_at) < cutoff) return false;
       if (
         search &&
         !tx.id.includes(search) &&
         !tx.description?.toLowerCase().includes(search.toLowerCase()) &&
-        !tx.customer_email?.toLowerCase().includes(search.toLowerCase())
+        !tx.customer_email?.toLowerCase().includes(search.toLowerCase()) &&
+        !(tx.customer_ip || '').includes(search) &&
+        !(tx.processor_error_message || '').toLowerCase().includes(search.toLowerCase())
       )
         return false;
       return true;
     });
-  }, [transactions, providerFilter, statusFilter, currencyFilter, dateRange, search]);
+  }, [transactions, providerFilter, statusFilter, currencyFilter, countryFilter, paymentMethodFilter, dateRange, search]);
 
   const providerCounts = useMemo(
     () =>
