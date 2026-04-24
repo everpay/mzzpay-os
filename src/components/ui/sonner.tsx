@@ -19,7 +19,21 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       position="top-center"
       theme={theme as ToasterProps["theme"]}
-      className="toaster group !top-[28%] !-translate-y-1/2"
+      className="toaster group"
+      style={
+        {
+          // Force the Sonner viewport to be horizontally centered.
+          // Sonner's default `top-center` still anchors width to the right
+          // edge on some viewports — these CSS vars + offset pin it to the
+          // true horizontal center, ~28% from the top.
+          top: "28%",
+          left: "50%",
+          right: "auto",
+          transform: "translateX(-50%)",
+          width: "min(420px, calc(100vw - 2rem))",
+        } as React.CSSProperties
+      }
+      offset={0}
       toastOptions={{
         classNames: {
           toast:
