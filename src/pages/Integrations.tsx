@@ -28,7 +28,7 @@ interface Integration {
 
 const integrations: Integration[] = [
   { id: 'shieldhub', name: 'ShieldHub', description: 'Primary global card processor. US/MX with 3DS.', category: 'gateways', status: 'connected', regions: ['US', 'MX', 'Global'], methods: ['Card', 'ACH'], icon: ShieldCheck, color: 'hsl(var(--chart-2))' },
-  { id: 'mondo', name: 'MzzPay EUR', description: 'EU/UK SEPA, Faster Payments, Open Banking, cards.', category: 'gateways', status: 'connected', regions: ['EU', 'UK'], methods: ['Card', 'SEPA', 'Open Banking'], icon: Building2, color: 'hsl(var(--chart-3))' },
+  { id: 'mondo', name: 'Openbanking EU', description: 'EU/UK SEPA, Faster Payments, Open Banking, cards.', category: 'gateways', status: 'connected', regions: ['EU', 'UK'], methods: ['Card', 'SEPA', 'Open Banking'], icon: Building2, color: 'hsl(var(--chart-3))' },
   { id: 'paygate10', name: 'Paygate10', description: 'Emerging markets — IN, PK, LATAM, AFR. UPI, PIX, JazzCash, EasyPaisa.', category: 'gateways', status: 'connected', regions: ['IN', 'PK', 'BR', 'MX', 'CO', 'AR', 'EG'], methods: ['UPI', 'PIX', 'JazzCash', 'EasyPaisa', 'Bank Transfer'], icon: Globe, color: 'hsl(25 95% 53%)' },
   { id: 'matrix', name: 'Matrix Pay', description: 'Gaming, casino & lottery — EUR/USD. Not US.', category: 'gateways', status: 'available', regions: ['EU', 'Global'], methods: ['Card', 'Crypto'], icon: Zap, color: 'hsl(270 70% 55%)' },
   { id: 'moneto', name: 'Moneto', description: 'Canadian wallet & bank transfer for CAD.', category: 'gateways', status: 'connected', regions: ['CA'], methods: ['Wallet', 'Bank Transfer'], icon: Landmark, color: 'hsl(var(--chart-5))' },
