@@ -338,8 +338,19 @@ serve(async (req) => {
 });
 
 async function processMzzPayPayment(data: PaymentRequest) {
-  const clientId = Deno.env.get('SHIELDHUB_CLIENT_ID')!;
-  const apiSecret = Deno.env.get('SHIELDHUB_API_SECRET')!;
+  const clientId = Deno.env.get('SHIELDHUB_CLIENT_ID');
+  const apiSecret = Deno.env.get('SHIELDHUB_API_SECRET');
+  if (!clientId || !apiSecret) {
+    return {
+      status: 'FAILED',
+      code: 'processor_misconfigured',
+      error: {
+        code: 'processor_misconfigured',
+        message:
+          'Shieldhub credentials missing (SHIELDHUB_CLIENT_ID / SHIELDHUB_API_SECRET).',
+      },
+    };
+  }
 
   const transactionReference = crypto.randomUUID();
   const amountStr = data.amount.toString();
@@ -362,9 +373,30 @@ async function processMzzPayPayment(data: PaymentRequest) {
     .eq('name', 'shieldhub')
     .maybeSingle();
 
-  const descriptor = processor?.acquirer_descriptor ?? 'AXP*FER*AXP*FERES';
-  const acquirerCountry = processor?.acquirer_country ?? 'MX';
-  const wants3ds = (processor?.flow_type ?? '3DS').toUpperCase().includes('3DS');
+  // Hard validation: refuse to call Shieldhub if the processor row is missing
+  // the acquirer settings we promised the gateway. This protects against
+  // half-provisioned environments where the row was never seeded.
+  const missing: string[] = [];
+  if (!processor) {
+    missing.push('payment_processors row (name=shieldhub)');
+  } else {
+    if (!processor.acquirer_country) missing.push('acquirer_country');
+    if (!processor.acquirer_descriptor) missing.push('acquirer_descriptor');
+    if (!processor.flow_type) missing.push('flow_type');
+  }
+  if (missing.length > 0) {
+    const msg = `Shieldhub processor row is misconfigured — missing: ${missing.join(', ')}`;
+    console.error('[process-payment]', msg);
+    return {
+      status: 'FAILED',
+      code: 'processor_misconfigured',
+      error: { code: 'processor_misconfigured', message: msg },
+    };
+  }
+
+  const descriptor = processor!.acquirer_descriptor;
+  const acquirerCountry = processor!.acquirer_country;
+  const wants3ds = String(processor!.flow_type ?? '3DS').toUpperCase().includes('3DS');
 
   const body: any = {
     amount: amountStr,
@@ -411,15 +443,26 @@ async function processMzzPayPayment(data: PaymentRequest) {
     clientId, transactionReference, three_ds: body.three_ds, descriptor,
   });
 
-  const response = await fetch('https://pgw.shieldhubpay.com/api/transaction', {
-    method: 'POST',
-    headers: {
-      'client-id': clientId,
-      'client-hash': clientHash,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
+  let response: Response;
+  try {
+    response = await fetch('https://pgw.shieldhubpay.com/api/transaction', {
+      method: 'POST',
+      headers: {
+        'client-id': clientId,
+        'client-hash': clientHash,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('Shieldhub network error:', msg);
+    return {
+      status: 'FAILED',
+      code: 'network',
+      error: { code: 'network', message: `Shieldhub network error: ${msg}` },
+    };
+  }
 
   const responseText = await response.text();
   console.log('Shieldhub response:', responseText);
@@ -428,7 +471,34 @@ async function processMzzPayPayment(data: PaymentRequest) {
   try {
     parsed = JSON.parse(responseText);
   } catch {
-    throw new Error(`Shieldhub API returned invalid JSON: ${responseText}`);
+    return {
+      status: 'FAILED',
+      code: 'provider_failure',
+      error: {
+        code: 'provider_failure',
+        message: `Shieldhub returned invalid JSON (HTTP ${response.status})`,
+      },
+      raw_text: responseText,
+    };
+  }
+
+  // Determine 3DS resolution. The gateway reports either an ACS redirect URL
+  // (issuer enrolled → step-up required) or it processes the charge as 2D.
+  // Surface a normalized field so the caller can persist a fallback event.
+  const acsUrl =
+    parsed.three_ds_redirect_url ||
+    parsed['3d_secure_redirect_url'] ||
+    parsed.acs_url ||
+    null;
+  const enrolledFlag =
+    parsed.three_ds_enrolled ?? parsed.threeDSEnrolled ?? parsed.enrolled ?? null;
+
+  let three_ds_status: 'requested_enrolled' | 'step_up_required' | 'fallback_2d' | 'off' =
+    'off';
+  if (wants3ds) {
+    if (acsUrl) three_ds_status = 'step_up_required';
+    else if (enrolledFlag === false || /not.?enrolled|fallback/i.test(responseText)) three_ds_status = 'fallback_2d';
+    else three_ds_status = 'requested_enrolled';
   }
 
   if (!response.ok || parsed.status === 'Declined' || parsed.status === 'Failed') {
@@ -436,6 +506,7 @@ async function processMzzPayPayment(data: PaymentRequest) {
     return {
       status: 'FAILED',
       error: { message: `Shieldhub: ${msg}` },
+      __three_ds_status: three_ds_status,
       ...parsed,
     };
   }
