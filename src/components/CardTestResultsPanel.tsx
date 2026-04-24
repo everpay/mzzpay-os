@@ -182,37 +182,48 @@ export function CardTestResultsPanel({ compact = false }: Props) {
                   <th className="py-2 pr-3 font-medium">HTTP</th>
                   <th className="py-2 pr-3 font-medium">Code</th>
                   <th className="py-2 pr-3 font-medium">Status</th>
+                  <th className="py-2 pr-3 font-medium">Provider event</th>
                   <th className="py-2 pr-3 font-medium">When</th>
                   <th className="py-2 pr-3 font-medium" />
                 </tr>
               </thead>
               <tbody>
-                {runs.map((r) => (
-                  <tr
-                    key={r.id}
-                    className="border-t border-border/50 hover:bg-muted/30 cursor-pointer"
-                    onClick={() => setSelected(r)}
-                  >
-                    <td className="py-2 pr-3">
-                      <Badge variant="secondary" className="text-[10px]">
-                        {processorLabel(r.provider)} · {r.environment}
-                      </Badge>
-                    </td>
-                    <td className="py-2 pr-3 text-foreground">{r.scenario}</td>
-                    <td className="py-2 pr-3 font-mono text-muted-foreground">
-                      {r.card_last4 ? `•••• ${r.card_last4}` : '—'}
-                    </td>
-                    <td className="py-2 pr-3 font-mono text-muted-foreground">{r.upstream_http_status ?? '—'}</td>
-                    <td className="py-2 pr-3 font-mono text-muted-foreground">{r.result_code ?? '—'}</td>
-                    <td className="py-2 pr-3">{statusBadge(r)}</td>
-                    <td className="py-2 pr-3 text-muted-foreground">
-                      {new Date(r.created_at).toLocaleTimeString()}
-                    </td>
-                    <td className="py-2 pr-3 text-muted-foreground">
-                      <Eye className="h-3.5 w-3.5" />
-                    </td>
-                  </tr>
-                ))}
+                {runs.map((r) => {
+                  const eventId = extractProviderEventId(r);
+                  const isMatrix = r.provider === 'matrix';
+                  return (
+                    <tr
+                      key={r.id}
+                      className="border-t border-border/50 hover:bg-muted/30 cursor-pointer"
+                      onClick={() => setSelected(r)}
+                    >
+                      <td className="py-2 pr-3">
+                        <Badge variant="secondary" className="text-[10px]">
+                          {processorLabel(r.provider)} · {r.environment}
+                          {isMatrix && r.scenario.toLowerCase().includes('h2h') && (
+                            <span className="ml-1 rounded bg-primary/15 px-1 text-primary">H2H</span>
+                          )}
+                        </Badge>
+                      </td>
+                      <td className="py-2 pr-3 text-foreground">{r.scenario}</td>
+                      <td className="py-2 pr-3 font-mono text-muted-foreground">
+                        {r.card_last4 ? `•••• ${r.card_last4}` : '—'}
+                      </td>
+                      <td className="py-2 pr-3 font-mono text-muted-foreground">{r.upstream_http_status ?? '—'}</td>
+                      <td className="py-2 pr-3 font-mono text-muted-foreground">{r.result_code ?? '—'}</td>
+                      <td className="py-2 pr-3">{statusBadge(r)}</td>
+                      <td className="py-2 pr-3 font-mono text-[10px] text-muted-foreground truncate max-w-[140px]" title={eventId ?? ''}>
+                        {eventId ?? '—'}
+                      </td>
+                      <td className="py-2 pr-3 text-muted-foreground">
+                        {new Date(r.created_at).toLocaleTimeString()}
+                      </td>
+                      <td className="py-2 pr-3 text-muted-foreground">
+                        <Eye className="h-3.5 w-3.5" />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -221,6 +232,22 @@ export function CardTestResultsPanel({ compact = false }: Props) {
 
       <CardTestRunDrawer run={selected} onClose={() => setSelected(null)} />
     </>
+  );
+}
+
+/** Pull the upstream transaction/event id out of whatever shape the
+ * processor returned. Matrix returns `transaction_id` / `order_id`,
+ * Shieldhub returns `id` / `transaction_reference`. */
+function extractProviderEventId(r: CardTestRun): string | null {
+  const raw = (r.raw_response ?? {}) as Record<string, any>;
+  return (
+    raw.transaction_id ??
+    raw.transaction_reference ??
+    raw.order_id ??
+    raw.id ??
+    raw.payment_id ??
+    raw.uuid ??
+    null
   );
 }
 
