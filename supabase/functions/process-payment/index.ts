@@ -539,7 +539,11 @@ async function processMzzPayPayment(data: PaymentRequest) {
     redirectback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
     notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
     // Acquirer / descriptor metadata. EVERPAY 3D PTY · MX · AXP*FER*AXP*FERES.
+    // Send under every alias the gateway accepts so the soft descriptor is
+    // honoured on the cardholder statement regardless of which field the
+    // upstream acquirer reads.
     descriptor,
+    descriptor_text: descriptor,
     soft_descriptor: descriptor,
     statement_descriptor: descriptor,
     acquirer_country: acquirerCountry,
