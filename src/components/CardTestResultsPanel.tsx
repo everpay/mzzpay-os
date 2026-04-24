@@ -53,6 +53,8 @@ interface Props {
 export function CardTestResultsPanel({ compact = false }: Props) {
   const [running, setRunning] = useState(false);
   const [selected, setSelected] = useState<CardTestRun | null>(null);
+  const [liveCount, setLiveCount] = useState(0);
+  const queryClient = useQueryClient();
 
   const { data: runs = [], isLoading, refetch } = useQuery({
     queryKey: ['card-test-runs', compact],
@@ -66,6 +68,31 @@ export function CardTestResultsPanel({ compact = false }: Props) {
       return (data ?? []) as CardTestRun[];
     },
   });
+
+  // Realtime: stream new probe rows into the table as the edge function
+  // writes them, so the merchant sees Matrix H2H attempts arriving live
+  // instead of having to refresh.
+  useEffect(() => {
+    const channel = supabase
+      .channel('card-test-runs-live')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'card_test_runs' },
+        () => {
+          setLiveCount((c) => c + 1);
+          queryClient.invalidateQueries({ queryKey: ['card-test-runs'] });
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'card_test_runs' },
+        () => queryClient.invalidateQueries({ queryKey: ['card-test-runs'] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const triggerRun = async () => {
     setRunning(true);
