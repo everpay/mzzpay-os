@@ -77,7 +77,10 @@ export default function NewPayment() {
 
   const queryClient = useQueryClient();
   const selectedProvider = resolveProvider(currency, undefined, { paymentMethod });
-  const idempotencyKey = `idk_${Date.now()}`;
+  // UUID-based idempotency key generated client-side once per page load.
+  // Same key on retries guarantees the backend treats them as the SAME logical
+  // payment (returns the cached response with `duplicate: true`).
+  const [idempotencyKey] = useState(() => `idk_${crypto.randomUUID()}`);
 
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
