@@ -9,13 +9,6 @@ interface ProviderConfig {
 }
 
 export const providerConfigs: Record<Provider, ProviderConfig> = {
-  facilitapay: {
-    name: 'facilitapay',
-    displayName: 'FacilitaPay',
-    supportedCurrencies: ['BRL', 'MXN', 'COP'],
-    regions: ['BR', 'MX', 'CO'],
-    methods: ['PIX', 'Boleto', 'SPEI', 'PSE'],
-  },
   mondo: {
     name: 'mondo',
     displayName: 'MzzPay EUR',
@@ -58,6 +51,13 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
     regions: ['EU', 'UK', 'GLOBAL'],
     methods: ['Card', 'APM', 'Subscription', 'Oneclick'],
   },
+  shieldhub: {
+    name: 'shieldhub',
+    displayName: 'Shieldhub',
+    supportedCurrencies: ['USD'],
+    regions: ['US', 'GLOBAL'],
+    methods: ['Card', '3DS'],
+  },
 };
 
 export function resolveProvider(currency: Currency, region?: string): Provider {
@@ -67,13 +67,13 @@ export function resolveProvider(currency: Currency, region?: string): Provider {
 
 export function getProviderColor(provider: Provider): string {
   switch (provider) {
-    case 'facilitapay': return 'hsl(var(--chart-4))';
     case 'mondo': return 'hsl(var(--chart-3))';
     case 'stripe': return 'hsl(var(--chart-1))';
     case 'mzzpay': return 'hsl(var(--chart-2))';
     case 'moneto': return 'hsl(var(--chart-5))';
     case 'moneto_mpg': return 'hsl(var(--chart-5))';
     case 'matrix': return 'hsl(var(--chart-4))';
+    case 'shieldhub': return 'hsl(var(--chart-2))';
     default: return 'hsl(var(--chart-1))';
   }
 }
