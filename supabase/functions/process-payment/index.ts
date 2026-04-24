@@ -1,10 +1,76 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// Strict Zod schema for /api/payments. Validation runs BEFORE we touch any
+// processor row or call out to Shieldhub/Mondo so a typed
+// `processor_validation_error` is returned with field-level details.
+const PaymentMethodEnum = z.enum([
+  'card', 'pix', 'boleto', 'apple_pay', 'open_banking', 'openbanking', 'crypto',
+]);
+
+const CardDetailsSchema = z.object({
+  number: z.string().regex(/^\d{12,19}$/, 'card number must be 12–19 digits'),
+  expMonth: z.string().regex(/^(0?[1-9]|1[0-2])$/, 'expMonth must be 1–12'),
+  expYear: z.string().regex(/^\d{2,4}$/, 'expYear must be 2 or 4 digits'),
+  cvc: z.string().regex(/^\d{3,4}$/, 'cvc must be 3–4 digits'),
+  holderName: z.string().min(1).max(120).optional(),
+});
+
+const PaymentRequestSchema = z.object({
+  amount: z.number().positive().max(1_000_000),
+  currency: z.string().length(3).regex(/^[A-Z]{3}$/i, 'currency must be ISO-4217'),
+  paymentMethod: PaymentMethodEnum,
+  customerEmail: z.string().email().max(255).optional(),
+  description: z.string().max(500).optional(),
+  idempotencyKey: z.string().min(8).max(120).optional(),
+  retry: z.boolean().optional(),
+  saveCard: z.boolean().optional(),
+  cardDetails: CardDetailsSchema.optional(),
+  customer: z.object({
+    first: z.string().max(80).optional(),
+    last: z.string().max(80).optional(),
+    phone: z.string().max(40).optional(),
+    ip: z.string().max(64).optional(),
+  }).optional(),
+  billing: z.object({
+    address: z.string().max(255).optional(),
+    postal_code: z.string().max(20).optional(),
+    city: z.string().max(80).optional(),
+    state: z.string().max(80).optional(),
+    country: z.string().length(2).optional(),
+  }).optional(),
+  merchantId: z.string().uuid().optional(),
+  orderId: z.string().max(120).optional(),
+  successUrl: z.string().url().optional(),
+  cancelUrl: z.string().url().optional(),
+}).refine(
+  (v) => v.paymentMethod !== 'card' || !!v.cardDetails,
+  { message: 'cardDetails required when paymentMethod is "card"', path: ['cardDetails'] },
+);
+
+function validationErrorResponse(zerr: z.ZodError) {
+  const fieldErrors = zerr.flatten().fieldErrors;
+  const formErrors = zerr.flatten().formErrors;
+  const summary = [
+    ...formErrors,
+    ...Object.entries(fieldErrors).map(([k, v]) => `${k}: ${(v ?? []).join(', ')}`),
+  ].join('; ');
+  return new Response(
+    JSON.stringify({
+      error: summary || 'Invalid payment payload',
+      error_code: 'processor_validation_error',
+      code: 'processor_validation_error',
+      validation: { fieldErrors, formErrors },
+    }),
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+  );
+}
 
 interface PaymentRequest {
   amount: number;
@@ -76,19 +142,29 @@ serve(async (req) => {
       throw new Error('Merchant not found');
     }
 
-    const paymentData: PaymentRequest = await req.json();
-    // Normalize 'openbanking' (from web checkout) to 'open_banking' (provider value).
-    if ((paymentData as any).paymentMethod === 'openbanking') {
-      paymentData.paymentMethod = 'open_banking';
+    const rawBody = await req.json().catch(() => ({}));
+    // Normalize 'openbanking' (from web checkout) to 'open_banking' (provider value)
+    if ((rawBody as any).paymentMethod === 'openbanking') {
+      (rawBody as any).paymentMethod = 'open_banking';
     }
+
+    // Strict input validation — fail fast with `processor_validation_error`
+    // BEFORE any provider call so the UI can render the field-level errors.
+    const parsed = PaymentRequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      console.warn('[process-payment] validation failed', parsed.error.flatten());
+      return validationErrorResponse(parsed.error);
+    }
+    const paymentData: PaymentRequest = parsed.data as PaymentRequest;
     const { amount, currency, paymentMethod, customerEmail, description, idempotencyKey, cardDetails } = paymentData;
 
-    // Check idempotency — but if the cached response was a decline AND the
-    // client is explicitly retrying, bypass the cache and re-run the charge.
+    // Check idempotency — if a prior response exists for this key we return
+    // it WITH a `duplicate: true` flag so the UI can show the "Duplicate
+    // request" toast instead of treating it as a fresh charge.
     if (idempotencyKey && !paymentData.retry) {
       const { data: existingKey } = await supabase
         .from('idempotency_keys')
-        .select('response')
+        .select('response, created_at')
         .eq('key', idempotencyKey)
         .eq('merchant_id', merchant.id)
         .single();
@@ -99,7 +175,15 @@ serve(async (req) => {
         const cachedFailed = cachedTxStatus === 'failed' || cached?.error;
         if (!cachedFailed) {
           return new Response(
-            JSON.stringify(cached),
+            JSON.stringify({
+              ...cached,
+              duplicate: true,
+              idempotency_replayed: true,
+              idempotency_key: idempotencyKey,
+              error_code: 'idempotency_conflict',
+              code: 'idempotency_conflict',
+              first_seen_at: existingKey.created_at,
+            }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }

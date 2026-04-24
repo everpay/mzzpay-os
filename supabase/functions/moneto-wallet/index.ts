@@ -1,10 +1,47 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// Zod schema for /api/payouts (create-payout). Validation runs BEFORE we
+// touch the wallet/processor so a typed `processor_validation_error` is
+// returned with field-level details when the payload is malformed.
+const PayoutSchema = z.object({
+  amount: z.number().positive().max(10_000_000),
+  currency_code: z.string().regex(/^[A-Z]{3}$/i, 'currency_code must be ISO-4217'),
+  country_code: z.string().regex(/^[A-Z]{2}$/i, 'country_code must be ISO-3166 alpha-2'),
+  bank_account: z.object({
+    institution_number: z.string().min(2).max(20),
+    transit_number: z.string().min(2).max(20),
+    account_number: z.string().min(4).max(40),
+    account_holder_name: z.string().min(2).max(120),
+  }),
+  description: z.string().max(500).optional(),
+  idempotencyKey: z.string().min(8).max(120).optional(),
+});
+
+function payoutValidationError(zerr: z.ZodError) {
+  const fieldErrors = zerr.flatten().fieldErrors;
+  const formErrors = zerr.flatten().formErrors;
+  const summary = [
+    ...formErrors,
+    ...Object.entries(fieldErrors).map(([k, v]) => `${k}: ${(v ?? []).join(', ')}`),
+  ].join('; ');
+  return new Response(
+    JSON.stringify({
+      error: summary || 'Invalid payout payload',
+      error_code: 'processor_validation_error',
+      code: 'processor_validation_error',
+      validation: { fieldErrors, formErrors },
+    }),
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+  );
+}
+
 
 // Moneto API Configuration
 const MONETO_BASE_URL = Deno.env.get('MONETO_BASE_URL') || 'https://demo.genwin.app';
@@ -189,7 +226,39 @@ serve(async (req) => {
       }
 
       case 'create-payout': {
-        const data: PayoutRequest = await req.json();
+        const rawBody = await req.json().catch(() => ({}));
+        const parsed = PayoutSchema.safeParse(rawBody);
+        if (!parsed.success) {
+          console.warn('[moneto-wallet] payout validation failed', parsed.error.flatten());
+          return payoutValidationError(parsed.error);
+        }
+        const data = parsed.data;
+
+        // Idempotency: if the merchant sent a key we've seen before, return
+        // the cached payout response with a `duplicate: true` flag so the UI
+        // can show "Duplicate request" instead of double-processing.
+        if (data.idempotencyKey) {
+          const { data: existingKey } = await supabase
+            .from('idempotency_keys')
+            .select('response, created_at')
+            .eq('key', data.idempotencyKey)
+            .eq('merchant_id', merchant.id)
+            .maybeSingle();
+          if (existingKey?.response) {
+            const cached: any = existingKey.response;
+            return new Response(
+              JSON.stringify({
+                ...cached,
+                duplicate: true,
+                idempotency_replayed: true,
+                error_code: 'idempotency_conflict',
+                code: 'idempotency_conflict',
+                first_seen_at: existingKey.created_at,
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
 
         // Note: Moneto payout API endpoint - using simulated response for now
         // In production, this would hit the actual Moneto payout endpoint
@@ -230,13 +299,23 @@ serve(async (req) => {
             .eq('id', accounts.id);
         }
 
+        const responseBody = {
+          success: true,
+          payout_id: payoutId,
+          status: 'processing',
+          message: 'Payout initiated successfully',
+        };
+
+        if (data.idempotencyKey) {
+          await supabase.from('idempotency_keys').upsert({
+            merchant_id: merchant.id,
+            key: data.idempotencyKey,
+            response: responseBody,
+          }, { onConflict: 'merchant_id,key' });
+        }
+
         return new Response(
-          JSON.stringify({
-            success: true,
-            payout_id: payoutId,
-            status: 'processing',
-            message: 'Payout initiated successfully',
-          }),
+          JSON.stringify(responseBody),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

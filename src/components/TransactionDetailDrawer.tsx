@@ -1,9 +1,12 @@
 import { Transaction } from '@/lib/types';
-import { useProviderEvents } from '@/hooks/useProviderEvents';
+import { useTransactionProviderEvents } from '@/hooks/useTransactionProviderEvents';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield, Wifi, Globe, Monitor, AlertTriangle, MapPin, Phone } from 'lucide-react';
+import {
+  ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield,
+  Wifi, Globe, Monitor, AlertTriangle, MapPin, Phone, ShieldOff, ShieldCheck, Activity,
+} from 'lucide-react';
 import { CardBrandBadge } from '@/components/CardBrandBadge';
 import { PaymentMethodIcon } from '@/components/PaymentMethodIcon';
 import { SettlementTimeline } from '@/components/SettlementTimeline';
@@ -15,11 +18,11 @@ interface TransactionDetailDrawerProps {
 }
 
 export function TransactionDetailDrawer({ transaction, open, onOpenChange }: TransactionDetailDrawerProps) {
-  const { data: allEvents = [] } = useProviderEvents();
+  const { events: relatedEvents, isLoading: eventsLoading } = useTransactionProviderEvents(
+    open ? transaction?.id ?? null : null,
+  );
 
   if (!transaction) return null;
-
-  const relatedEvents = allEvents.filter((e) => e.transaction_id === transaction.id);
 
   // Extract VGS alias and card brand from enrichment events
   const tapixEvent = relatedEvents.find((e) => e.event_type === 'enrichment.completed');
@@ -236,28 +239,89 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
           {/* Settlement Timeline */}
           <SettlementTimeline transaction={transaction} events={relatedEvents} />
 
-          {/* Event Timeline */}
-          {relatedEvents.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="font-heading text-sm font-semibold text-foreground">Event Timeline</h4>
-              <div className="space-y-2">
-                {relatedEvents.map((event) => (
-                  <div key={event.id} className="flex items-start gap-3 rounded-lg border border-border bg-background p-3">
-                    <div className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 flex-shrink-0">
-                      <Zap className="h-3 w-3 text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-foreground">{event.event_type}</span>
-                        <Badge variant="provider" className="text-[10px]">{event.provider}</Badge>
-                      </div>
-                      <span className="text-xs text-muted-foreground">{formatDate(event.created_at)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          {/* Event Timeline (live via Realtime) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-heading text-sm font-semibold text-foreground flex items-center gap-2">
+                Event Timeline
+                <span className="inline-flex items-center gap-1 text-[10px] font-normal text-success">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-success" />
+                  </span>
+                  Live
+                </span>
+              </h4>
+              {eventsLoading && (
+                <span className="text-[10px] text-muted-foreground">Loading…</span>
+              )}
             </div>
-          )}
+            {relatedEvents.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border bg-background p-3 text-xs text-muted-foreground">
+                Waiting for provider events…
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {relatedEvents.map((event) => {
+                  const t = event.event_type;
+                  const isFallback = t === 'three_ds.fallback_2d';
+                  const is3ds = t.startsWith('three_ds.') && !isFallback;
+                  const isMatrix = t.startsWith('matrix.h2h');
+                  const Icon = isFallback ? ShieldOff : is3ds ? ShieldCheck : isMatrix ? Activity : Zap;
+                  const tone = isFallback
+                    ? 'border-warning/40 bg-warning/5'
+                    : is3ds
+                      ? 'border-primary/40 bg-primary/5'
+                      : isMatrix
+                        ? 'border-accent/40 bg-accent/5'
+                        : 'border-border bg-background';
+                  const iconTone = isFallback
+                    ? 'bg-warning/10 text-warning'
+                    : is3ds
+                      ? 'bg-primary/10 text-primary'
+                      : isMatrix
+                        ? 'bg-accent/10 text-accent'
+                        : 'bg-primary/10 text-primary';
+                  const providerEventId =
+                    (event.payload as any)?.provider_event_id ??
+                    (event.payload as any)?.order_id ??
+                    (event.payload as any)?.transaction_reference ??
+                    null;
+                  return (
+                    <div key={event.id} className={`flex items-start gap-3 rounded-lg border p-3 ${tone}`}>
+                      <div className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-md flex-shrink-0 ${iconTone}`}>
+                        <Icon className="h-3 w-3" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-foreground">{t}</span>
+                          <Badge variant="provider" className="text-[10px]">{event.provider}</Badge>
+                          {isFallback && (
+                            <Badge variant="outline" className="text-[10px] border-warning/40 text-warning">
+                              3DS → 2D
+                            </Badge>
+                          )}
+                          {isMatrix && (
+                            <Badge variant="outline" className="text-[10px] border-accent/40 text-accent">
+                              H2H
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-muted-foreground">{formatDate(event.created_at)}</span>
+                          {providerEventId && (
+                            <span className="font-mono text-[10px] text-muted-foreground truncate">
+                              · {String(providerEventId)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Timestamps */}
           <div className="space-y-2 text-xs text-muted-foreground border-t border-border pt-4">
