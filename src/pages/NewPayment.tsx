@@ -389,7 +389,7 @@ export default function NewPayment() {
                   <Badge variant="outline" className="justify-center py-2">🇪🇺 EU Banks</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Supported via Mondo Open Banking API. Instant settlement for EUR/GBP.
+                  Supported via Openbanking EU. Instant settlement for EUR/GBP.
                 </p>
               </div>
             </TabsContent>
