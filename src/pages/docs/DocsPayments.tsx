@@ -29,6 +29,16 @@ export default function DocsPayments() {
         <code>failed</code> includes a <code>last_error</code> with the decline reason.
       </Callout>
 
+      <Callout variant="warning" title="New: strict payload validation (April 2026)">
+        Every <code>/process-payment</code> and <code>/process-payout</code> request is
+        validated against a Zod schema <strong>before</strong> any acquirer call. Invalid
+        payloads return <code>processor_validation_error</code> with a typed{" "}
+        <code>code</code> (e.g. <code>invalid_currency</code>,{" "}
+        <code>amount_below_minimum</code>, <code>missing_card_details</code>) and an{" "}
+        <code>issues[]</code> array describing each failed field. No provider attempt is
+        made and no charge is created.
+      </Callout>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">The Transaction Object</CardTitle>
