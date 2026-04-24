@@ -204,20 +204,83 @@ export default function DocsPayments() {
         </h2>
         <p className="text-sm text-muted-foreground">
           Always send a fresh <code>idempotencyKey</code> (UUID v4) per checkout attempt.
-          The browser SDK now generates one automatically on mount. If the backend finds
-          an existing match in <code>idempotency_keys</code>, the cached response is
-          returned with <code>duplicate: true</code> and the UI surfaces a{" "}
-          <strong>“Duplicate request”</strong> toast — no second charge is created.
+          The browser SDK generates one automatically on mount. When{" "}
+          <code>/process-payment</code> finds an existing row in{" "}
+          <code>idempotency_keys</code> for the same{" "}
+          <code>(merchant_id, key)</code> pair, the original response is replayed —{" "}
+          <strong>no second authorization is sent to the acquirer</strong>. Cached
+          declines are NOT replayed; they fall through so the merchant can retry under
+          the same key.
+        </p>
+
+        <h3 className="text-base font-semibold tracking-tight pt-2">
+          Duplicate response — exact 200 payload
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          Replays always return HTTP <code>200</code> with the original transaction
+          object plus five duplicate-detection fields the UI must branch on:
         </p>
         <CodeBlock
           language="curl"
           code={`HTTP/1.1 200 OK
+Content-Type: application/json
+
 {
   "success": true,
-  "duplicate": true,
-  "transaction": { "id": "9b1c...", "status": "completed", "amount": 5000 }
+  "duplicate": true,                       // hard signal — this is a replay
+  "idempotency_replayed": true,            // alias for older SDKs
+  "idempotency_key": "6f3b2a1e-9c4d-4f8a-bb12-7e9f3a2b1c4d",
+  "code": "idempotency_conflict",          // stable machine code
+  "error_code": "idempotency_conflict",    // alias
+  "first_seen_at": "2026-04-24T18:02:11.412Z",
+  "transaction": {
+    "id": "9b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
+    "status": "completed",
+    "amount": 5000,
+    "currency": "USD",
+    "provider": "shieldhub",
+    "provider_ref": "ep_8821k"
+  },
+  "providerResponse": { /* original acquirer payload, untouched */ }
 }`}
         />
+
+        <h3 className="text-base font-semibold tracking-tight pt-2">
+          Surfacing the duplicate state in the UI
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          The hosted checkout, NewPayment screen, and merchant SDK all branch on{" "}
+          <code>response.duplicate === true</code> before showing a success / failure
+          state. The pattern below is what the in-app checkout uses today — replicate it
+          in any custom integration:
+        </p>
+        <CodeBlock
+          language="node"
+          code={`const { data } = await supabase.functions.invoke('process-payment', {
+  body: { amount, currency, paymentMethod, cardDetails, idempotencyKey },
+});
+
+if (data?.duplicate) {
+  // Same key, same body → original response replayed.
+  // Do NOT re-render the success animation, do NOT re-emit analytics.
+  toast.info('Duplicate request', {
+    description: \`This payment was already processed at \${new Date(data.first_seen_at).toLocaleString()}.\`,
+    action: { label: 'View transaction', onClick: () => openDrawer(data.transaction.id) },
+  });
+  // Hand the user back to the existing transaction; never create a new row.
+  navigate(\`/transactions/\${data.transaction.id}\`);
+  return;
+}
+
+if (data?.success) { /* normal happy path */ }`}
+        />
+        <p className="text-xs text-muted-foreground">
+          If the cached row had <code>status === 'failed'</code>, the backend skips the
+          replay and re-attempts under the same key — your handler will see a fresh
+          response with <code>duplicate</code> absent or <code>false</code>. Pass{" "}
+          <code>retry: true</code> to force a re-attempt even when the cached row
+          succeeded (used by the post-decline retry overlay).
+        </p>
       </section>
 
       <section className="space-y-4 pt-4 border-t border-border">
@@ -252,26 +315,48 @@ export default function DocsPayments() {
         <h2 className="text-2xl font-heading font-semibold tracking-tight">
           Provider routing
         </h2>
-        <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-5">
+        <p className="text-sm text-muted-foreground">
+          You don&apos;t pick a processor — <code>/process-payment</code> selects one
+          deterministically from <code>paymentMethod</code>, <code>currency</code>, and
+          merchant flags. The exact decision tree, in order:
+        </p>
+        <ol className="text-sm text-muted-foreground space-y-2 list-decimal pl-5">
           <li>
-            <strong>EUR / GBP</strong> → MzzPay EUR S2S.
+            <strong>Open Banking + EUR / GBP</strong> →{" "}
+            <code>mondo</code> (MzzPay EUR S2S). Triggered when{" "}
+            <code>paymentMethod === &quot;open_banking&quot;</code> and{" "}
+            <code>currency ∈ &#123; EUR, GBP &#125;</code>.
           </li>
           <li>
-            <strong>USD (Mexico acquirer)</strong> → Shieldhub. The descriptor
-            <code className="mx-1">AXP*FER*AXP*FERES</code> is injected automatically;
-            it is non-empty on every request.
+            <strong>Card (any currency)</strong> →{" "}
+            <code>shieldhub</code> (live MID: EVERPAY 3D PTY · MX · USD).
+            The Mondo card path is disabled — every card transaction goes to Shieldhub.
+            The soft descriptor <code>AXP*FER*AXP*FERES</code> is injected automatically
+            (with a hard-coded fallback if the <code>payment_processors.acquirer_descriptor</code>{" "}
+            row is blank) so it is never empty on the wire. Visa / Mastercard only; 3DS
+            is enforced when the card is enrolled.
           </li>
           <li>
-            <strong>Matrix Partners merchants</strong> → routed via the H2H endpoint.
-            All other merchants use the standard hosted/S2S flow because every payment
-            form is generated from this project.
+            <strong>Matrix Partners merchants</strong> → the{" "}
+            <code>/matrix-process</code> edge function is called with the{" "}
+            <code>h2h_payment</code> action (POST <code>/v1/h2h/payment</code>). The
+            hosted-checkout path is intentionally not used because every payment form is
+            generated from this project — only the H2H endpoint is exercised.
           </li>
           <li>
-            <strong>Visa / Mastercard only</strong> on the live Shieldhub MID; 3DS is
-            enforced when the card is enrolled.
+            <strong>Everything else</strong> → falls through to <code>shieldhub</code>{" "}
+            via <code>processMzzPayPayment()</code>.
           </li>
-        </ul>
+        </ol>
+        <p className="text-xs text-muted-foreground">
+          The selected provider is returned on the transaction as{" "}
+          <code>transaction.provider</code> (one of <code>mondo</code>,{" "}
+          <code>shieldhub</code>, <code>matrix</code>) and emitted on every{" "}
+          <code>provider_events</code> row so you can branch retry / reconciliation logic
+          downstream.
+        </p>
       </section>
+
 
       <section className="space-y-4 pt-4 border-t border-border">
         <h2 className="text-2xl font-heading font-semibold tracking-tight">
