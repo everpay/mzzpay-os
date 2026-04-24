@@ -108,6 +108,11 @@ const COPY: Record<NormalizedErrorCode, { title: string; description: string }> 
     title: "Check the form",
     description: "Some fields are missing or invalid.",
   },
+  processor_validation_error: {
+    title: "Invalid payment details",
+    description:
+      "The payment payload failed validation before reaching the processor. Fix the highlighted fields and try again.",
+  },
   network: {
     title: "Network error",
     description: "We couldn't reach the server. Check your connection and try again.",
