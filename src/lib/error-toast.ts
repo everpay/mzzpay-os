@@ -90,6 +90,11 @@ const COPY: Record<NormalizedErrorCode, { title: string; description: string }> 
     title: "3DS authentication required",
     description: "Send the customer to the redirect URL to complete 3D Secure.",
   },
+  "3ds_fallback_2d": {
+    title: "3DS not available — fell back to 2D",
+    description:
+      "The issuer is not enrolled in 3D Secure. The charge proceeded as a standard 2D transaction.",
+  },
   rate_limited: {
     title: "Too many requests",
     description: "Slow down — wait a few seconds and try again.",
@@ -105,6 +110,34 @@ const COPY: Record<NormalizedErrorCode, { title: string; description: string }> 
   network: {
     title: "Network error",
     description: "We couldn't reach the server. Check your connection and try again.",
+  },
+  weak_password: {
+    title: "Password too weak",
+    description:
+      "This password has appeared in known data breaches or is too easy to guess. Pick a longer, unique password (mix of letters, numbers, symbols).",
+  },
+  user_already_exists: {
+    title: "Account already exists",
+    description:
+      "An account with this email is already registered. Try signing in instead, or use a different email.",
+  },
+  invalid_email: {
+    title: "Invalid email address",
+    description: "Enter a valid email address (e.g. you@company.com).",
+  },
+  email_not_confirmed: {
+    title: "Email not confirmed",
+    description:
+      "Open the confirmation link we sent to your inbox before signing in.",
+  },
+  invalid_credentials: {
+    title: "Incorrect email or password",
+    description: "Double-check your email and password and try again.",
+  },
+  processor_misconfigured: {
+    title: "Processor not configured",
+    description:
+      "The payment processor is missing required acquirer settings (country, descriptor, or flow). Contact support so we can finish provisioning.",
   },
   unknown: {
     title: "Something went wrong",
