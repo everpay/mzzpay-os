@@ -93,14 +93,9 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
       setSignupComplete(true);
       notifySuccess('Account created! Check your email to confirm.');
     } catch (error: any) {
-      const msg = error?.message ?? 'Could not create account';
-      if (msg.toLowerCase().includes('already') || error?.code === 'user_already_exists') {
-        notifyError('An account with this email already exists. Try signing in instead.');
-      } else if (msg.toLowerCase().includes('rate') || error?.status === 429) {
-        notifyError('Too many attempts. Please wait a minute and try again.');
-      } else {
-        notifyError(msg);
-      }
+      // Pass the full error object so notifyError can read .code / .error_code
+      // (e.g. weak_password, user_already_exists, email_address_invalid).
+      notifyError(error);
     } finally {
       setLoading(false);
     }
