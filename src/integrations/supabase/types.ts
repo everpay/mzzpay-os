@@ -1721,6 +1721,7 @@ export type Database = {
           created_at: string
           custom_markup_fixed: number | null
           custom_markup_percentage: number | null
+          gambling_enabled: boolean
           id: string
           name: string
           phone_number: string | null
@@ -1745,6 +1746,7 @@ export type Database = {
           created_at?: string
           custom_markup_fixed?: number | null
           custom_markup_percentage?: number | null
+          gambling_enabled?: boolean
           id?: string
           name: string
           phone_number?: string | null
@@ -1769,6 +1771,7 @@ export type Database = {
           created_at?: string
           custom_markup_fixed?: number | null
           custom_markup_percentage?: number | null
+          gambling_enabled?: boolean
           id?: string
           name?: string
           phone_number?: string | null
