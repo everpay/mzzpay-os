@@ -190,6 +190,8 @@ const CODE_FIELD_MAP: Record<string, NormalizedErrorCode> = {
   invalid_credentials: "invalid_credentials",
   invalid_grant: "invalid_credentials",
   processor_misconfigured: "processor_misconfigured",
+  processor_validation_error: "processor_validation_error",
+  idempotency_conflict: "idempotency_conflict",
   "3ds_fallback_2d": "3ds_fallback_2d",
 };
 
