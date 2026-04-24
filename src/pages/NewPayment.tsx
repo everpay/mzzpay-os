@@ -204,10 +204,10 @@ export default function NewPayment() {
   };
 
   const providerRegionLabel: Record<string, { label: string; badge: string }> = {
-    mondo: { label: 'EU / UK payments', badge: '🇪🇺 MzzPay EUR' },
-    mzzpay: { label: 'US & Global payments', badge: '🌐 MzzPay USD' },
-    matrix: { label: 'Intl. card / APM', badge: '🌍 Matrix' },
-    shieldhub: { label: 'Shieldhub gateway', badge: '🛡 Shieldhub' },
+    mondo: { label: 'EU / UK payments', badge: '🇪🇺 Openbanking EU' },
+    mzzpay: { label: 'US & Global payments', badge: '🌐 US/International' },
+    matrix: { label: 'Intl. card / APM', badge: '🌍 EU/International' },
+    shieldhub: { label: 'US & Global payments', badge: '🌐 US/International' },
     stripe: { label: 'Global fallback', badge: '⚡ Stripe' },
   };
 
@@ -389,7 +389,7 @@ export default function NewPayment() {
                   <Badge variant="outline" className="justify-center py-2">🇪🇺 EU Banks</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Supported via Mondo Open Banking API. Instant settlement for EUR/GBP.
+                  Supported via Openbanking EU. Instant settlement for EUR/GBP.
                 </p>
               </div>
             </TabsContent>

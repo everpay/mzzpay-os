@@ -19,6 +19,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { PayoutSettlementTimeline } from '@/components/PayoutSettlementTimeline';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 interface PayoutRecord {
   id: string;
@@ -57,6 +59,29 @@ export default function Payouts() {
   const [selectedSavedAccount, setSelectedSavedAccount] = useState<string>('');
 
   const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
+  const [selectedPayout, setSelectedPayout] = useState<PayoutRecord | null>(null);
+
+  // Fetch provider_events for the selected payout (matched by metadata.payout_id)
+  const { data: payoutEvents = [] } = useQuery({
+    queryKey: ['payout-events', selectedPayout?.id],
+    enabled: !!selectedPayout,
+    queryFn: async () => {
+      if (!selectedPayout) return [];
+      const { data, error } = await supabase
+        .from('provider_events')
+        .select('id, event_type, provider, created_at, payload')
+        .or(
+          `payload->>payout_id.eq.${selectedPayout.id},transaction_id.eq.${selectedPayout.id}`,
+        )
+        .order('created_at', { ascending: true })
+        .limit(50);
+      if (error) {
+        console.warn('payout events fetch', error);
+        return [];
+      }
+      return data ?? [];
+    },
+  });
 
   const { data: accounts = [] } = useAccounts();
   const createPayout = useCreateMonetoPayout();
@@ -121,10 +146,10 @@ export default function Payouts() {
   }, [destinationCurrency]);
 
   const handleCreatePayout = async () => {
-    if (!amount || parseFloat(amount) <= 0) { toast.error('Enter a valid amount'); return; }
-    if (parseFloat(amount) > availableBalance) { toast.error('Insufficient balance'); return; }
+    if (!amount || parseFloat(amount) <= 0) { notifyError({ message: 'Enter a valid amount' }); return; }
+    if (parseFloat(amount) > availableBalance) { notifyError({ message: 'Insufficient balance' }); return; }
     if (!institutionNumber || !transitNumber || !accountNumber || !accountHolderName) {
-      toast.error('Fill in all bank details'); return;
+      notifyError({ message: 'Fill in all bank details' }); return;
     }
 
     try {
@@ -169,11 +194,11 @@ export default function Payouts() {
         }
       } catch {}
 
-      toast.success('Payout initiated successfully');
+      notifySuccess('Payout initiated successfully');
       setIsOpen(false);
       resetForm();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create payout');
+      notifyError(error, { fallback: 'Failed to create payout' });
     }
   };
 
@@ -499,7 +524,12 @@ export default function Payouts() {
           </div>
           <div className="divide-y divide-border">
             {payouts.map((payout) => (
-              <div key={payout.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <button
+                type="button"
+                key={payout.id}
+                onClick={() => setSelectedPayout(payout)}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors text-left"
+              >
                 <div className="flex items-center gap-4">
                   <div className="p-2 rounded-lg bg-muted">{getStatusIcon(payout.status)}</div>
                   <div>
@@ -511,11 +541,46 @@ export default function Payouts() {
                   {getStatusBadge(payout.status)}
                   <p className="text-xs text-muted-foreground mt-1">{formatDate(payout.created_at)}</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
       )}
+
+      {/* Payout detail dialog with settlement timeline */}
+      <Dialog open={!!selectedPayout} onOpenChange={(o) => !o && setSelectedPayout(null)}>
+        <DialogContent className="sm:max-w-lg">
+          {selectedPayout && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {getStatusIcon(selectedPayout.status)}
+                  Payout {formatCurrency(selectedPayout.amount, selectedPayout.currency as any)}
+                </DialogTitle>
+                <DialogDescription>
+                  To •••• {selectedPayout.account_last4} · {selectedPayout.bank_name}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-5 pt-2">
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="rounded-md border border-border bg-background p-2.5">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Payout ID</p>
+                    <p className="font-mono text-[11px] text-foreground truncate">{selectedPayout.id}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background p-2.5">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Status</p>
+                    <div className="mt-0.5">{getStatusBadge(selectedPayout.status)}</div>
+                  </div>
+                </div>
+                <PayoutSettlementTimeline
+                  payout={selectedPayout}
+                  events={payoutEvents as any}
+                />
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="mt-8 rounded-xl border border-border bg-card/50 p-6">
         <div className="flex items-start gap-4">

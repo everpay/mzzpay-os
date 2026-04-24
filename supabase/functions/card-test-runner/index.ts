@@ -325,54 +325,115 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization") ?? "";
     const apiKeyHeader = req.headers.get("apikey") ?? "";
-    const token = (authHeader.replace("Bearer ", "").trim()) || apiKeyHeader.trim();
+    const xClientToken = req.headers.get("x-client-token") ?? "";
+
+    // Try every common location: Authorization: Bearer X, apikey, x-client-token
+    const bearer = authHeader.replace(/^Bearer\s+/i, "").trim();
+    const token = bearer || apiKeyHeader.trim() || xClientToken.trim();
+
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
     const body = await req.json().catch(() => ({}));
     const includeApproved = body?.include_approved === true;
     const providers = (body?.providers as string[] | undefined) ?? ["matrix", "shieldhub"];
 
-    let merchant: { id: string } | null = null;
-
-    // Decode role from JWT (no verification — only used to branch logic).
+    // Decode role from JWT (no signature verification — only for branching)
     let tokenRole: string | null = null;
+    let tokenSub: string | null = null;
     try {
       const part = token.split(".")[1];
       if (part) {
         const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
         tokenRole = json?.role ?? null;
+        tokenSub = json?.sub ?? null;
       }
     } catch { /* ignore */ }
 
     console.log("[card-test-runner] auth check", {
-      hasAuth: !!authHeader, hasApiKey: !!apiKeyHeader,
-      tokenLen: token.length, role: tokenRole,
+      hasAuth: !!authHeader, hasApiKey: !!apiKeyHeader, hasXClient: !!xClientToken,
+      tokenLen: token.length, role: tokenRole, sub: tokenSub,
     });
 
-    // Mode 1 — service-role caller may pass an explicit merchant_id
-    if ((token === serviceKey || tokenRole === "service_role") && body?.merchant_id) {
-      const { data } = await supabase
-        .from("merchants").select("id").eq("id", body.merchant_id).maybeSingle();
-      merchant = data ?? null;
-    } else if (token) {
-      // Mode 2 — user JWT → derive merchant
-      const { data: { user } } = await supabase.auth.getUser(token);
-      if (user) {
-        const { data } = await supabase
-          .from("merchants").select("id").eq("user_id", user.id).maybeSingle();
-        merchant = data ?? null;
-      }
-    }
-
-    if (!merchant) {
+    if (!token) {
       return new Response(JSON.stringify({
-        error: "Unauthorized",
-        hint: "Pass a user JWT, or call with the service role key plus { merchant_id } in the body.",
-        debug: { role: tokenRole, hasMerchantId: !!body?.merchant_id },
+        error: "missing_credentials",
+        message:
+          "No credentials supplied. Send a user JWT in the Authorization header " +
+          "(Bearer …) or call with the service role key in `apikey`/`Authorization`.",
       }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    let merchant: { id: string } | null = null;
+
+    // Mode 1 — service-role caller may pass an explicit merchant_id
+    const isServiceRole = token === serviceKey || tokenRole === "service_role";
+    if (isServiceRole) {
+      const requestedMerchant = body?.merchant_id;
+      if (!requestedMerchant) {
+        return new Response(JSON.stringify({
+          error: "missing_merchant_id",
+          message:
+            "Service-role calls must include `merchant_id` in the JSON body so test runs are attributed to a real merchant.",
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data, error } = await supabase
+        .from("merchants").select("id").eq("id", requestedMerchant).maybeSingle();
+      if (error) console.warn("[card-test-runner] merchant lookup error", error);
+      merchant = data ?? null;
+      if (!merchant) {
+        return new Response(JSON.stringify({
+          error: "unknown_merchant",
+          message: `No merchant found with id ${requestedMerchant}.`,
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else if (token === anonKey) {
+      // Anon key alone is not enough — caller needs a user JWT
+      return new Response(JSON.stringify({
+        error: "anon_key_not_allowed",
+        message:
+          "Anonymous credentials cannot trigger live test runs. Sign in to the dashboard first.",
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } else {
+      // Mode 2 — user JWT → derive merchant via auth.uid
+      const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
+      if (userErr || !user) {
+        return new Response(JSON.stringify({
+          error: "invalid_session",
+          message:
+            "Your session has expired or is invalid. Sign out and back in, then retry.",
+          debug: userErr?.message ?? null,
+        }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data, error: merchErr } = await supabase
+        .from("merchants").select("id").eq("user_id", user.id).maybeSingle();
+      if (merchErr) console.warn("[card-test-runner] merchant lookup", merchErr);
+      merchant = data ?? null;
+      if (!merchant) {
+        return new Response(JSON.stringify({
+          error: "no_merchant_for_user",
+          message:
+            "Your user account isn't linked to a merchant yet. Complete onboarding first.",
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const batchId = crypto.randomUUID();

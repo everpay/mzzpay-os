@@ -3,18 +3,26 @@ import { Toaster as Sonner, toast } from "sonner";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
+/**
+ * Global Toaster — center-center positioning by default.
+ *
+ * Sonner only ships top/bottom anchors, so we anchor to `top-center` and add
+ * a `[--gap:0px] !top-1/2 !-translate-y-1/2` override class so toasts pin to
+ * the vertical middle of the viewport. All app-wide error toasts (see
+ * `src/lib/error-toast.ts`) inherit this position.
+ */
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
 
   return (
     <Sonner
-      position="bottom-center"
+      position="top-center"
       theme={theme as ToasterProps["theme"]}
-      className="toaster group"
+      className="toaster group !top-1/2 !-translate-y-1/2"
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-card group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-xl group-[.toaster]:rounded-xl",
+            "group toast group-[.toaster]:bg-card group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-2xl group-[.toaster]:rounded-xl group-[.toaster]:max-w-md",
           description: "group-[.toast]:text-muted-foreground",
           actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
