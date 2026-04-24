@@ -95,7 +95,15 @@ function simulateResponse(action: string, params: any) {
 
   switch (action) {
     case 'customer_token':
-      return { status: 'success', code: 0, customer_token: `ct_sim_${Date.now().toString(36)}` };
+      // Matrix actually nests the token under `data.customer_token` (verified
+      // against live sandbox 2026-04-24). Mirror the real shape exactly.
+      return {
+        code: 0,
+        reason: 'ok',
+        data: { customer_token: `ct_sim_${Date.now().toString(36)}` },
+        // Back-compat: keep the flat field too so existing callers don't break.
+        customer_token: `ct_sim_${Date.now().toString(36)}`,
+      };
     case 'pay':
     case 'h2h_payment':
     case 'h2h_p2p_init':
