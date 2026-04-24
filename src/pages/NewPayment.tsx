@@ -204,10 +204,10 @@ export default function NewPayment() {
   };
 
   const providerRegionLabel: Record<string, { label: string; badge: string }> = {
-    mondo: { label: 'EU / UK payments', badge: '🇪🇺 MzzPay EUR' },
-    mzzpay: { label: 'US & Global payments', badge: '🌐 MzzPay USD' },
-    matrix: { label: 'Intl. card / APM', badge: '🌍 Matrix' },
-    shieldhub: { label: 'Shieldhub gateway', badge: '🛡 Shieldhub' },
+    mondo: { label: 'EU / UK payments', badge: '🇪🇺 Openbanking EU' },
+    mzzpay: { label: 'US & Global payments', badge: '🌐 US/International' },
+    matrix: { label: 'Intl. card / APM', badge: '🌍 EU/International' },
+    shieldhub: { label: 'US & Global payments', badge: '🌐 US/International' },
     stripe: { label: 'Global fallback', badge: '⚡ Stripe' },
   };
 
