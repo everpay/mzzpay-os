@@ -48,7 +48,7 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
       notifySuccess('Signed in successfully');
       navigate('/dashboard');
     } catch (error: any) {
-      notifyError(error.message);
+      notifyError(error);
     } finally {
       setLoading(false);
     }
