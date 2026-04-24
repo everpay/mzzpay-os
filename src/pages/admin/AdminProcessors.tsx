@@ -703,6 +703,62 @@ export default function AdminProcessors() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="gambling">
+          <Card>
+            <CardHeader>
+              <CardTitle>Matrix Partners — Gambling Enablement</CardTitle>
+              <CardDescription>
+                Matrix Partners is reserved for online casino, lottery, betting,
+                sweepstakes, sportsbook and other gambling-class merchants.
+                Toggle a merchant on to route their card traffic through Matrix;
+                otherwise traffic falls back to the default Shieldhub MID.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Loading…</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Merchant</TableHead>
+                      <TableHead>Routing</TableHead>
+                      <TableHead className="text-right">Matrix enabled</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {merchants.map((m: any) => (
+                      <TableRow key={m.id}>
+                        <TableCell className="font-medium">{m.name}</TableCell>
+                        <TableCell>
+                          <Badge variant={m.gambling_enabled ? "default" : "secondary"}>
+                            {m.gambling_enabled ? "Matrix Partners" : "Shieldhub (default)"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Switch
+                            checked={!!m.gambling_enabled}
+                            onCheckedChange={(v) =>
+                              toggleGambling.mutate({ id: m.id, enabled: v })
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {merchants.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                          No merchants
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </AppLayout>
   );
