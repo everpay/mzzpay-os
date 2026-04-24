@@ -30,7 +30,7 @@ function useAdminData() {
         { data: rules },
         { data: feeProfiles },
       ] = await Promise.all([
-        supabase.from("merchants").select("id, name").order("name"),
+        supabase.from("merchants").select("id, name, gambling_enabled").order("name"),
         (supabase.from as any)("acquirers").select("*").order("name"),
         (supabase.from as any)("merchant_acquirer_mids").select("*, acquirer:acquirers(name)"),
         (supabase.from as any)("routing_rules").select("*").order("priority"),
@@ -66,6 +66,30 @@ export default function AdminProcessors() {
     },
     onSuccess: () => { notifySuccess("Acquirer updated"); invalidate(); },
     onError: (e: any) => notifyError(e.message),
+  });
+
+  // Super-admin per-merchant Matrix (gambling) enable flag.
+  // Matrix Partners is reserved for casino/lottery/sportsbook/sweepstakes
+  // merchants. The toggle is RLS-gated to admins via the
+  // "Admins can update merchants" policy added in 20260424_*.
+  const toggleGambling = useMutation({
+    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+      const { error } = await supabase
+        .from("merchants")
+        .update({ gambling_enabled: enabled })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      notifySuccess(
+        vars.enabled ? "Matrix enabled for merchant" : "Matrix disabled for merchant",
+        vars.enabled
+          ? "Gambling/casino card traffic will now route through Matrix Partners."
+          : "Card traffic will fall back to the default Shieldhub MID.",
+      );
+      invalidate();
+    },
+    onError: (e: any) => notifyError(e),
   });
 
   // Assign MID
