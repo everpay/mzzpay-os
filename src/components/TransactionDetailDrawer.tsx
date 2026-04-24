@@ -1,9 +1,12 @@
 import { Transaction } from '@/lib/types';
-import { useProviderEvents } from '@/hooks/useProviderEvents';
+import { useTransactionProviderEvents } from '@/hooks/useTransactionProviderEvents';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield, Wifi, Globe, Monitor, AlertTriangle, MapPin, Phone } from 'lucide-react';
+import {
+  ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield,
+  Wifi, Globe, Monitor, AlertTriangle, MapPin, Phone, ShieldOff, ShieldCheck, Activity,
+} from 'lucide-react';
 import { CardBrandBadge } from '@/components/CardBrandBadge';
 import { PaymentMethodIcon } from '@/components/PaymentMethodIcon';
 import { SettlementTimeline } from '@/components/SettlementTimeline';
