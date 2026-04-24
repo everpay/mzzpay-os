@@ -11,7 +11,7 @@ interface ProviderConfig {
 export const providerConfigs: Record<Provider, ProviderConfig> = {
   mondo: {
     name: 'mondo',
-    displayName: 'MzzPay EUR',
+    displayName: 'Openbanking EU',
     supportedCurrencies: ['EUR', 'GBP'],
     regions: ['EU', 'UK'],
     methods: ['SEPA', 'Faster Payments', 'SEPA Direct Debit', 'Card'],
@@ -25,7 +25,7 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
   },
   mzzpay: {
     name: 'mzzpay',
-    displayName: 'MzzPay USD',
+    displayName: 'US/International',
     supportedCurrencies: ['USD', 'BRL', 'MXN', 'COP'],
     regions: ['US', 'GLOBAL'],
     methods: ['Card', 'ACH', 'PIX', 'Boleto'],
@@ -46,14 +46,16 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
   },
   matrix: {
     name: 'matrix',
-    displayName: 'Matrix Pay',
+    displayName: 'EU/International',
     supportedCurrencies: ['EUR', 'USD', 'GBP'],
     regions: ['EU', 'UK', 'GLOBAL'],
     methods: ['Card', 'APM', 'Subscription', 'Oneclick'],
   },
   shieldhub: {
+    // Same upstream endpoint as `mzzpay` — kept as a separate key for
+    // historical migrations but presented under the same merged label.
     name: 'shieldhub',
-    displayName: 'Shieldhub',
+    displayName: 'US/International',
     supportedCurrencies: ['USD'],
     regions: ['US', 'GLOBAL'],
     methods: ['Card', '3DS'],
