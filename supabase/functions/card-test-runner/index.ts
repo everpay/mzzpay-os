@@ -324,8 +324,13 @@ serve(async (req) => {
     );
 
     const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace("Bearer ", "").trim();
+    const apiKeyHeader = req.headers.get("apikey") ?? "";
+    const token = (authHeader.replace("Bearer ", "").trim()) || apiKeyHeader.trim();
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    console.log("[card-test-runner] auth check", {
+      hasAuth: !!authHeader, hasApiKey: !!apiKeyHeader,
+      tokenLen: token.length, isService: token === serviceKey,
+    });
 
     const body = await req.json().catch(() => ({}));
     const includeApproved = body?.include_approved === true;
