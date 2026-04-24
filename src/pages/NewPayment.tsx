@@ -162,6 +162,44 @@ export default function NewPayment() {
         setResponseMessage({ type: 'error', title: 'Transaction blocked', detail: data.error });
         return;
       }
+
+      // Strict server-side validation rejected the payload before any
+      // processor call. Surface field-level reasons so the merchant fixes them.
+      if (data?.error_code === 'processor_validation_error' || data?.code === 'processor_validation_error') {
+        const fieldErrors = data?.validation?.fieldErrors ?? {};
+        const detail = Object.entries(fieldErrors)
+          .map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
+          .join('\n') || data.error;
+        notifyError(
+          { code: 'processor_validation_error', message: data.error },
+          { description: detail },
+        );
+        setResponseMessage({
+          type: 'error',
+          title: 'Invalid payment details',
+          detail: `${detail} [code: processor_validation_error]`,
+        });
+        return;
+      }
+
+      // Idempotency replay — backend recognized this key and returned the
+      // cached response. Show "Duplicate request" instead of double-charging.
+      if (data?.duplicate || data?.idempotency_replayed || data?.error_code === 'idempotency_conflict') {
+        notifyError(
+          { code: 'idempotency_conflict', message: 'Duplicate request' },
+          {
+            description:
+              'This payment was already processed. We returned the original result instead of charging twice.',
+          },
+        );
+        setResponseMessage({
+          type: 'warning',
+          title: 'Duplicate request',
+          detail: `Already processed at ${data?.first_seen_at ?? 'a previous attempt'} [code: idempotency_conflict]`,
+        });
+        return;
+      }
+
       if (data?.processorMisconfigured || data?.error_code === 'processor_misconfigured') {
         setResponseMessage({
           type: 'error',
