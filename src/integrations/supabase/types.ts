@@ -255,6 +255,7 @@ export type Database = {
           id: string
           merchant_id: string | null
           provider: string
+          raw_request: Json | null
           raw_response: Json | null
           result_code: string | null
           result_status: string | null
@@ -273,6 +274,7 @@ export type Database = {
           id?: string
           merchant_id?: string | null
           provider: string
+          raw_request?: Json | null
           raw_response?: Json | null
           result_code?: string | null
           result_status?: string | null
@@ -291,6 +293,7 @@ export type Database = {
           id?: string
           merchant_id?: string | null
           provider?: string
+          raw_request?: Json | null
           raw_response?: Json | null
           result_code?: string | null
           result_status?: string | null
