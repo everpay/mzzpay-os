@@ -368,68 +368,10 @@ async function runMatrix(
     results.push({ ...row, passed });
   }
 
-  // 3. Hosted checkout per scenario (visible as orders in the Matrix portal).
-  for (const sc of MATRIX_HOSTED_SCENARIOS) {
-    const stamp = Date.now().toString(36);
-    const orderId = `e2e_${stamp}_${sc.currency}`;
-    const body = {
-      order_id: orderId,
-      reference: orderId,
-      order_description: "card-test-runner hosted",
-      amount: sc.amount,
-      currency: sc.currency,
-      country: sc.country,
-      result_url: "https://example.com/result",
-      success_url: "https://example.com/ok",
-      error_url: "https://example.com/err",
-      language: "EN",
-      customer_token: customerToken ?? "no_token",
-      callback_url: "https://example.com/cb",
-    };
-
-    let httpStatus = 0;
-    let parsed: any = null;
-    let errorMessage: string | null = null;
-    try {
-      const res = await fetch(`${MATRIX_SANDBOX}/v1/checkout/pay`, {
-        method: "POST",
-        headers: { "Authorization": auth, "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      httpStatus = res.status;
-      const text = await res.text();
-      try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
-    } catch (e) {
-      errorMessage = `network: ${String(e)}`;
-    }
-
-    const success = parsed?.code === 0 && !!parsed?.redirect_url;
-
-    const row = {
-      merchant_id: merchantId,
-      batch_id: batchId,
-      provider: "matrix",
-      environment: "sandbox",
-      scenario: sc.scenario,
-      card_last4: null,
-      card_brand: null,
-      currency: sc.currency,
-      amount: sc.amount,
-      upstream_http_status: httpStatus || null,
-      result_status: success ? "Redirect" : (parsed?.status_description ?? "Failed"),
-      result_code: parsed?.code != null ? String(parsed.code) : null,
-      error_message: success ? null : (errorMessage ?? parsed?.message ?? null),
-      raw_response: parsed,
-      raw_request: {
-        endpoint: `${MATRIX_SANDBOX}/v1/checkout/pay`,
-        method: "POST",
-        headers: { Authorization: "Basic <redacted>", "Content-Type": "application/json" },
-        body,
-      },
-    };
-    await supabase.from("card_test_runs").insert(row);
-    results.push({ ...row, passed: success });
-  }
+  // Matrix hosted-checkout intentionally NOT exercised — Matrix is wired as
+  // H2H only across every payment form in this project, so the battery test
+  // mirrors live behavior. Re-enable here only if a hosted-checkout merchant
+  // is onboarded in the future.
 
   return results;
 }
