@@ -1,4 +1,4 @@
-import { Transaction } from '@/lib/types';
+import type { Transaction } from '@/lib/types';
 import { useTransactionProviderEvents } from '@/hooks/useTransactionProviderEvents';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
