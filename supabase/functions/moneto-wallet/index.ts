@@ -226,7 +226,39 @@ serve(async (req) => {
       }
 
       case 'create-payout': {
-        const data: PayoutRequest = await req.json();
+        const rawBody = await req.json().catch(() => ({}));
+        const parsed = PayoutSchema.safeParse(rawBody);
+        if (!parsed.success) {
+          console.warn('[moneto-wallet] payout validation failed', parsed.error.flatten());
+          return payoutValidationError(parsed.error);
+        }
+        const data = parsed.data;
+
+        // Idempotency: if the merchant sent a key we've seen before, return
+        // the cached payout response with a `duplicate: true` flag so the UI
+        // can show "Duplicate request" instead of double-processing.
+        if (data.idempotencyKey) {
+          const { data: existingKey } = await supabase
+            .from('idempotency_keys')
+            .select('response, created_at')
+            .eq('key', data.idempotencyKey)
+            .eq('merchant_id', merchant.id)
+            .maybeSingle();
+          if (existingKey?.response) {
+            const cached: any = existingKey.response;
+            return new Response(
+              JSON.stringify({
+                ...cached,
+                duplicate: true,
+                idempotency_replayed: true,
+                error_code: 'idempotency_conflict',
+                code: 'idempotency_conflict',
+                first_seen_at: existingKey.created_at,
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
 
         // Note: Moneto payout API endpoint - using simulated response for now
         // In production, this would hit the actual Moneto payout endpoint
@@ -267,13 +299,23 @@ serve(async (req) => {
             .eq('id', accounts.id);
         }
 
+        const responseBody = {
+          success: true,
+          payout_id: payoutId,
+          status: 'processing',
+          message: 'Payout initiated successfully',
+        };
+
+        if (data.idempotencyKey) {
+          await supabase.from('idempotency_keys').upsert({
+            merchant_id: merchant.id,
+            key: data.idempotencyKey,
+            response: responseBody,
+          }, { onConflict: 'merchant_id,key' });
+        }
+
         return new Response(
-          JSON.stringify({
-            success: true,
-            payout_id: payoutId,
-            status: 'processing',
-            message: 'Payout initiated successfully',
-          }),
+          JSON.stringify(responseBody),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
