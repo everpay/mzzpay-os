@@ -163,39 +163,130 @@ X-Mzzpay-Signature: <hex hmac-sha256 of body>
 
         <TabsContent value="reference" className="mt-6 space-y-6">
           <Card>
-            <CardHeader><CardTitle className="text-lg">Verify Webhook Signature</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-lg">Signature scheme</CardTitle>
+              <CardDescription>
+                Every event is signed as <code>HMAC_SHA256(raw_body, webhook_secret)</code>,
+                hex-encoded, in the <code>X-Mzzpay-Signature</code> header. Verify against the
+                <strong> raw request body</strong> — never the re-serialized JSON.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock
+                code={`Method:    POST <your endpoint>
+Headers:   Content-Type:        application/json
+           X-Mzzpay-Event:      payment.completed
+           X-Mzzpay-Signature:  <hex(hmac_sha256(raw_body, secret))>
+           X-Mzzpay-Timestamp:  <unix ms, mirrors envelope.created>
+Body:      Canonical JSON envelope (below)`}
+                language="curl"
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">End-to-end signed cURL example</CardTitle>
+              <CardDescription>
+                Reproduce the exact request MzzPay sends to your endpoint. Pipe the same body
+                bytes into <code>openssl dgst</code> to get the signature you'll see in the header.
+              </CardDescription>
+            </CardHeader>
             <CardContent>
               <CodeBlock
                 code={{
-                  curl: `# MzzPay signs every webhook with HMAC-SHA256
-# X-Mzzpay-Signature: <hex digest of the raw request body>
-# X-Mzzpay-Event:     <event type, e.g. payment.completed>`,
+                  curl: `# 1. Build the canonical envelope (write to file so we sign the EXACT bytes)
+cat > /tmp/evt.json <<'JSON'
+{"id":"evt_1Q9aB3cDeFgHiJkLmNoPqRsT","type":"payment.completed","created":1745452800000,"data":{"transaction_id":"9b1c2d3e-4f5a-6b7c-8d9e-0a1b2c3d4e5f","amount":5000,"currency":"usd","status":"completed","merchant_id":"mer_test_123"}}
+JSON
+
+# 2. Sign the raw body with your webhook secret (hex output)
+SECRET="whsec_test_abcdef1234567890"
+SIG=$(openssl dgst -sha256 -hmac "$SECRET" -hex /tmp/evt.json | awk '{print $2}')
+
+# 3. Send to your endpoint — body MUST be byte-identical to what was signed
+curl -X POST https://your-app.com/webhooks/mzzpay \\
+  -H "Content-Type: application/json" \\
+  -H "X-Mzzpay-Event: payment.completed" \\
+  -H "X-Mzzpay-Timestamp: 1745452800000" \\
+  -H "X-Mzzpay-Signature: $SIG" \\
+  --data-binary @/tmp/evt.json`,
                   node: `import crypto from 'node:crypto';
+import express from 'express';
 
-function verify(rawBody, signature, secret) {
-  const expected = crypto
-    .createHmac('sha256', secret)
-    .update(rawBody)
-    .digest('hex');
-  return crypto.timingSafeEqual(
-    Buffer.from(expected, 'hex'),
-    Buffer.from(signature, 'hex'),
-  );
-}
+const app = express();
+const SECRET = process.env.MZZPAY_WEBHOOK_SECRET!;
 
-// In your handler — use the RAW body, not JSON.parse(body)
-const sig = req.headers['x-mzzpay-signature'];
-if (!verify(rawBody, sig, process.env.MZZPAY_WEBHOOK_SECRET)) {
-  return res.status(401).end();
-}`,
-                  python: `import hmac, hashlib
+// CRITICAL: capture the raw body BEFORE any JSON middleware parses it
+app.post(
+  '/webhooks/mzzpay',
+  express.raw({ type: 'application/json' }),
+  (req, res) => {
+    const rawBody = req.body as Buffer;            // <-- raw bytes
+    const signature = req.header('X-Mzzpay-Signature') ?? '';
 
-def verify(raw_body: bytes, signature: str, secret: str) -> bool:
-    expected = hmac.new(
-        secret.encode(), raw_body, hashlib.sha256
-    ).hexdigest()
-    return hmac.compare_digest(expected, signature)`,
+    const expected = crypto
+      .createHmac('sha256', SECRET)
+      .update(rawBody)
+      .digest('hex');
+
+    const ok =
+      signature.length === expected.length &&
+      crypto.timingSafeEqual(
+        Buffer.from(expected, 'hex'),
+        Buffer.from(signature, 'hex'),
+      );
+
+    if (!ok) return res.status(401).end('invalid signature');
+
+    const event = JSON.parse(rawBody.toString('utf8'));
+    // Dedupe on event.id, then handle
+    console.log(event.type, event.data);
+    res.status(200).end('ok');
+  },
+);`,
+                  python: `import hmac, hashlib, json
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+SECRET = b"whsec_test_abcdef1234567890"
+
+@app.post("/webhooks/mzzpay")
+def mzzpay_hook():
+    raw = request.get_data()  # <-- raw bytes, NOT request.json
+    sig = request.headers.get("X-Mzzpay-Signature", "")
+    expected = hmac.new(SECRET, raw, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, sig):
+        abort(401)
+
+    event = json.loads(raw)
+    # event = { "id", "type", "created", "data" }
+    return ("ok", 200)`,
                 }}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Canonical envelope</CardTitle>
+              <CardDescription>Every event MzzPay emits uses this shape.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock
+                code={`{
+  "id":      "evt_1Q9aB3cDeFgHiJkLmNoPqRsT",   // unique, dedupe key
+  "type":    "payment.completed",               // see Event Reference
+  "created": 1745452800000,                     // unix milliseconds
+  "data": {
+    "transaction_id": "9b1c2d3e-4f5a-6b7c-8d9e-0a1b2c3d4e5f",
+    "amount":   5000,                           // minor units
+    "currency": "usd",
+    "status":   "completed",                    // completed | failed | pending
+    "merchant_id": "mer_test_123"
+  }
+}`}
+                language="curl"
               />
             </CardContent>
           </Card>
