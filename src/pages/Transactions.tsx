@@ -12,6 +12,7 @@ import { CurrencySelector } from '@/components/CurrencySelector';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportPdf } from '@/lib/export-pdf';
 import { motion } from 'framer-motion';
+import { CardTestResultsPanel } from '@/components/CardTestResultsPanel';
 
 export default function Transactions() {
   const { data: transactions = [], isLoading } = useTransactions();
@@ -288,6 +289,10 @@ export default function Transactions() {
           </p>
         </>
       )}
+
+      <div className="mt-8">
+        <CardTestResultsPanel />
+      </div>
     </AppLayout>
   );
 }

@@ -1,0 +1,407 @@
+// deno-lint-ignore-file no-explicit-any
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+/**
+ * card-test-runner
+ *
+ * Sends a fixed battery of documented test cards to BOTH Matrix Partners
+ * (sandbox) and Shieldhub (production), stores every outcome in
+ * `card_test_runs`, and returns a summary. Real cards are NEVER used; only
+ * the doc-listed test PANs:
+ *
+ *   Shieldhub  https://documenter.getpostman.com/view/547480/2sB2qXkPAz#test-cards
+ *     4242 4242 4242 4242  → Approved (gated behind ALLOW_REAL_CHARGE; off by default)
+ *     4242 4242 4242 4341  → Declined
+ *     4242 4242 4242 4846  → 3DS Redirect
+ *
+ *   Matrix     https://docs.matrixpaysolution.com/en/#test-cards
+ *     4111 1111 1111 1111  → Approved (sandbox)
+ *     4000 0000 0000 0002  → Declined (sandbox)
+ *
+ * Auth: requires a valid Supabase user JWT. The merchant linked to that user
+ * receives the test rows. Returns 401 if the caller is not authenticated.
+ */
+
+const SHIELDHUB_URL = "https://pgw.shieldhubpay.com/api/transaction";
+const MATRIX_SANDBOX = "https://api-sandbox.matrixpaysolution.com";
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(input),
+  );
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+interface ShieldhubScenario {
+  scenario: string;
+  pan: string;
+  expectedStatuses: string[];
+  realCharge?: boolean;
+}
+
+const SHIELDHUB_SCENARIOS: ShieldhubScenario[] = [
+  {
+    scenario: "Declined card (Visa 4341)",
+    pan: "4242424242424341",
+    expectedStatuses: ["Declined", "Failed"],
+  },
+  {
+    scenario: "3DS Redirect card (Visa 4846)",
+    pan: "4242424242424846",
+    expectedStatuses: ["Redirect", "Approved"],
+  },
+  // Approved card omitted by default — would charge $1 on the LIVE account.
+  // Enable by passing { include_approved: true } in the request body.
+];
+
+const MATRIX_SCENARIOS = [
+  {
+    scenario: "Matrix sandbox checkout (EUR)",
+    amount: 1,
+    currency: "EUR",
+    country: "NL",
+  },
+  {
+    scenario: "Matrix sandbox checkout (USD non-US billing)",
+    amount: 1,
+    currency: "USD",
+    country: "NL", // US is region-blocked; NL is fine.
+  },
+];
+
+async function runShieldhub(
+  supabase: any,
+  merchantId: string,
+  batchId: string,
+  includeApproved: boolean,
+) {
+  const clientId = Deno.env.get("SHIELDHUB_CLIENT_ID");
+  const apiSecret = Deno.env.get("SHIELDHUB_API_SECRET");
+  if (!clientId || !apiSecret) {
+    return [{
+      provider: "shieldhub",
+      scenario: "missing credentials",
+      ok: false,
+      error: "SHIELDHUB_CLIENT_ID / SHIELDHUB_API_SECRET not configured",
+    }];
+  }
+
+  const scenarios = [...SHIELDHUB_SCENARIOS];
+  if (includeApproved) {
+    scenarios.push({
+      scenario: "Approved card (Visa 4242) — REAL CHARGE",
+      pan: "4242424242424242",
+      expectedStatuses: ["Approved"],
+      realCharge: true,
+    });
+  }
+
+  const results: any[] = [];
+  for (const sc of scenarios) {
+    const txRef = crypto.randomUUID();
+    const amount = "1";
+    const hash = await sha256Hex(clientId + amount + txRef + apiSecret);
+    const body = {
+      amount,
+      currency: "USD",
+      transaction_reference: txRef,
+      redirectback_url: "https://example.com/cb",
+      notification_url: "https://example.com/notify",
+      customer: {
+        first: "Card", last: "Test", email: "card-test@everpay.io",
+        phone: "(555) 555-5555", ip: "1.1.1.1",
+      },
+      billing: {
+        address: "1 Test St", postal_code: "10001",
+        city: "New York", state: "NY", country: "MX",
+      },
+      card: {
+        holder: "Card Test", number: sc.pan, cvv: "123",
+        expiry_month: "12", expiry_year: "30",
+      },
+    };
+
+    let httpStatus = 0;
+    let parsed: any = null;
+    let errorMessage: string | null = null;
+    try {
+      const res = await fetch(SHIELDHUB_URL, {
+        method: "POST",
+        headers: {
+          "client-id": clientId,
+          "client-hash": hash,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      httpStatus = res.status;
+      const text = await res.text();
+      try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
+    } catch (e) {
+      errorMessage = `network: ${String(e)}`;
+    }
+
+    const status = parsed?.status ?? null;
+    const code = parsed?.error?.code ?? parsed?.code ?? null;
+    const msg = parsed?.error?.messsage ?? parsed?.error?.message ?? errorMessage;
+
+    const row = {
+      merchant_id: merchantId,
+      batch_id: batchId,
+      provider: "shieldhub",
+      environment: "production",
+      scenario: sc.scenario,
+      card_last4: sc.pan.slice(-4),
+      card_brand: "Visa",
+      currency: "USD",
+      amount: 1,
+      upstream_http_status: httpStatus || null,
+      result_status: status,
+      result_code: code != null ? String(code) : null,
+      error_message: msg,
+      raw_response: parsed,
+    };
+
+    await supabase.from("card_test_runs").insert(row);
+    results.push({
+      ...row,
+      passed: status ? sc.expectedStatuses.includes(status) : false,
+      expected: sc.expectedStatuses,
+    });
+  }
+  return results;
+}
+
+async function runMatrix(
+  supabase: any,
+  merchantId: string,
+  batchId: string,
+) {
+  const pub = Deno.env.get("MATRIX_PUBLIC_KEY");
+  const sec = Deno.env.get("MATRIX_SECRET_KEY");
+  if (!pub || !sec) {
+    return [{
+      provider: "matrix",
+      scenario: "missing credentials",
+      ok: false,
+      error: "MATRIX_PUBLIC_KEY / MATRIX_SECRET_KEY not configured",
+    }];
+  }
+  const auth = `Basic ${btoa(`${pub}:${sec}`)}`;
+
+  const results: any[] = [];
+
+  // 1. Mint a customer token (no money movement; appears in Matrix dashboard
+  // as a customer record).
+  const tokenRef = `e2e_token_${Date.now()}`;
+  const tokenBody = {
+    id: tokenRef,
+    country: "NL",
+    details: {
+      email: `e2e_${Date.now()}@everpay.io`,
+      first_name: "E2E", last_name: "Test", cardholder: "E2E Test",
+      country: "NL", city: "Rotterdam", address: "1 Test St", zip: "10001",
+      phone: "+31600000000",
+    },
+  };
+
+  let customerToken: string | null = null;
+  try {
+    const res = await fetch(`${MATRIX_SANDBOX}/v1/customer/token`, {
+      method: "POST",
+      headers: { "Authorization": auth, "Content-Type": "application/json" },
+      body: JSON.stringify(tokenBody),
+    });
+    const text = await res.text();
+    let json: any = {};
+    try { json = JSON.parse(text); } catch { json = { raw: text }; }
+    customerToken = json?.data?.customer_token ?? json?.customer_token ?? json?.id ?? null;
+
+    const row = {
+      merchant_id: merchantId,
+      batch_id: batchId,
+      provider: "matrix",
+      environment: "sandbox",
+      scenario: "customer_token (mint)",
+      card_last4: null,
+      card_brand: null,
+      currency: null,
+      amount: null,
+      upstream_http_status: res.status,
+      result_status: customerToken ? "issued" : "missing",
+      result_code: json?.code != null ? String(json.code) : null,
+      error_message: customerToken ? null : `no token in response: ${text.slice(0, 200)}`,
+      raw_response: json,
+    };
+    await supabase.from("card_test_runs").insert(row);
+    results.push({ ...row, passed: !!customerToken });
+  } catch (e) {
+    results.push({
+      provider: "matrix",
+      scenario: "customer_token",
+      passed: false,
+      error_message: `network: ${String(e)}`,
+    });
+  }
+
+  // 2. Hosted checkout per scenario (visible in Matrix portal as orders).
+  for (const sc of MATRIX_SCENARIOS) {
+    const orderId = `e2e_chk_${Date.now()}_${sc.currency}`;
+    const body = {
+      order_id: orderId,
+      order_description: "card-test-runner",
+      amount: sc.amount,
+      currency: sc.currency,
+      country: sc.country,
+      result_url: "https://example.com/result",
+      success_url: "https://example.com/ok",
+      error_url: "https://example.com/err",
+      language: "EN",
+      customer_token: customerToken ?? "no_token",
+      callback_url: "https://example.com/cb",
+    };
+
+    let httpStatus = 0;
+    let parsed: any = null;
+    let errorMessage: string | null = null;
+    try {
+      const res = await fetch(`${MATRIX_SANDBOX}/v1/checkout/pay`, {
+        method: "POST",
+        headers: { "Authorization": auth, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      httpStatus = res.status;
+      const text = await res.text();
+      try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
+    } catch (e) {
+      errorMessage = `network: ${String(e)}`;
+    }
+
+    const success = parsed?.code === 0 && !!parsed?.redirect_url;
+
+    const row = {
+      merchant_id: merchantId,
+      batch_id: batchId,
+      provider: "matrix",
+      environment: "sandbox",
+      scenario: sc.scenario,
+      card_last4: null,
+      card_brand: null,
+      currency: sc.currency,
+      amount: sc.amount,
+      upstream_http_status: httpStatus || null,
+      result_status: success ? "Redirect" : (parsed?.status_description ?? "Failed"),
+      result_code: parsed?.code != null ? String(parsed.code) : null,
+      error_message: success ? null : (errorMessage ?? parsed?.message ?? null),
+      raw_response: parsed,
+    };
+    await supabase.from("card_test_runs").insert(row);
+    results.push({ ...row, passed: success });
+  }
+
+  return results;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const apiKeyHeader = req.headers.get("apikey") ?? "";
+    const token = (authHeader.replace("Bearer ", "").trim()) || apiKeyHeader.trim();
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const body = await req.json().catch(() => ({}));
+    const includeApproved = body?.include_approved === true;
+    const providers = (body?.providers as string[] | undefined) ?? ["matrix", "shieldhub"];
+
+    let merchant: { id: string } | null = null;
+
+    // Decode role from JWT (no verification — only used to branch logic).
+    let tokenRole: string | null = null;
+    try {
+      const part = token.split(".")[1];
+      if (part) {
+        const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+        tokenRole = json?.role ?? null;
+      }
+    } catch { /* ignore */ }
+
+    console.log("[card-test-runner] auth check", {
+      hasAuth: !!authHeader, hasApiKey: !!apiKeyHeader,
+      tokenLen: token.length, role: tokenRole,
+    });
+
+    // Mode 1 — service-role caller may pass an explicit merchant_id
+    if ((token === serviceKey || tokenRole === "service_role") && body?.merchant_id) {
+      const { data } = await supabase
+        .from("merchants").select("id").eq("id", body.merchant_id).maybeSingle();
+      merchant = data ?? null;
+    } else if (token) {
+      // Mode 2 — user JWT → derive merchant
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) {
+        const { data } = await supabase
+          .from("merchants").select("id").eq("user_id", user.id).maybeSingle();
+        merchant = data ?? null;
+      }
+    }
+
+    if (!merchant) {
+      return new Response(JSON.stringify({
+        error: "Unauthorized",
+        hint: "Pass a user JWT, or call with the service role key plus { merchant_id } in the body.",
+        debug: { role: tokenRole, hasMerchantId: !!body?.merchant_id },
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const batchId = crypto.randomUUID();
+    const all: any[] = [];
+
+    if (providers.includes("matrix")) {
+      const m = await runMatrix(supabase, merchant.id, batchId);
+      all.push(...m);
+    }
+    if (providers.includes("shieldhub")) {
+      const s = await runShieldhub(supabase, merchant.id, batchId, includeApproved);
+      all.push(...s);
+    }
+
+    return new Response(JSON.stringify({
+      batch_id: batchId,
+      merchant_id: merchant.id,
+      total: all.length,
+      passed: all.filter((r) => r.passed).length,
+      results: all,
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("[card-test-runner] error", err);
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});

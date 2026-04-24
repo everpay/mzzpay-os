@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PeriodSelector, type PeriodValue, getPeriodCutoff } from '@/components/PeriodSelector';
 import { CurrencySelector } from '@/components/CurrencySelector';
+import { CardTestResultsPanel } from '@/components/CardTestResultsPanel';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
@@ -253,6 +254,10 @@ const Index = () => {
         ) : (
           <TransactionTable transactions={filteredTransactions.slice(0, 5)} compact />
         )}
+      </motion.div>
+
+      <motion.div className="mt-6" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
+        <CardTestResultsPanel compact />
       </motion.div>
     </AppLayout>
   );

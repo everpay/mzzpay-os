@@ -36,7 +36,7 @@ Regions supported:
 
 - Europe (PSD2)
 - Africa (Lipad / Marasoft)
-- LATAM (FacilitaPay)
+- US / Canada / Global (MzzPay USD via Shieldhub, Matrix Partners)
 - US / Canada (Card processor)
 - Global settlement via Delos (USD / USDC / USDT)
 
@@ -99,7 +99,8 @@ Chooses best processor based on:
 Processors integrated:
 
 - Mondo
-- FacilitaPay
+- Matrix Partners (Sandbox + Live)
+- Shieldhub (Production card / 3DS)
 - Lipad
 - MarasoftPay
 - US/Canada card processor

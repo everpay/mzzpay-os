@@ -206,7 +206,8 @@ export default function NewPayment() {
   const providerRegionLabel: Record<string, { label: string; badge: string }> = {
     mondo: { label: 'EU / UK payments', badge: '🇪🇺 MzzPay EUR' },
     mzzpay: { label: 'US & Global payments', badge: '🌐 MzzPay USD' },
-    facilitapay: { label: 'LATAM payments', badge: '🌎 FacilitaPay' },
+    matrix: { label: 'Intl. card / APM', badge: '🌍 Matrix' },
+    shieldhub: { label: 'Shieldhub gateway', badge: '🛡 Shieldhub' },
     stripe: { label: 'Global fallback', badge: '⚡ Stripe' },
   };
 
