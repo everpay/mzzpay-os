@@ -76,7 +76,7 @@ export default function NewPayment() {
   const [threeDSTxId, setThreeDSTxId] = useState('');
 
   const queryClient = useQueryClient();
-  const selectedProvider = resolveProvider(currency);
+  const selectedProvider = resolveProvider(currency, undefined, { paymentMethod });
   const idempotencyKey = `idk_${Date.now()}`;
 
   const validate = (): boolean => {
@@ -204,10 +204,10 @@ export default function NewPayment() {
   };
 
   const providerRegionLabel: Record<string, { label: string; badge: string }> = {
-    mondo: { label: 'EU / UK payments', badge: '🇪🇺 Openbanking EU' },
-    mzzpay: { label: 'US & Global payments', badge: '🌐 US/International' },
-    matrix: { label: 'Intl. card / APM', badge: '🌍 EU/International' },
-    shieldhub: { label: 'US & Global payments', badge: '🌐 US/International' },
+    mondo: { label: 'EU / UK open banking', badge: '🇪🇺 Openbanking EU' },
+    mzzpay: { label: 'Primary 2D card MID', badge: '🌐 US/International' },
+    matrix: { label: 'Gambling / sportsbook (admin-enabled)', badge: '🎰 EU/International' },
+    shieldhub: { label: 'Primary 2D card MID', badge: '🌐 US/International' },
     stripe: { label: 'Global fallback', badge: '⚡ Stripe' },
   };
 
