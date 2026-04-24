@@ -315,26 +315,48 @@ if (data?.success) { /* normal happy path */ }`}
         <h2 className="text-2xl font-heading font-semibold tracking-tight">
           Provider routing
         </h2>
-        <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-5">
+        <p className="text-sm text-muted-foreground">
+          You don&apos;t pick a processor — <code>/process-payment</code> selects one
+          deterministically from <code>paymentMethod</code>, <code>currency</code>, and
+          merchant flags. The exact decision tree, in order:
+        </p>
+        <ol className="text-sm text-muted-foreground space-y-2 list-decimal pl-5">
           <li>
-            <strong>EUR / GBP</strong> → MzzPay EUR S2S.
+            <strong>Open Banking + EUR / GBP</strong> →{" "}
+            <code>mondo</code> (MzzPay EUR S2S). Triggered when{" "}
+            <code>paymentMethod === &quot;open_banking&quot;</code> and{" "}
+            <code>currency ∈ &#123; EUR, GBP &#125;</code>.
           </li>
           <li>
-            <strong>USD (Mexico acquirer)</strong> → Shieldhub. The descriptor
-            <code className="mx-1">AXP*FER*AXP*FERES</code> is injected automatically;
-            it is non-empty on every request.
+            <strong>Card (any currency)</strong> →{" "}
+            <code>shieldhub</code> (live MID: EVERPAY 3D PTY · MX · USD).
+            The Mondo card path is disabled — every card transaction goes to Shieldhub.
+            The soft descriptor <code>AXP*FER*AXP*FERES</code> is injected automatically
+            (with a hard-coded fallback if the <code>payment_processors.acquirer_descriptor</code>{" "}
+            row is blank) so it is never empty on the wire. Visa / Mastercard only; 3DS
+            is enforced when the card is enrolled.
           </li>
           <li>
-            <strong>Matrix Partners merchants</strong> → routed via the H2H endpoint.
-            All other merchants use the standard hosted/S2S flow because every payment
-            form is generated from this project.
+            <strong>Matrix Partners merchants</strong> → the{" "}
+            <code>/matrix-process</code> edge function is called with the{" "}
+            <code>h2h_payment</code> action (POST <code>/v1/h2h/payment</code>). The
+            hosted-checkout path is intentionally not used because every payment form is
+            generated from this project — only the H2H endpoint is exercised.
           </li>
           <li>
-            <strong>Visa / Mastercard only</strong> on the live Shieldhub MID; 3DS is
-            enforced when the card is enrolled.
+            <strong>Everything else</strong> → falls through to <code>shieldhub</code>{" "}
+            via <code>processMzzPayPayment()</code>.
           </li>
-        </ul>
+        </ol>
+        <p className="text-xs text-muted-foreground">
+          The selected provider is returned on the transaction as{" "}
+          <code>transaction.provider</code> (one of <code>mondo</code>,{" "}
+          <code>shieldhub</code>, <code>matrix</code>) and emitted on every{" "}
+          <code>provider_events</code> row so you can branch retry / reconciliation logic
+          downstream.
+        </p>
       </section>
+
 
       <section className="space-y-4 pt-4 border-t border-border">
         <h2 className="text-2xl font-heading font-semibold tracking-tight">
