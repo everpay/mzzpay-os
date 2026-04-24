@@ -133,7 +133,7 @@ function simulateResponse(action: string, params: any) {
   }
 }
 
-serve(async (req) => {
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
@@ -208,4 +208,9 @@ serve(async (req) => {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-});
+};
+
+// Only bind a port when running as an edge function (not under Deno test).
+if (!Deno.env.get('MATRIX_TEST_MODE')) {
+  serve(handler);
+}
