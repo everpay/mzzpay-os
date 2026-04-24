@@ -131,7 +131,9 @@ async function runShieldhub(
       redirectback_url: "https://example.com/cb",
       notification_url: "https://example.com/notify",
       // EVERPAY 3D PTY · Mexico acquirer · soft descriptor on every charge.
+      // Send under every alias the gateway accepts.
       descriptor: SHIELDHUB_DESCRIPTOR,
+      descriptor_text: SHIELDHUB_DESCRIPTOR,
       soft_descriptor: SHIELDHUB_DESCRIPTOR,
       statement_descriptor: SHIELDHUB_DESCRIPTOR,
       acquirer_country: SHIELDHUB_ACQUIRER_COUNTRY,
