@@ -351,12 +351,35 @@ async function processMzzPayPayment(data: PaymentRequest) {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const clientHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
+  // Pull processor-level acquirer config (Mexico / descriptor / 3DS / etc.)
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  );
+  const { data: processor } = await supabase
+    .from('payment_processors')
+    .select('acquirer_country, acquirer_descriptor, default_currency, flow_type, supported_brands')
+    .eq('name', 'shieldhub')
+    .maybeSingle();
+
+  const descriptor = processor?.acquirer_descriptor ?? 'AXP*FER*AXP*FERES';
+  const acquirerCountry = processor?.acquirer_country ?? 'MX';
+  const wants3ds = (processor?.flow_type ?? '3DS').toUpperCase().includes('3DS');
+
   const body: any = {
     amount: amountStr,
     currency: data.currency,
     transaction_reference: transactionReference,
     redirectback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
     notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
+    // Acquirer / descriptor metadata. EVERPAY 3D PTY · MX · AXP*FER*AXP*FERES.
+    descriptor,
+    soft_descriptor: descriptor,
+    statement_descriptor: descriptor,
+    acquirer_country: acquirerCountry,
+    // Request 3DS when issuer is enrolled, fall back to 2D otherwise. The
+    // gateway interprets `three_ds: 'enrolled'` as "step up if enrolled".
+    three_ds: wants3ds ? 'enrolled' : 'off',
     customer: {
       first: data.customer?.first || data.customerEmail?.split('@')[0] || 'Customer',
       last: data.customer?.last || 'N/A',
@@ -383,7 +406,10 @@ async function processMzzPayPayment(data: PaymentRequest) {
     };
   }
 
-  console.log('MzzPay request:', { endpoint: 'https://pgw.shieldhubpay.com/api/transaction', clientId, transactionReference });
+  console.log('Shieldhub request:', {
+    endpoint: 'https://pgw.shieldhubpay.com/api/transaction',
+    clientId, transactionReference, three_ds: body.three_ds, descriptor,
+  });
 
   const response = await fetch('https://pgw.shieldhubpay.com/api/transaction', {
     method: 'POST',
@@ -396,20 +422,20 @@ async function processMzzPayPayment(data: PaymentRequest) {
   });
 
   const responseText = await response.text();
-  console.log('MzzPay response:', responseText);
+  console.log('Shieldhub response:', responseText);
 
   let parsed: any;
   try {
     parsed = JSON.parse(responseText);
   } catch {
-    throw new Error(`MzzPay USD API returned invalid JSON: ${responseText}`);
+    throw new Error(`Shieldhub API returned invalid JSON: ${responseText}`);
   }
 
   if (!response.ok || parsed.status === 'Declined' || parsed.status === 'Failed') {
     const msg = parsed.error?.message || parsed.message || `HTTP ${response.status}`;
     return {
       status: 'FAILED',
-      error: { message: `MzzPay USD: ${msg}` },
+      error: { message: `Shieldhub: ${msg}` },
       ...parsed,
     };
   }

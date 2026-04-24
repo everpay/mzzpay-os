@@ -2094,31 +2094,46 @@ export type Database = {
       }
       payment_processors: {
         Row: {
+          acquirer_country: string | null
+          acquirer_descriptor: string | null
           created_at: string | null
+          default_currency: string | null
+          flow_type: string | null
           id: string
           is_active: boolean | null
           name: string
           processor_fee_fixed: number | null
           processor_fee_percentage: number | null
           provider_type: string
+          supported_brands: string[] | null
         }
         Insert: {
+          acquirer_country?: string | null
+          acquirer_descriptor?: string | null
           created_at?: string | null
+          default_currency?: string | null
+          flow_type?: string | null
           id?: string
           is_active?: boolean | null
           name: string
           processor_fee_fixed?: number | null
           processor_fee_percentage?: number | null
           provider_type: string
+          supported_brands?: string[] | null
         }
         Update: {
+          acquirer_country?: string | null
+          acquirer_descriptor?: string | null
           created_at?: string | null
+          default_currency?: string | null
+          flow_type?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
           processor_fee_fixed?: number | null
           processor_fee_percentage?: number | null
           provider_type?: string
+          supported_brands?: string[] | null
         }
         Relationships: []
       }

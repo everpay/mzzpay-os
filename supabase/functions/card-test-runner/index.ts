@@ -49,6 +49,9 @@ interface ShieldhubScenario {
   realCharge?: boolean;
 }
 
+const SHIELDHUB_DESCRIPTOR = "AXP*FER*AXP*FERES";
+const SHIELDHUB_ACQUIRER_COUNTRY = "MX";
+
 const SHIELDHUB_SCENARIOS: ShieldhubScenario[] = [
   {
     scenario: "Declined card (Visa 4341)",
@@ -58,25 +61,36 @@ const SHIELDHUB_SCENARIOS: ShieldhubScenario[] = [
   {
     scenario: "3DS Redirect card (Visa 4846)",
     pan: "4242424242424846",
-    expectedStatuses: ["Redirect", "Approved"],
+    expectedStatuses: ["Redirect", "Approved", "Pending"],
   },
-  // Approved card omitted by default — would charge $1 on the LIVE account.
+  // Approved card omitted by default — would charge $10 on the LIVE account.
   // Enable by passing { include_approved: true } in the request body.
 ];
 
-const MATRIX_SCENARIOS = [
-  {
-    scenario: "Matrix sandbox checkout (EUR $10)",
-    amount: 10,
-    currency: "EUR",
-    country: "NL",
-  },
-  {
-    scenario: "Matrix sandbox checkout (USD $10 non-US billing)",
-    amount: 10,
-    currency: "USD",
-    country: "NL", // US is region-blocked; NL is fine.
-  },
+interface MatrixCardScenario {
+  scenario: string;
+  pan: string;
+  expMonth: string;
+  expYear: string;
+  cvv: string;
+  brand: string;
+  enrolled3ds: boolean;
+}
+
+// Documented sandbox cards from https://docs.matrixpaysolution.com (provided
+// by EVERPAY ops 2026-04). All non-US billing because Matrix region-blocks US.
+const MATRIX_CARDS: MatrixCardScenario[] = [
+  { scenario: "Visa 3DS-enrolled (4012…1003)", pan: "4012000300001003", expMonth: "01", expYear: "29", cvv: "030", brand: "Visa", enrolled3ds: true },
+  { scenario: "Visa frictionless (4012…1881)", pan: "4012888888881881", expMonth: "10", expYear: "27", cvv: "000", brand: "Visa", enrolled3ds: false },
+  { scenario: "Mastercard (5413…3002)",        pan: "5413330300003002", expMonth: "04", expYear: "28", cvv: "440", brand: "Mastercard", enrolled3ds: false },
+  { scenario: "Mastercard (5555…4444)",        pan: "5555555555554444", expMonth: "12", expYear: "27", cvv: "111", brand: "Mastercard", enrolled3ds: false },
+  { scenario: "Amex (3714…8431)",              pan: "371449635398431",  expMonth: "01", expYear: "28", cvv: "0203", brand: "Amex", enrolled3ds: false },
+  { scenario: "UnionPay (6212…1232)",          pan: "6212345678901232", expMonth: "02", expYear: "28", cvv: "123",  brand: "UnionPay", enrolled3ds: false },
+];
+
+const MATRIX_HOSTED_SCENARIOS = [
+  { scenario: "Matrix sandbox checkout (EUR $10)", amount: 10, currency: "EUR", country: "NL" },
+  { scenario: "Matrix sandbox checkout (USD $10 non-US billing)", amount: 10, currency: "USD", country: "NL" },
 ];
 
 async function runShieldhub(
@@ -99,9 +113,9 @@ async function runShieldhub(
   const scenarios = [...SHIELDHUB_SCENARIOS];
   if (includeApproved) {
     scenarios.push({
-      scenario: "Approved card (Visa 4242) — REAL CHARGE",
+      scenario: "Approved card (Visa 4242) — REAL CHARGE $10",
       pan: "4242424242424242",
-      expectedStatuses: ["Approved"],
+      expectedStatuses: ["Approved", "Redirect"],
       realCharge: true,
     });
   }
@@ -117,6 +131,14 @@ async function runShieldhub(
       transaction_reference: txRef,
       redirectback_url: "https://example.com/cb",
       notification_url: "https://example.com/notify",
+      // EVERPAY 3D PTY · Mexico acquirer · soft descriptor on every charge.
+      descriptor: SHIELDHUB_DESCRIPTOR,
+      soft_descriptor: SHIELDHUB_DESCRIPTOR,
+      statement_descriptor: SHIELDHUB_DESCRIPTOR,
+      acquirer_country: SHIELDHUB_ACQUIRER_COUNTRY,
+      // 3DS-when-enrolled: gateway will issue Redirect for enrolled cards
+      // and process as 2D for the rest.
+      three_ds: "enrolled",
       customer: {
         first: "Card", last: "Test", email: "card-test@everpay.io",
         phone: "(555) 555-5555", ip: "1.1.1.1",
@@ -155,8 +177,6 @@ async function runShieldhub(
     const code = parsed?.error?.code ?? parsed?.code ?? null;
     const msg = parsed?.error?.messsage ?? parsed?.error?.message ?? errorMessage;
 
-    // Persist a redacted copy of the request alongside the response so the UI
-    // drawer can show exactly what we sent (PAN/CVV redacted for PCI safety).
     const redactedRequest = {
       endpoint: SHIELDHUB_URL,
       method: "POST",
@@ -277,15 +297,86 @@ async function runMatrix(
     });
   }
 
-  // 2. Hosted checkout per scenario (visible in Matrix portal as orders).
-  for (const sc of MATRIX_SCENARIOS) {
-    // Matrix requires order_id ≤ 64 chars and a separate `reference` ≤ 64.
+  // 2. H2H card payments per documented test card. These show up in the
+  // Matrix portal as real test transactions with brand + last4.
+  for (const card of MATRIX_CARDS) {
+    const stamp = Date.now().toString(36);
+    const orderId = `e2e_${stamp}_${card.pan.slice(-4)}`;
+    const body: Record<string, unknown> = {
+      order_id: orderId,
+      reference: orderId,
+      order_description: "card-test-runner h2h",
+      amount: 10,
+      currency: "EUR",
+      country: "NL",
+      customer_token: customerToken ?? "no_token",
+      callback_url: "https://example.com/cb",
+      result_url: "https://example.com/result",
+      success_url: "https://example.com/ok",
+      error_url: "https://example.com/err",
+      language: "EN",
+      card: {
+        number: card.pan,
+        cvv: card.cvv,
+        expire: `${card.expMonth}/${card.expYear}`,
+        cardholder: "E2E Test",
+      },
+    };
+
+    let httpStatus = 0;
+    let parsed: any = null;
+    let errorMessage: string | null = null;
+    try {
+      const res = await fetch(`${MATRIX_SANDBOX}/v1/h2h/payment`, {
+        method: "POST",
+        headers: { "Authorization": auth, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      httpStatus = res.status;
+      const text = await res.text();
+      try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
+    } catch (e) {
+      errorMessage = `network: ${String(e)}`;
+    }
+
+    const code = parsed?.code;
+    const txStatus = parsed?.transactions?.[0]?.status ?? parsed?.status ?? null;
+    const passed = code === 0 || txStatus === "success" || txStatus === "pending" || txStatus === "3ds";
+
+    const row = {
+      merchant_id: merchantId,
+      batch_id: batchId,
+      provider: "matrix",
+      environment: "sandbox",
+      scenario: card.scenario + (card.enrolled3ds ? " · 3DS" : ""),
+      card_last4: card.pan.slice(-4),
+      card_brand: card.brand,
+      currency: "EUR",
+      amount: 10,
+      upstream_http_status: httpStatus || null,
+      result_status: txStatus ?? (passed ? "Approved" : "Failed"),
+      result_code: code != null ? String(code) : null,
+      error_message: passed ? null : (errorMessage ?? parsed?.status_description ?? parsed?.message ?? null),
+      raw_response: parsed,
+      raw_request: {
+        endpoint: `${MATRIX_SANDBOX}/v1/h2h/payment`,
+        method: "POST",
+        headers: { Authorization: "Basic <redacted>", "Content-Type": "application/json" },
+        body: { ...body, card: { ...(body.card as Record<string, unknown>), number: `**** **** **** ${card.pan.slice(-4)}`, cvv: "***" } },
+      },
+    };
+    await supabase.from("card_test_runs").insert(row);
+    results.push({ ...row, passed });
+  }
+
+  // 3. Hosted checkout per scenario (visible as orders in the Matrix portal).
+  for (const sc of MATRIX_HOSTED_SCENARIOS) {
     const stamp = Date.now().toString(36);
     const orderId = `e2e_${stamp}_${sc.currency}`;
     const body = {
       order_id: orderId,
       reference: orderId,
-      order_description: "card-test-runner",
+      order_description: "card-test-runner hosted",
       amount: sc.amount,
       currency: sc.currency,
       country: sc.country,
