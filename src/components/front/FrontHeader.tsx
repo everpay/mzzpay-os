@@ -187,7 +187,7 @@ export function FrontHeader({
             <div className="flex items-center justify-between h-[56px] px-4 border-b border-border/60">
               <Link to="/" className="flex items-center" onClick={closeMenu}>
                 <BrandLogo
-                  iconSizeClassName="h-28"
+                  iconSizeClassName="h-32"
                   wordmarkSizeClassName="text-2xl"
                   textClassName="text-foreground"
                 />
