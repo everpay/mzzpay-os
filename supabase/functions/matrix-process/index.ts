@@ -208,4 +208,9 @@ export const handler = async (req: Request): Promise<Response> => {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-});
+};
+
+// Only bind a port when running as an edge function (not under Deno test).
+if (!Deno.env.get('MATRIX_TEST_MODE')) {
+  serve(handler);
+}
