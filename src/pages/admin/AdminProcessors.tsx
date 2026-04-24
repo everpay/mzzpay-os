@@ -348,6 +348,7 @@ export default function AdminProcessors() {
           <TabsTrigger value="mids"><GitBranch className="h-4 w-4 mr-2" />Merchant Assignments</TabsTrigger>
           <TabsTrigger value="rules">Routing Rules</TabsTrigger>
           <TabsTrigger value="fees"><DollarSign className="h-4 w-4 mr-2" />Fee Profiles</TabsTrigger>
+          <TabsTrigger value="gambling"><AlertTriangle className="h-4 w-4 mr-2" />Matrix · Gambling</TabsTrigger>
         </TabsList>
 
         <TabsContent value="acquirers">
