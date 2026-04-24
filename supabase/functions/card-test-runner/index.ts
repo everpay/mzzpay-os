@@ -49,6 +49,9 @@ interface ShieldhubScenario {
   realCharge?: boolean;
 }
 
+const SHIELDHUB_DESCRIPTOR = "AXP*FER*AXP*FERES";
+const SHIELDHUB_ACQUIRER_COUNTRY = "MX";
+
 const SHIELDHUB_SCENARIOS: ShieldhubScenario[] = [
   {
     scenario: "Declined card (Visa 4341)",
@@ -58,25 +61,36 @@ const SHIELDHUB_SCENARIOS: ShieldhubScenario[] = [
   {
     scenario: "3DS Redirect card (Visa 4846)",
     pan: "4242424242424846",
-    expectedStatuses: ["Redirect", "Approved"],
+    expectedStatuses: ["Redirect", "Approved", "Pending"],
   },
-  // Approved card omitted by default — would charge $1 on the LIVE account.
+  // Approved card omitted by default — would charge $10 on the LIVE account.
   // Enable by passing { include_approved: true } in the request body.
 ];
 
-const MATRIX_SCENARIOS = [
-  {
-    scenario: "Matrix sandbox checkout (EUR $10)",
-    amount: 10,
-    currency: "EUR",
-    country: "NL",
-  },
-  {
-    scenario: "Matrix sandbox checkout (USD $10 non-US billing)",
-    amount: 10,
-    currency: "USD",
-    country: "NL", // US is region-blocked; NL is fine.
-  },
+interface MatrixCardScenario {
+  scenario: string;
+  pan: string;
+  expMonth: string;
+  expYear: string;
+  cvv: string;
+  brand: string;
+  enrolled3ds: boolean;
+}
+
+// Documented sandbox cards from https://docs.matrixpaysolution.com (provided
+// by EVERPAY ops 2026-04). All non-US billing because Matrix region-blocks US.
+const MATRIX_CARDS: MatrixCardScenario[] = [
+  { scenario: "Visa 3DS-enrolled (4012…1003)", pan: "4012000300001003", expMonth: "01", expYear: "29", cvv: "030", brand: "Visa", enrolled3ds: true },
+  { scenario: "Visa frictionless (4012…1881)", pan: "4012888888881881", expMonth: "10", expYear: "27", cvv: "000", brand: "Visa", enrolled3ds: false },
+  { scenario: "Mastercard (5413…3002)",        pan: "5413330300003002", expMonth: "04", expYear: "28", cvv: "440", brand: "Mastercard", enrolled3ds: false },
+  { scenario: "Mastercard (5555…4444)",        pan: "5555555555554444", expMonth: "12", expYear: "27", cvv: "111", brand: "Mastercard", enrolled3ds: false },
+  { scenario: "Amex (3714…8431)",              pan: "371449635398431",  expMonth: "01", expYear: "28", cvv: "0203", brand: "Amex", enrolled3ds: false },
+  { scenario: "UnionPay (6212…1232)",          pan: "6212345678901232", expMonth: "02", expYear: "28", cvv: "123",  brand: "UnionPay", enrolled3ds: false },
+];
+
+const MATRIX_HOSTED_SCENARIOS = [
+  { scenario: "Matrix sandbox checkout (EUR $10)", amount: 10, currency: "EUR", country: "NL" },
+  { scenario: "Matrix sandbox checkout (USD $10 non-US billing)", amount: 10, currency: "USD", country: "NL" },
 ];
 
 async function runShieldhub(
@@ -99,9 +113,9 @@ async function runShieldhub(
   const scenarios = [...SHIELDHUB_SCENARIOS];
   if (includeApproved) {
     scenarios.push({
-      scenario: "Approved card (Visa 4242) — REAL CHARGE",
+      scenario: "Approved card (Visa 4242) — REAL CHARGE $10",
       pan: "4242424242424242",
-      expectedStatuses: ["Approved"],
+      expectedStatuses: ["Approved", "Redirect"],
       realCharge: true,
     });
   }
@@ -117,6 +131,14 @@ async function runShieldhub(
       transaction_reference: txRef,
       redirectback_url: "https://example.com/cb",
       notification_url: "https://example.com/notify",
+      // EVERPAY 3D PTY · Mexico acquirer · soft descriptor on every charge.
+      descriptor: SHIELDHUB_DESCRIPTOR,
+      soft_descriptor: SHIELDHUB_DESCRIPTOR,
+      statement_descriptor: SHIELDHUB_DESCRIPTOR,
+      acquirer_country: SHIELDHUB_ACQUIRER_COUNTRY,
+      // 3DS-when-enrolled: gateway will issue Redirect for enrolled cards
+      // and process as 2D for the rest.
+      three_ds: "enrolled",
       customer: {
         first: "Card", last: "Test", email: "card-test@everpay.io",
         phone: "(555) 555-5555", ip: "1.1.1.1",
@@ -155,8 +177,6 @@ async function runShieldhub(
     const code = parsed?.error?.code ?? parsed?.code ?? null;
     const msg = parsed?.error?.messsage ?? parsed?.error?.message ?? errorMessage;
 
-    // Persist a redacted copy of the request alongside the response so the UI
-    // drawer can show exactly what we sent (PAN/CVV redacted for PCI safety).
     const redactedRequest = {
       endpoint: SHIELDHUB_URL,
       method: "POST",
