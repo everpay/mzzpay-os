@@ -26,6 +26,14 @@ export default function DocsPayouts() {
         Pending and rolling-reserve amounts are excluded.
       </Callout>
 
+      <Callout variant="info" title="Strict payload validation">
+        <code>/process-payout</code> validates the payload with Zod before any provider
+        call. Invalid requests return <code>processor_validation_error</code> with a typed
+        <code className="mx-1">code</code> (e.g. <code>invalid_iban</code>,{" "}
+        <code>amount_below_minimum</code>, <code>unsupported_currency</code>) and an{" "}
+        <code>issues[]</code> array — no withdrawal row is created.
+      </Callout>
+
       <Card>
         <CardHeader><CardTitle className="text-lg">The Payout Object</CardTitle></CardHeader>
         <CardContent>
