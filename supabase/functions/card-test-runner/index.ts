@@ -259,6 +259,12 @@ async function runMatrix(
       result_code: json?.code != null ? String(json.code) : null,
       error_message: customerToken ? null : `no token in response: ${text.slice(0, 200)}`,
       raw_response: json,
+      raw_request: {
+        endpoint: `${MATRIX_SANDBOX}/v1/customer/token`,
+        method: "POST",
+        headers: { Authorization: "Basic <redacted>", "Content-Type": "application/json" },
+        body: tokenBody,
+      },
     };
     await supabase.from("card_test_runs").insert(row);
     results.push({ ...row, passed: !!customerToken });
@@ -321,6 +327,12 @@ async function runMatrix(
       result_code: parsed?.code != null ? String(parsed.code) : null,
       error_message: success ? null : (errorMessage ?? parsed?.message ?? null),
       raw_response: parsed,
+      raw_request: {
+        endpoint: `${MATRIX_SANDBOX}/v1/checkout/pay`,
+        method: "POST",
+        headers: { Authorization: "Basic <redacted>", "Content-Type": "application/json" },
+        body,
+      },
     };
     await supabase.from("card_test_runs").insert(row);
     results.push({ ...row, passed: success });
