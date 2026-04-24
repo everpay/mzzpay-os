@@ -26,8 +26,9 @@ import {
   Info,
   XCircle,
 } from "lucide-react";
-import { toast } from "sonner";
+
 import { supabase } from "@/integrations/supabase/client";
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 type ExpectedRecord = {
   type: "MX" | "TXT" | "CNAME";
@@ -78,7 +79,7 @@ const CopyBtn = ({ value }: { value: string }) => {
       onClick={() => {
         navigator.clipboard.writeText(value);
         setCopied(true);
-        toast.success("Copied");
+        notifySuccess("Copied");
         setTimeout(() => setCopied(false), 1200);
       }}
     >
@@ -146,9 +147,9 @@ export default function EmailDnsBundle() {
       });
       if (error) throw error;
       setResult(data ?? null);
-      toast.success("DNS check complete");
+      notifySuccess("DNS check complete");
     } catch (e) {
-      toast.error("DNS check failed", { description: String(e) });
+      notifyError("DNS check failed", { description: String(e) });
     } finally {
       setValidating(false);
     }
@@ -156,7 +157,7 @@ export default function EmailDnsBundle() {
 
   const copyAll = () => {
     navigator.clipboard.writeText(bundleAsText(records, root));
-    toast.success("Full bundle copied");
+    notifySuccess("Full bundle copied");
   };
 
   return (

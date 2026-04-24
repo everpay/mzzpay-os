@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Linkedin, Github, Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 export function FrontFooter() {
   const [email, setEmail] = useState("");
@@ -20,14 +21,14 @@ export function FrontFooter() {
         body: { email, source: "landing_footer" },
       });
       if (error || !data?.ok) {
-        toast.error(data?.error || "Could not subscribe. Try again.");
+        notifyError(data?.error || "Could not subscribe. Try again.");
         return;
       }
       setDone(true);
       setEmail("");
-      toast.success("Subscribed! Welcome to MzzPay updates.");
+      notifySuccess("Subscribed! Welcome to MzzPay updates.");
     } catch {
-      toast.error("Network error. Please try again.");
+      notifyError("Network error. Please try again.");
     } finally {
       setSubmitting(false);
     }

@@ -12,9 +12,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+
 import { formatCurrency } from '@/lib/format';
 import { Users, DollarSign, TrendingUp, Plus, Building2, Mail, Globe, Phone, Loader2, BarChart3 } from 'lucide-react';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 interface MerchantApplication {
   id: string;
@@ -115,13 +116,13 @@ export default function ResellerPortal() {
       return data;
     },
     onSuccess: () => {
-      toast.success('Merchant application submitted successfully');
+      notifySuccess('Merchant application submitted successfully');
       setShowNewApp(false);
       setForm({ business_name: '', contact_name: '', contact_email: '', phone: '', website: '', business_type: 'ecommerce', estimated_volume: '', notes: '' });
       queryClient.invalidateQueries({ queryKey: ['referred-merchants'] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to submit application');
+      notifyError(error instanceof Error ? error.message : 'Failed to submit application');
     },
   });
 

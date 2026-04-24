@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
+
 import { Bitcoin, Copy, Loader2, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 interface CryptoPaymentPanelProps {
   amount: number;
@@ -57,7 +58,7 @@ export function CryptoPaymentPanel({ amount, currency, description, reference, i
       if ((data as any)?.status === 'complete') {
         setConfirmed(true);
         onComplete?.(txId);
-        toast.success('Crypto payment confirmed!');
+        notifySuccess('Crypto payment confirmed!');
       }
     }, 6000);
     return () => clearInterval(id);
@@ -65,7 +66,7 @@ export function CryptoPaymentPanel({ amount, currency, description, reference, i
 
   const handleGenerate = async () => {
     if (!invoiceId && !merchantId) {
-      toast.error('Crypto payment is not available for this checkout');
+      notifyError('Crypto payment is not available for this checkout');
       return;
     }
     setGenerating(true);
@@ -88,7 +89,7 @@ export function CryptoPaymentPanel({ amount, currency, description, reference, i
       setTxId(data.data?.id || null);
     } catch (err) {
       console.error(err);
-      toast.error(err instanceof Error ? err.message : 'Could not generate crypto address');
+      notifyError(err instanceof Error ? err.message : 'Could not generate crypto address');
     } finally {
       setGenerating(false);
     }
@@ -96,7 +97,7 @@ export function CryptoPaymentPanel({ amount, currency, description, reference, i
 
   const copy = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard');
+    notifySuccess('Copied to clipboard');
   };
 
   if (confirmed) {

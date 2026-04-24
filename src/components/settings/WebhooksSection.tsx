@@ -11,8 +11,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Webhook, Copy, Trash2, Eye, EyeOff, RefreshCw, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+
 import { formatDate } from '@/lib/format';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 const EVENTS = [
   'payment.created', 'payment.completed', 'payment.failed',
@@ -69,13 +70,13 @@ export function WebhooksSection() {
         events: events.length > 0 ? events : EVENTS,
       });
       if (error) throw error;
-      toast.success('Webhook created');
+      notifySuccess('Webhook created');
       setOpen(false);
       setUrl('');
       setEvents([]);
       qc.invalidateQueries({ queryKey: ['webhook-endpoints'] });
     } catch (err: any) {
-      toast.error(err.message);
+      notifyError(err.message);
     } finally {
       setBusy(false);
     }
@@ -83,9 +84,9 @@ export function WebhooksSection() {
 
   const del = async (id: string) => {
     const { error } = await (supabase as any).from('webhook_endpoints').delete().eq('id', id);
-    if (error) toast.error('Failed');
+    if (error) notifyError('Failed');
     else {
-      toast.success('Deleted');
+      notifySuccess('Deleted');
       qc.invalidateQueries({ queryKey: ['webhook-endpoints'] });
     }
   };
@@ -197,7 +198,7 @@ export function WebhooksSection() {
                         className="h-6 w-6"
                         onClick={() => {
                           navigator.clipboard.writeText(ep.secret);
-                          toast.success('Copied');
+                          notifySuccess('Copied');
                         }}
                       >
                         <Copy className="h-3 w-3" />

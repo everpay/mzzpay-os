@@ -7,8 +7,9 @@ import { CryptoWallet } from '@/hooks/useCryptoWallets';
 import { useLatestWalletDeposit, explorerUrl } from '@/hooks/useCryptoTransactions';
 import { WalletActionDialog } from './WalletActionDialog';
 import { WalletTransactionsTable } from './WalletTransactionsTable';
-import { toast } from 'sonner';
+
 import { format } from 'date-fns';
+import { notifySuccess } from '@/lib/error-toast';
 
 interface Props { wallet: CryptoWallet; }
 
@@ -25,7 +26,7 @@ export function CryptoWalletCard({ wallet }: Props) {
 
   const copy = (val: string) => {
     navigator.clipboard.writeText(val);
-    toast.success('Copied');
+    notifySuccess('Copied');
   };
 
   const explorer = explorerUrl(wallet.network, latest?.tx_hash);

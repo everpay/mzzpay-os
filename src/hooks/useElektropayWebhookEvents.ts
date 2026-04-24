@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 export interface WebhookEvent {
   id: string;
@@ -44,8 +45,8 @@ export function useRetryWebhook() {
       qc.invalidateQueries({ queryKey: ['elektropay-webhook-events'] });
       qc.invalidateQueries({ queryKey: ['crypto-wallets'] });
       qc.invalidateQueries({ queryKey: ['crypto-transactions'] });
-      toast.success('Webhook reprocessed');
+      notifySuccess('Webhook reprocessed');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notifyError(e.message),
   });
 }

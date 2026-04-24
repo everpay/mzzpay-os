@@ -12,13 +12,14 @@ import { Plus, Trash2, RefreshCw, ArrowUpDown, Bell } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSubscriptionPlans, useSubscriptions } from '@/hooks/useSubscriptions';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+
 import { formatCurrency } from '@/lib/format';
 import { SubscriptionAnalytics } from '@/components/SubscriptionAnalytics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 interface PriceRow {
   id: string;
@@ -130,12 +131,12 @@ export default function Subscriptions() {
         await supabase.from('subscription_plan_prices').insert(prices as any);
       }
 
-      toast.success('Recurring plan created successfully!');
+      notifySuccess('Recurring plan created successfully!');
       setShowCreateForm(false);
       resetForm();
       refetchPlans();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create plan');
+      notifyError(err.message || 'Failed to create plan');
     } finally {
       setIsCreating(false);
     }
@@ -167,7 +168,7 @@ export default function Subscriptions() {
       });
       if (error) throw error;
       setProratedPreview(data.proration);
-    } catch { toast.error('Failed to calculate proration'); }
+    } catch { notifyError('Failed to calculate proration'); }
   };
 
   const handleChangePlan = async () => {
@@ -179,9 +180,9 @@ export default function Subscriptions() {
       });
       if (error) throw error;
       const p = data.proration;
-      toast.success(`Plan ${p.is_upgrade ? 'upgraded' : 'downgraded'} to ${p.new_plan}`);
+      notifySuccess(`Plan ${p.is_upgrade ? 'upgraded' : 'downgraded'} to ${p.new_plan}`);
       setChangePlanOpen(false); setProratedPreview(null); refetchSubs();
-    } catch { toast.error('Failed to change plan'); }
+    } catch { notifyError('Failed to change plan'); }
     finally { setIsChanging(false); }
   };
 
@@ -190,10 +191,10 @@ export default function Subscriptions() {
     try {
       const { data, error } = await supabase.functions.invoke('retry-payment', { body: { subscription_id: subId, force: true } });
       if (error) throw error;
-      if (data.results?.[0]?.action === 'retry_succeeded') toast.success('Payment retry successful!');
-      else toast.error('Payment retry failed.');
+      if (data.results?.[0]?.action === 'retry_succeeded') notifySuccess('Payment retry successful!');
+      else notifyError('Payment retry failed.');
       refetchSubs();
-    } catch { toast.error('Failed to retry payment'); }
+    } catch { notifyError('Failed to retry payment'); }
     finally { setIsRetrying(null); }
   };
 
@@ -203,8 +204,8 @@ export default function Subscriptions() {
         body: { type: alertType, subscription_id: sub.id, customer_email: sub.customer?.email },
       });
       if (error) throw error;
-      toast.success(`Alert sent to ${sub.customer?.email}`);
-    } catch { toast.error('Failed to send alert'); }
+      notifySuccess(`Alert sent to ${sub.customer?.email}`);
+    } catch { notifyError('Failed to send alert'); }
   };
 
   const getStatusBadge = (status: string) => {

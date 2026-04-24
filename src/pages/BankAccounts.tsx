@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Building, PlusCircle, Check, Clock, Trash2, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CountrySelect } from '@/components/CountrySelect';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 export default function BankAccounts() {
   const { user } = useAuth();
@@ -32,8 +33,8 @@ export default function BankAccounts() {
   });
   const del = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from('bank_accounts').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['bank_accounts'] }); toast.success('Bank account removed'); },
-    onError: () => toast.error('Failed to remove'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['bank_accounts'] }); notifySuccess('Bank account removed'); },
+    onError: () => notifyError('Failed to remove'),
   });
 
   const submit = async (e: React.FormEvent) => {
@@ -42,8 +43,8 @@ export default function BankAccounts() {
     setBusy(true);
     const { error } = await supabase.from('bank_accounts').insert({ merchant_id: merchant.id, ...form, status: 'pending_verification' });
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success('Bank account added');
+    if (error) { notifyError(error.message); return; }
+    notifySuccess('Bank account added');
     setOpen(false);
     setForm({ bank_name: '', country: '', currency: 'USD', account_number: '', iban: '', sort_code: '', account_holder_name: '' });
     qc.invalidateQueries({ queryKey: ['bank_accounts'] });

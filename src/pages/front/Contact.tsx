@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Mail, Phone, MapPin, MessageSquare, Loader2, CheckCircle2 } from "lucide-react";
-import { toast } from "sonner";
+
+import { notifySuccess } from '@/lib/error-toast';
 
 const PRIMARY = "hsl(172 72% 48%)";
 
@@ -34,7 +35,7 @@ export default function Contact() {
     await new Promise((r) => setTimeout(r, 800));
     setSubmitting(false);
     setDone(true);
-    toast.success("Thanks — our team will reach out within one business day.");
+    notifySuccess("Thanks — our team will reach out within one business day.");
   };
 
   return (

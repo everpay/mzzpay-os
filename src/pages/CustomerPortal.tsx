@@ -7,10 +7,11 @@ import { Separator } from '@/components/ui/separator';
 import { Calendar, DollarSign, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+
 import { formatCurrency } from '@/lib/format';
 import { CardBrandBadge } from '@/components/CardBrandBadge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 export default function CustomerPortal() {
   const [isCanceling, setIsCanceling] = useState(false);
@@ -62,11 +63,11 @@ export default function CustomerPortal() {
 
       if (error) throw error;
 
-      toast.success('Subscription canceled successfully');
+      notifySuccess('Subscription canceled successfully');
       refetch();
     } catch (error) {
       console.error('Error canceling subscription:', error);
-      toast.error('Failed to cancel subscription');
+      notifyError('Failed to cancel subscription');
     } finally {
       setIsCanceling(false);
     }

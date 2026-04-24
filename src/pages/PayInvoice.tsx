@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText, Download, Bitcoin } from 'lucide-react';
-import { toast } from 'sonner';
+
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { formatCurrency } from '@/lib/format';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
+import { notifyError } from '@/lib/error-toast';
 
 export default function PayInvoice() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
@@ -48,7 +49,7 @@ export default function PayInvoice() {
       setInvoice(data);
     } catch (error) {
       console.error('Failed to load invoice:', error);
-      toast.error('Invoice not found');
+      notifyError('Invoice not found');
     } finally {
       setLoading(false);
     }
@@ -102,7 +103,7 @@ export default function PayInvoice() {
       // Check for failure
       if (data?.providerResponse?.status === 'Failed' || data?.providerResponse?.transaction_status === 'FAILED') {
         const msg = data.providerResponse?.error?.message || data.providerResponse?.gateway_message || 'Payment declined';
-        toast.error(msg);
+        notifyError(msg);
         return;
       }
 
@@ -116,7 +117,7 @@ export default function PayInvoice() {
       setPaymentComplete(true);
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error(error instanceof Error ? error.message : 'Payment failed');
+      notifyError(error instanceof Error ? error.message : 'Payment failed');
     } finally {
       setIsSubmitting(false);
     }

@@ -12,8 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { RotateCcw, DollarSign, CheckCircle2, XCircle, Clock, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+
 import { formatCurrency, formatDate } from '@/lib/format';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 export default function Refunds() {
   const qc = useQueryClient();
@@ -62,12 +63,12 @@ export default function Refunds() {
         body: { transactionId: selectedTxn, amount: parseFloat(refundAmount), reason },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
-      toast.success('Refund issued');
+      notifySuccess('Refund issued');
       setOpen(false); setSelectedTxn(''); setRefundAmount(''); setReason('');
       qc.invalidateQueries({ queryKey: ['refunds'] });
       qc.invalidateQueries({ queryKey: ['completed-txns'] });
     } catch (err: any) {
-      toast.error(err.message || 'Refund failed');
+      notifyError(err.message || 'Refund failed');
     } finally { setBusy(false); }
   };
 

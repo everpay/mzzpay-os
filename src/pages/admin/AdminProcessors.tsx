@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, GitBranch, DollarSign, Server, AlertTriangle } from "lucide-react";
 import { RoutingAnalyticsWidget } from "@/components/admin/RoutingAnalyticsWidget";
 import { validateRoutingRule } from "@/lib/routing-rules-validation";
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 function useAdminData() {
   return useQuery({
@@ -63,8 +64,8 @@ export default function AdminProcessors() {
       const { error } = await (supabase.from as any)("acquirers").update({ active }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Acquirer updated"); invalidate(); },
-    onError: (e: any) => toast.error(e.message),
+    onSuccess: () => { notifySuccess("Acquirer updated"); invalidate(); },
+    onError: (e: any) => notifyError(e.message),
   });
 
   // Assign MID
@@ -76,20 +77,20 @@ export default function AdminProcessors() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Acquirer assigned to merchant");
+      notifySuccess("Acquirer assigned to merchant");
       setMidDialog(false);
       setNewMid({ merchant_id: "", acquirer_id: "", mid: "", priority: 1 });
       invalidate();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => notifyError(e.message),
   });
   const deleteMid = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase.from as any)("merchant_acquirer_mids").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Removed"); invalidate(); },
-    onError: (e: any) => toast.error(e.message),
+    onSuccess: () => { notifySuccess("Removed"); invalidate(); },
+    onError: (e: any) => notifyError(e.message),
   });
 
   // Routing rule — with inline conflict validation + per-submission idempotency key
@@ -163,7 +164,7 @@ export default function AdminProcessors() {
     },
     onError: (e: any, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(["admin-processors"], ctx.prev);
-      toast.error(e.message);
+      notifyError(e.message);
     },
     onSuccess: (result, _vars, ctx) => {
       if (result && "idempotent" in result) {
@@ -177,7 +178,7 @@ export default function AdminProcessors() {
         qc.setQueryData<any>(["admin-processors"], (old: any) =>
           old ? { ...old, rules: (old.rules || []).map((r: any) => r.id === ctx?.tempId ? result.row : r) } : old,
         );
-        toast.success("Routing rule added");
+        notifySuccess("Routing rule added");
       }
       setRuleDialog(false);
       resetRuleDialog();
@@ -199,9 +200,9 @@ export default function AdminProcessors() {
     },
     onError: (e: any, _id, ctx) => {
       if (ctx?.prev) qc.setQueryData(["admin-processors"], ctx.prev);
-      toast.error(e.message);
+      notifyError(e.message);
     },
-    onSuccess: () => toast.success("Removed"),
+    onSuccess: () => notifySuccess("Removed"),
     onSettled: () => invalidate(),
   });
 
@@ -257,7 +258,7 @@ export default function AdminProcessors() {
     },
     onError: (e: any, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["admin-processors"], ctx.prev);
-      toast.error(e.message);
+      notifyError(e.message);
     },
     onSuccess: (result, _v, ctx) => {
       if (result && "idempotent" in result) {
@@ -269,7 +270,7 @@ export default function AdminProcessors() {
         qc.setQueryData<any>(["admin-processors"], (old: any) =>
           old ? { ...old, feeProfiles: (old.feeProfiles || []).map((f: any) => f.id === ctx?.tempId ? result.row : f) } : old,
         );
-        toast.success(editingFee ? "Fee profile updated" : "Fee profile added");
+        notifySuccess(editingFee ? "Fee profile updated" : "Fee profile added");
       }
       setFeeDialog(false); setEditingFee(null); setNewFee(blankFee);
       feeIdemRef.current = crypto.randomUUID();
@@ -291,9 +292,9 @@ export default function AdminProcessors() {
     },
     onError: (e: any, _id, ctx) => {
       if (ctx?.prev) qc.setQueryData(["admin-processors"], ctx.prev);
-      toast.error(e.message);
+      notifyError(e.message);
     },
-    onSuccess: () => toast.success("Removed"),
+    onSuccess: () => notifySuccess("Removed"),
     onSettled: () => invalidate(),
   });
   const openEditFee = (fp: any) => {

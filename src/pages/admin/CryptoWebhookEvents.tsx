@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Search, RefreshCcw, Webhook, AlertTriangle, CheckCircle2, Copy } from 'lucide-react';
 import { format } from 'date-fns';
-import { toast } from 'sonner';
+
+import { notifySuccess } from '@/lib/error-toast';
 
 export default function CryptoWebhookEvents() {
   const { isSuperAdmin, isAdmin, isLoading } = useAccessControl();
@@ -48,7 +49,7 @@ export default function CryptoWebhookEvents() {
     duplicates: events.filter(e => (e.attempt_count ?? 1) > 1).length,
   };
 
-  const copy = (v: string) => { navigator.clipboard.writeText(v); toast.success('Copied'); };
+  const copy = (v: string) => { navigator.clipboard.writeText(v); notifySuccess('Copied'); };
 
   return (
     <AppLayout>

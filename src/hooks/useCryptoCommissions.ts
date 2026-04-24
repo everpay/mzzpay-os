@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 export interface CryptoCommission {
   id: string;
@@ -39,9 +40,9 @@ export function useUpsertCommission() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crypto-commissions'] });
-      toast.success('Commission saved');
+      notifySuccess('Commission saved');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notifyError(e.message),
   });
 }
 
@@ -57,8 +58,8 @@ export function useDeleteCommission() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crypto-commissions'] });
-      toast.success('Commission deleted');
+      notifySuccess('Commission deleted');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notifyError(e.message),
   });
 }

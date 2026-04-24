@@ -5,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, Bitcoin, AlertTriangle, RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
+
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { CountrySelect } from '@/components/CountrySelect';
 import { validateCheckoutParams } from '@/lib/checkout-params';
+import { notifyError } from '@/lib/error-toast';
 
 const DOMAIN = 'mzzpay.io';
 
@@ -85,7 +86,7 @@ export default function Checkout() {
   const handleSubmit = async (e?: React.FormEvent, opts?: { isRetry?: boolean }) => {
     e?.preventDefault();
     if (checkoutBlocked) {
-      toast.error('This checkout link is incomplete', {
+      notifyError('This checkout link is incomplete', {
         description: blockingIssues.map((i) => i.message).join(' '),
       });
       return;
@@ -163,12 +164,12 @@ export default function Checkout() {
         setLastProcessorError(procCode ? `${procMsg} [${procCode}]` : procMsg);
 
         if (retryCount < 2) {
-          toast.error(procCode ? `${procMsg} [${procCode}]` : procMsg, {
+          notifyError(procCode ? `${procMsg} [${procCode}]` : procMsg, {
             description: 'Try again or use a different payment method.',
           });
           setShowRetryPanel(true);
         } else {
-          toast.error('Payment declined after multiple attempts');
+          notifyError('Payment declined after multiple attempts');
           redirectToOutcome('failed', data?.transaction?.id);
         }
         return;
@@ -199,7 +200,7 @@ export default function Checkout() {
       redirectToOutcome('success', data.transaction?.id || '');
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error('Payment failed', {
+      notifyError('Payment failed', {
         description: error instanceof Error ? error.message : 'Please try again',
       });
     } finally {

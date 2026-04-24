@@ -13,13 +13,14 @@ import {
   Link2, Copy, ExternalLink, Mail, MessageSquare, QrCode, Check, Code, Globe,
   Download, Trash2, Pencil, Save, Plus, Loader2, ShieldCheck, ShieldAlert, ShieldQuestion,
 } from 'lucide-react';
-import { toast } from 'sonner';
+
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Switch } from '@/components/ui/switch';
 import { formatCurrency } from '@/lib/format';
 import { buildCheckoutUrl, currentCheckoutHost, CHECKOUT_HOSTS } from '@/lib/checkout-url';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 interface SavedLink {
   id: string;
@@ -116,9 +117,9 @@ export default function PaymentLinks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['merchant-checkout-pref'] });
-      toast.success('Checkout host preference saved');
+      notifySuccess('Checkout host preference saved');
     },
-    onError: (err: any) => toast.error(err.message || 'Failed to save preference'),
+    onError: (err: any) => notifyError(err.message || 'Failed to save preference'),
   });
 
   const { data: savedLinks = [], isLoading: linksLoading } = useQuery({
@@ -157,17 +158,17 @@ export default function PaymentLinks() {
   const copyToClipboard = async (link?: string) => {
     await navigator.clipboard.writeText(link || paymentLink);
     setCopied(true);
-    toast.success('Payment link copied to clipboard');
+    notifySuccess('Payment link copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
   };
 
   const savePaymentLink = async () => {
-    if (!merchantId) { toast.error('Merchant not found'); return; }
+    if (!merchantId) { notifyError('Merchant not found'); return; }
     // If the merchant has the subdomain turned on but our live probe shows it
     // is broken, refuse to save — this is the senior-eng safety net that stops
     // bad links from ever reaching customers.
     if (preferSubdomain && hostStatus && hostStatus.subdomain.status !== 'active' && hostStatus.subdomain.status !== 'redirected') {
-      toast.error('Checkout subdomain is not safe to use', {
+      notifyError('Checkout subdomain is not safe to use', {
         description: hostStatus.subdomain.message + ' Switch to the apex host or fix DNS first.',
       });
       return;
@@ -195,17 +196,17 @@ export default function PaymentLinks() {
           .update({ ...linkData, updated_at: new Date().toISOString() })
           .eq('id', editingLinkId);
         if (error) throw error;
-        toast.success('Payment link updated');
+        notifySuccess('Payment link updated');
         setEditingLinkId(null);
       } else {
         const { error } = await supabase.from('payment_links' as any).insert(linkData);
         if (error) throw error;
-        toast.success('Payment link saved');
+        notifySuccess('Payment link saved');
       }
       queryClient.invalidateQueries({ queryKey: ['payment-links'] });
       resetForm();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save');
+      notifyError(err.message || 'Failed to save');
     } finally {
       setSaving(false);
     }
@@ -215,10 +216,10 @@ export default function PaymentLinks() {
     try {
       const { error } = await supabase.from('payment_links' as any).delete().eq('id', id);
       if (error) throw error;
-      toast.success('Payment link deleted');
+      notifySuccess('Payment link deleted');
       queryClient.invalidateQueries({ queryKey: ['payment-links'] });
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete');
+      notifyError(err.message || 'Failed to delete');
     }
   };
 
@@ -502,7 +503,7 @@ export default function PaymentLinks() {
                   <div className="rounded-lg bg-muted/50 p-4 overflow-x-auto">
                     <pre className="text-xs font-mono text-foreground whitespace-pre-wrap break-all">{generateEmbedCode()}</pre>
                   </div>
-                  <Button onClick={() => { navigator.clipboard.writeText(generateEmbedCode()); toast.success('Embed code copied'); }} variant="outline" className="gap-2">
+                  <Button onClick={() => { navigator.clipboard.writeText(generateEmbedCode()); notifySuccess('Embed code copied'); }} variant="outline" className="gap-2">
                     <Copy className="h-4 w-4" /> Copy Embed Code
                   </Button>
                 </TabsContent>

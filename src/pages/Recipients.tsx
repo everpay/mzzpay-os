@@ -7,10 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Plus, Search, User, Mail, MapPin, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CountrySelect } from '@/components/CountrySelect';
-import { toast } from 'sonner';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 export default function Recipients() {
   const { user } = useAuth();
@@ -36,14 +37,14 @@ export default function Recipients() {
     const { data: m } = await supabase.from('merchants').select('id').eq('user_id', user.id).single();
     if (!m) return;
     const { error } = await supabase.from('recipients').insert({ merchant_id: m.id, ...form });
-    if (error) { toast.error(error.message); return; }
-    toast.success('Recipient added');
+    if (error) { notifyError(error.message); return; }
+    notifySuccess('Recipient added');
     setOpen(false); setForm({ name: '', email: '', country: '', account_type: '' });
     qc.invalidateQueries({ queryKey: ['recipients'] });
   };
   const del = async (id: string) => {
     const { error } = await supabase.from('recipients').delete().eq('id', id);
-    if (error) toast.error(error.message); else { toast.success('Removed'); qc.invalidateQueries({ queryKey: ['recipients'] }); }
+    if (error) notifyError(error.message); else { notifySuccess('Removed'); qc.invalidateQueries({ queryKey: ['recipients'] }); }
   };
 
   return (

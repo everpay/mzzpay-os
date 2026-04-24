@@ -28,8 +28,9 @@ import {
   Search, MoreHorizontal, Eye, Pencil, UserCircle, CreditCard,
   MapPin, Package, ShieldCheck, RefreshCw, Plus,
 } from 'lucide-react';
-import { toast } from 'sonner';
+
 import { CardBrandBadge } from '@/components/CardBrandBadge';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 interface Customer {
   id: string;
@@ -135,11 +136,11 @@ export default function Customers() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Customer updated');
+      notifySuccess('Customer updated');
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       setEditCustomer(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notifyError(e.message),
   });
 
   const createMutation = useMutation({
@@ -158,11 +159,11 @@ export default function Customers() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Customer created');
+      notifySuccess('Customer created');
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       setShowAddModal(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notifyError(e.message),
   });
 
   const buildAddress = () => ({
@@ -175,18 +176,18 @@ export default function Customers() {
   });
 
   const handleEnrich = async (txId: string, cardLast4?: string) => {
-    if (!cardLast4) { toast.error('No card data available'); return; }
+    if (!cardLast4) { notifyError('No card data available'); return; }
     setEnrichingTx(txId);
     try {
       const res = await enrichWithTapix(cardLast4);
       if (res.success && res.enrichment) {
         setEnrichedData(prev => ({ ...prev, [txId]: res.enrichment }));
-        toast.success('Transaction enriched with Tapix');
+        notifySuccess('Transaction enriched with Tapix');
       } else {
-        toast.error(res.error || 'Enrichment failed');
+        notifyError(res.error || 'Enrichment failed');
       }
     } catch {
-      toast.error('Enrichment failed');
+      notifyError('Enrichment failed');
     }
     setEnrichingTx(null);
   };

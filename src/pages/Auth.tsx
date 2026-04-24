@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CountrySelect } from '@/components/CountrySelect';
 import { Mail, Lock, User, ArrowRight, Building2, Phone, Globe, Zap, CreditCard, ShieldCheck, CheckCircle2 } from 'lucide-react';
-import { toast } from 'sonner';
+
 import { BrandLogo } from '@/components/BrandLogo';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 interface AuthProps {
   defaultMode?: 'login' | 'signup';
@@ -44,10 +45,10 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      toast.success('Signed in successfully');
+      notifySuccess('Signed in successfully');
       navigate('/dashboard');
     } catch (error: any) {
-      toast.error(error.message);
+      notifyError(error.message);
     } finally {
       setLoading(false);
     }
@@ -56,11 +57,11 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
   const handleSignupStep1 = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast.error('Email and password are required');
+      notifyError('Email and password are required');
       return;
     }
     if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      notifyError('Password must be at least 6 characters');
       return;
     }
     setSignupStep(2);
@@ -69,7 +70,7 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
   const handleSignupStep2 = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName) {
-      toast.error('Your name is required');
+      notifyError('Your name is required');
       return;
     }
     setLoading(true);
@@ -90,15 +91,15 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
       });
       if (error) throw error;
       setSignupComplete(true);
-      toast.success('Account created! Check your email to confirm.');
+      notifySuccess('Account created! Check your email to confirm.');
     } catch (error: any) {
       const msg = error?.message ?? 'Could not create account';
       if (msg.toLowerCase().includes('already') || error?.code === 'user_already_exists') {
-        toast.error('An account with this email already exists. Try signing in instead.');
+        notifyError('An account with this email already exists. Try signing in instead.');
       } else if (msg.toLowerCase().includes('rate') || error?.status === 429) {
-        toast.error('Too many attempts. Please wait a minute and try again.');
+        notifyError('Too many attempts. Please wait a minute and try again.');
       } else {
-        toast.error(msg);
+        notifyError(msg);
       }
     } finally {
       setLoading(false);
@@ -107,7 +108,7 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
 
   const handleForgotPassword = async () => {
     if (!email) {
-      toast.error('Enter your email address first');
+      notifyError('Enter your email address first');
       return;
     }
     setLoading(true);
@@ -116,9 +117,9 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      toast.success('Password reset link sent to your email');
+      notifySuccess('Password reset link sent to your email');
     } catch (error: any) {
-      toast.error(error.message);
+      notifyError(error.message);
     } finally {
       setLoading(false);
     }

@@ -41,7 +41,7 @@ import {
 import { useProviderEvents } from "@/hooks/useProviderEvents";
 import { formatDate } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -59,6 +59,7 @@ import { BusinessVerificationSection as BusinessVerificationSectionComponent } f
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CountrySelect } from "@/components/CountrySelect";
 import { CardTestResultsPanel } from "@/components/CardTestResultsPanel";
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 type SettingsSection =
   | "main"
@@ -239,11 +240,11 @@ export default function Settings() {
       }
     },
     onSuccess: () => {
-      toast.success("Account details saved");
+      notifySuccess("Account details saved");
       queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
       queryClient.invalidateQueries({ queryKey: ["profile-settings"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to save"),
+    onError: (e) => notifyError(e instanceof Error ? e.message : "Failed to save"),
   });
 
   const saveBusiness = useMutation({
@@ -255,10 +256,10 @@ export default function Settings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Business details saved");
+      notifySuccess("Business details saved");
       queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to save"),
+    onError: (e) => notifyError(e instanceof Error ? e.message : "Failed to save"),
   });
 
   const changePassword = useMutation({
@@ -269,11 +270,11 @@ export default function Settings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Password updated");
+      notifySuccess("Password updated");
       setNewPassword("");
       setConfirmPassword("");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update password"),
+    onError: (e) => notifyError(e instanceof Error ? e.message : "Failed to update password"),
   });
 
   const updateWebhook = useMutation({
@@ -282,10 +283,10 @@ export default function Settings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Webhook URL updated");
+      notifySuccess("Webhook URL updated");
       queryClient.invalidateQueries({ queryKey: ["merchant-settings"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update webhook"),
+    onError: (e) => notifyError(e instanceof Error ? e.message : "Failed to update webhook"),
   });
 
   const deleteBankAccount = useMutation({
@@ -294,10 +295,10 @@ export default function Settings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Bank account removed");
+      notifySuccess("Bank account removed");
       queryClient.invalidateQueries({ queryKey: ["saved-bank-accounts"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to delete"),
+    onError: (e) => notifyError(e instanceof Error ? e.message : "Failed to delete"),
   });
 
   const handleDeleteAccount = async () => {
@@ -306,11 +307,11 @@ export default function Settings() {
     try {
       const { error } = await supabase.functions.invoke("delete-account");
       if (error) throw error;
-      toast.success("Your account has been deactivated. Payment records are preserved for compliance.");
+      notifySuccess("Your account has been deactivated. Payment records are preserved for compliance.");
       await signOut();
       navigate("/auth");
     } catch (error: any) {
-      toast.error(error.message || "Failed to delete account");
+      notifyError(error.message || "Failed to delete account");
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
@@ -336,7 +337,7 @@ export default function Settings() {
         .update({ api_key_hash: newKey } as any)
         .eq("user_id", user!.id);
       if (error) {
-        toast.error("Failed to generate key");
+        notifyError("Failed to generate key");
         return;
       }
       setLiveSecretKey(newKey);
@@ -345,7 +346,7 @@ export default function Settings() {
       setLivePublicKey(newKey);
     }
     navigator.clipboard.writeText(newKey);
-    toast.success(`New ${type} key generated and copied to clipboard. Store it securely!`);
+    notifySuccess(`New ${type} key generated and copied to clipboard. Store it securely!`);
   };
 
   const menuItems: {
@@ -582,7 +583,7 @@ export default function Settings() {
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Account ID</Label>
                 <div className="flex gap-2">
                   <Input value={merchant?.id || ""} readOnly className="flex-1 font-mono text-xs" />
-                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(merchant?.id || ""); toast.success("Account ID copied"); }}>
+                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(merchant?.id || ""); notifySuccess("Account ID copied"); }}>
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -599,7 +600,7 @@ export default function Settings() {
                       {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(livePublicKey); toast.success("Copied"); }}>
+                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(livePublicKey); notifySuccess("Copied"); }}>
                     <Copy className="h-4 w-4" />
                   </Button>
                   <Button variant="secondary" size="sm" onClick={() => generateApiKey("public")} className="gap-1.5">
@@ -617,7 +618,7 @@ export default function Settings() {
                       {showSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(liveSecretKey); toast.success("Copied"); }}>
+                  <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(liveSecretKey); notifySuccess("Copied"); }}>
                     <Copy className="h-4 w-4" />
                   </Button>
                   <Button variant="secondary" size="sm" onClick={() => generateApiKey("secret")} className="gap-1.5">
@@ -644,7 +645,7 @@ export default function Settings() {
                         {showTestPublicKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
-                    <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(testPublicKey); toast.success("Copied"); }}>
+                    <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(testPublicKey); notifySuccess("Copied"); }}>
                       <Copy className="h-4 w-4" />
                     </Button>
                     <Button variant="secondary" size="sm" onClick={() => {
@@ -652,7 +653,7 @@ export default function Settings() {
                       setTestPublicKey(k);
                       localStorage.setItem(`mzz_test_pk_${merchant?.id}`, k);
                       navigator.clipboard.writeText(k);
-                      toast.success("Test publishable key generated and copied");
+                      notifySuccess("Test publishable key generated and copied");
                     }} className="gap-1.5">
                       <RefreshCw className="h-3.5 w-3.5" /> {testPublicKey ? "Rotate" : "Generate"}
                     </Button>
@@ -668,7 +669,7 @@ export default function Settings() {
                         {showTestSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
-                    <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(testSecretKey); toast.success("Copied"); }}>
+                    <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(testSecretKey); notifySuccess("Copied"); }}>
                       <Copy className="h-4 w-4" />
                     </Button>
                     <Button variant="secondary" size="sm" onClick={() => {
@@ -676,7 +677,7 @@ export default function Settings() {
                       setTestSecretKey(k);
                       localStorage.setItem(`mzz_test_sk_${merchant?.id}`, k);
                       navigator.clipboard.writeText(k);
-                      toast.success("Test secret key generated and copied");
+                      notifySuccess("Test secret key generated and copied");
                     }} className="gap-1.5">
                       <RefreshCw className="h-3.5 w-3.5" /> {testSecretKey ? "Rotate" : "Generate"}
                     </Button>
@@ -766,8 +767,8 @@ export default function Settings() {
               </div>
               <Button
                 onClick={async () => {
-                  if (!inviteEmail) { toast.error("Email is required"); return; }
-                  if (!merchant?.id) { toast.error("Merchant not loaded"); return; }
+                  if (!inviteEmail) { notifyError("Email is required"); return; }
+                  if (!merchant?.id) { notifyError("Merchant not loaded"); return; }
                   setIsInviting(true);
                   try {
                     const { data, error } = await supabase.functions.invoke("invite-admin", {
@@ -784,13 +785,13 @@ export default function Settings() {
                       status: "pending",
                       last_sent_at: new Date().toISOString(),
                     }, { onConflict: "merchant_id,email" } as any);
-                    toast.success(`Invitation sent to ${inviteEmail}`);
+                    notifySuccess(`Invitation sent to ${inviteEmail}`);
                     setInviteEmail("");
                     setInviteFullName("");
                     setInviteRole("admin");
                     queryClient.invalidateQueries({ queryKey: ["team-invitations"] });
                   } catch (err: any) {
-                    toast.error(err.message || "Failed to send invitation");
+                    notifyError(err.message || "Failed to send invitation");
                   } finally {
                     setIsInviting(false);
                   }
@@ -940,7 +941,7 @@ function TeamInvitationsList({ merchantId }: { merchantId?: string }) {
     const sinceLast = Date.now() - new Date(inv.last_sent_at).getTime();
     if (sinceLast < RESEND_COOLDOWN_MS) {
       const minsLeft = Math.ceil((RESEND_COOLDOWN_MS - sinceLast) / 60000);
-      toast.error(`Please wait ${minsLeft} more minute(s) before resending.`);
+      notifyError(`Please wait ${minsLeft} more minute(s) before resending.`);
       return;
     }
     setResendingId(inv.id);
@@ -954,10 +955,10 @@ function TeamInvitationsList({ merchantId }: { merchantId?: string }) {
         .from("team_invitations" as any)
         .update({ last_sent_at: new Date().toISOString() } as any)
         .eq("id", inv.id);
-      toast.success(`Invitation resent to ${inv.email}`);
+      notifySuccess(`Invitation resent to ${inv.email}`);
       queryClient.invalidateQueries({ queryKey: ["team-invitations"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to resend invitation");
+      notifyError(e.message || "Failed to resend invitation");
     } finally {
       setResendingId(null);
     }
@@ -968,10 +969,10 @@ function TeamInvitationsList({ merchantId }: { merchantId?: string }) {
     try {
       const { error } = await supabase.from("team_invitations" as any).delete().eq("id", inv.id);
       if (error) throw error;
-      toast.success("Invitation deleted");
+      notifySuccess("Invitation deleted");
       queryClient.invalidateQueries({ queryKey: ["team-invitations"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to delete");
+      notifyError(e.message || "Failed to delete");
     } finally {
       setDeletingId(null);
     }
@@ -1117,10 +1118,10 @@ function SurchargeSettingsSection({ merchantId }: { merchantId?: string }) {
           .insert(payload);
         if (error) throw error;
       }
-      toast.success("Surcharge settings saved");
+      notifySuccess("Surcharge settings saved");
       queryClient.invalidateQueries({ queryKey: ["surcharge-settings"] });
     } catch (error: any) {
-      toast.error(error.message || "Failed to save surcharge settings");
+      notifyError(error.message || "Failed to save surcharge settings");
     } finally {
       setIsSaving(false);
     }
