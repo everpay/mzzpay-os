@@ -280,6 +280,34 @@ serve(async (req) => {
       payload: providerResponse,
     });
 
+    // 3DS lifecycle event — record whether the issuer was enrolled, the
+    // step-up was required, or we fell back to a 2D charge. Surfaces in the
+    // payment timeline UI so support can confirm the flow per transaction.
+    const threeDsStatus = providerResponse?.__three_ds_status as string | undefined;
+    if (provider === 'mzzpay' && threeDsStatus && threeDsStatus !== 'off') {
+      const eventType =
+        threeDsStatus === 'step_up_required'
+          ? 'three_ds.step_up_required'
+          : threeDsStatus === 'fallback_2d'
+            ? 'three_ds.fallback_2d'
+            : 'three_ds.requested';
+      await supabase.from('provider_events').insert({
+        merchant_id: merchant.id,
+        transaction_id: transaction.id,
+        provider,
+        event_type: eventType,
+        payload: {
+          three_ds_status: threeDsStatus,
+          requested: 'enrolled',
+          acs_url:
+            providerResponse.three_ds_redirect_url ||
+            providerResponse['3d_secure_redirect_url'] ||
+            providerResponse.acs_url ||
+            null,
+        },
+      });
+    }
+
     // --- Rolling Reserve (10% held for 180 days) ---
     if (txStatus === 'completed' || txStatus === 'processing') {
       const reserveAmount = amount * 0.10;
