@@ -33,13 +33,13 @@ const LABELS: Record<string, string> = {
 
 const DESCRIPTIONS: Record<string, string> = {
   matrix:
-    "EUR/USD card processing for EU and international merchants. US transactions are blocked at the route level.",
+    "EUR/USD card processing reserved for gambling, casino, lottery, sportsbook and sweepstakes merchants. Enabled per-merchant by super admins.",
   mzzpay:
-    "USD card and ACH processing for US and international merchants with optional 3DS.",
+    "Primary 2D card MID — USD/multi-currency card processing for US and international merchants. No 3DS step-up.",
   shieldhub:
-    "USD card and ACH processing for US and international merchants with optional 3DS.",
+    "Primary 2D card MID — USD/multi-currency card processing for US and international merchants. No 3DS step-up.",
   mondo:
-    "EUR/GBP open banking, SEPA, Faster Payments and card processing for EU/UK.",
+    "EUR/GBP open banking, SEPA, Faster Payments and 3DS card processing for EU/UK merchants.",
 };
 
 export function processorLabel(key: ProcessorKey | null | undefined): string {

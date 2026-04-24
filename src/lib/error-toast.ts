@@ -3,10 +3,13 @@ import { toast as sonnerToast } from "sonner";
 /**
  * Centralised error → user-facing toast mapping.
  *
- * Every fetch/edge-function error in the merchant portal should funnel through
- * `notify*` so error copy and positioning stay consistent. Toasts are rendered
- * by the `<Toaster />` configured in `src/components/ui/sonner.tsx` with
- * center-center positioning.
+ * Every fetch/edge-function error in the merchant portal funnels through
+ * `notify*` so error copy stays consistent. Each toast renders the
+ * normalized error code in its description (in monospace square brackets)
+ * so support and merchants can quote the exact code when reporting issues.
+ *
+ * Toasts render via the `<Toaster />` configured in
+ * `src/components/ui/sonner.tsx`, anchored above center.
  */
 
 export type NormalizedErrorCode =
@@ -32,16 +35,20 @@ interface NormalizedError {
   description: string;
 }
 
+/**
+ * Strict code → user-facing copy map.
+ * Edits here should be the ONLY way to change customer-visible error wording.
+ */
 const COPY: Record<NormalizedErrorCode, { title: string; description: string }> = {
   idempotency_conflict: {
     title: "Duplicate request",
     description:
-      "This request has already been processed. We returned the original result instead of charging twice.",
+      "This request was already processed. We returned the original result instead of charging twice.",
   },
   provider_failure: {
     title: "Payment processor error",
     description:
-      "The payment processor returned an error. Try again in a moment, or contact support if it persists.",
+      "The payment processor returned an error. Try again in a moment, or contact support if it keeps happening.",
   },
   region_blocked: {
     title: "Region not supported",
@@ -121,7 +128,6 @@ const REGEX: Array<{ re: RegExp; code: NormalizedErrorCode }> = [
 export function normalizeError(input: unknown): NormalizedError {
   if (!input) return { code: "unknown", ...COPY.unknown };
 
-  // Accept Error, string, FunctionsError, FunctionsHttpError, plain objects
   const raw =
     typeof input === "string"
       ? input
@@ -137,7 +143,6 @@ export function normalizeError(input: unknown): NormalizedError {
     (input as any)?.status_code ??
     null;
 
-  // Direct code matches
   if (typeof codeField === "string") {
     const c = codeField.toLowerCase();
     if (c.includes("idempotency")) return { code: "idempotency_conflict", ...COPY.idempotency_conflict };
@@ -151,7 +156,12 @@ export function normalizeError(input: unknown): NormalizedError {
       return { code, ...COPY[code] };
     }
   }
-  return { code: "unknown", ...COPY.unknown, description: String(raw).slice(0, 240) };
+  return { code: "unknown", ...COPY.unknown };
+}
+
+/** Format the toast description so the error code is always visible. */
+function withCode(code: NormalizedErrorCode, description: string) {
+  return `${description}\n[code: ${code}]`;
 }
 
 export function notifyError(
@@ -159,16 +169,27 @@ export function notifyError(
   opts?: { fallback?: string; description?: string },
 ) {
   const norm = normalizeError(input);
+  // Always pull the canonical description from COPY — never trust raw input
+  // text in the toast body, but keep the raw error in console for debug.
+  if (input) {
+    // eslint-disable-next-line no-console
+    console.warn(`[notifyError] ${norm.code}`, input);
+  }
+  const desc = opts?.description ?? COPY[norm.code].description ?? opts?.fallback ?? COPY.unknown.description;
   sonnerToast.error(norm.title, {
-    description: opts?.description ?? norm.description ?? opts?.fallback,
+    description: withCode(norm.code, desc),
   });
   return norm;
 }
 
 export function notifySuccess(title: string, description?: string) {
-  sonnerToast.success(title, { description });
+  sonnerToast.success(title, {
+    description: description ? `${description}\n[code: ok]` : `[code: ok]`,
+  });
 }
 
 export function notifyInfo(title: string, description?: string) {
-  sonnerToast(title, { description });
+  sonnerToast(title, {
+    description: description ? `${description}\n[code: info]` : `[code: info]`,
+  });
 }

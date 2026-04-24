@@ -53,19 +53,38 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
     methods: ['Card', 'APM', 'Subscription', 'Oneclick'],
   },
   shieldhub: {
-    // Same upstream endpoint as `mzzpay` — kept as a separate key for
-    // historical migrations but presented under the same merged label.
+    // Primary 2D card MID. Shares upstream with the legacy `mzzpay` key but
+    // is the default acquirer for all card checkouts going forward. 2D only —
+    // no 3DS step-up. Use `mondo` (Openbanking EU) for EU 3DS/SCA flows.
     name: 'shieldhub',
     displayName: processorLabel('shieldhub'),
-    supportedCurrencies: ['USD'],
+    supportedCurrencies: ['USD', 'EUR', 'GBP', 'MXN', 'BRL', 'COP'],
     regions: ['US', 'GLOBAL'],
-    methods: ['Card', '3DS'],
+    methods: ['Card', '2D'],
   },
 };
 
-export function resolveProvider(currency: Currency, region?: string): Provider {
-  if (['EUR', 'GBP'].includes(currency)) return 'mondo';
-  return 'mzzpay';
+/**
+ * Default routing for every checkout/payment form on the platform.
+ *
+ * Per product decision (2026-04):
+ *  - **Shieldhub** is the primary 2D card processor for ALL merchants.
+ *  - **Mondo (Openbanking EU)** is offered as an alternative for EU/UK
+ *    open-banking and SEPA flows; it is enabled for every merchant.
+ *  - **Matrix Partners** is gated behind `merchants.gambling_enabled`
+ *    (super_admin only) for casino/lottery/sportsbook/sweepstakes.
+ *
+ * `paymentMethod` lets callers force open-banking even when the currency
+ * would normally route to Shieldhub.
+ */
+export function resolveProvider(
+  currency: Currency,
+  region?: string,
+  opts?: { paymentMethod?: string; gamblingEnabled?: boolean },
+): Provider {
+  if (opts?.paymentMethod === 'open_banking') return 'mondo';
+  if (opts?.gamblingEnabled) return 'matrix';
+  return 'shieldhub';
 }
 
 export function getProviderColor(provider: Provider): string {

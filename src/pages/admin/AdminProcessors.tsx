@@ -30,7 +30,7 @@ function useAdminData() {
         { data: rules },
         { data: feeProfiles },
       ] = await Promise.all([
-        supabase.from("merchants").select("id, name").order("name"),
+        supabase.from("merchants").select("id, name, gambling_enabled").order("name"),
         (supabase.from as any)("acquirers").select("*").order("name"),
         (supabase.from as any)("merchant_acquirer_mids").select("*, acquirer:acquirers(name)"),
         (supabase.from as any)("routing_rules").select("*").order("priority"),
@@ -66,6 +66,30 @@ export default function AdminProcessors() {
     },
     onSuccess: () => { notifySuccess("Acquirer updated"); invalidate(); },
     onError: (e: any) => notifyError(e.message),
+  });
+
+  // Super-admin per-merchant Matrix (gambling) enable flag.
+  // Matrix Partners is reserved for casino/lottery/sportsbook/sweepstakes
+  // merchants. The toggle is RLS-gated to admins via the
+  // "Admins can update merchants" policy added in 20260424_*.
+  const toggleGambling = useMutation({
+    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+      const { error } = await supabase
+        .from("merchants")
+        .update({ gambling_enabled: enabled })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      notifySuccess(
+        vars.enabled ? "Matrix enabled for merchant" : "Matrix disabled for merchant",
+        vars.enabled
+          ? "Gambling/casino card traffic will now route through Matrix Partners."
+          : "Card traffic will fall back to the default Shieldhub MID.",
+      );
+      invalidate();
+    },
+    onError: (e: any) => notifyError(e),
   });
 
   // Assign MID
@@ -324,6 +348,7 @@ export default function AdminProcessors() {
           <TabsTrigger value="mids"><GitBranch className="h-4 w-4 mr-2" />Merchant Assignments</TabsTrigger>
           <TabsTrigger value="rules">Routing Rules</TabsTrigger>
           <TabsTrigger value="fees"><DollarSign className="h-4 w-4 mr-2" />Fee Profiles</TabsTrigger>
+          <TabsTrigger value="gambling"><AlertTriangle className="h-4 w-4 mr-2" />Matrix · Gambling</TabsTrigger>
         </TabsList>
 
         <TabsContent value="acquirers">
@@ -675,6 +700,62 @@ export default function AdminProcessors() {
                   )}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="gambling">
+          <Card>
+            <CardHeader>
+              <CardTitle>Matrix Partners — Gambling Enablement</CardTitle>
+              <CardDescription>
+                Matrix Partners is reserved for online casino, lottery, betting,
+                sweepstakes, sportsbook and other gambling-class merchants.
+                Toggle a merchant on to route their card traffic through Matrix;
+                otherwise traffic falls back to the default Shieldhub MID.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Loading…</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Merchant</TableHead>
+                      <TableHead>Routing</TableHead>
+                      <TableHead className="text-right">Matrix enabled</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {merchants.map((m: any) => (
+                      <TableRow key={m.id}>
+                        <TableCell className="font-medium">{m.name}</TableCell>
+                        <TableCell>
+                          <Badge variant={m.gambling_enabled ? "default" : "secondary"}>
+                            {m.gambling_enabled ? "Matrix Partners" : "Shieldhub (default)"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Switch
+                            checked={!!m.gambling_enabled}
+                            onCheckedChange={(v) =>
+                              toggleGambling.mutate({ id: m.id, enabled: v })
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {merchants.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                          No merchants
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
