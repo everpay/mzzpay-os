@@ -146,10 +146,10 @@ export default function Payouts() {
   }, [destinationCurrency]);
 
   const handleCreatePayout = async () => {
-    if (!amount || parseFloat(amount) <= 0) { toast.error('Enter a valid amount'); return; }
-    if (parseFloat(amount) > availableBalance) { toast.error('Insufficient balance'); return; }
+    if (!amount || parseFloat(amount) <= 0) { notifyError({ message: 'Enter a valid amount' }); return; }
+    if (parseFloat(amount) > availableBalance) { notifyError({ message: 'Insufficient balance' }); return; }
     if (!institutionNumber || !transitNumber || !accountNumber || !accountHolderName) {
-      toast.error('Fill in all bank details'); return;
+      notifyError({ message: 'Fill in all bank details' }); return;
     }
 
     try {
