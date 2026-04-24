@@ -57,6 +57,29 @@ export default function Payouts() {
   const [selectedSavedAccount, setSelectedSavedAccount] = useState<string>('');
 
   const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
+  const [selectedPayout, setSelectedPayout] = useState<PayoutRecord | null>(null);
+
+  // Fetch provider_events for the selected payout (matched by metadata.payout_id)
+  const { data: payoutEvents = [] } = useQuery({
+    queryKey: ['payout-events', selectedPayout?.id],
+    enabled: !!selectedPayout,
+    queryFn: async () => {
+      if (!selectedPayout) return [];
+      const { data, error } = await supabase
+        .from('provider_events')
+        .select('id, event_type, provider, created_at, payload')
+        .or(
+          `payload->>payout_id.eq.${selectedPayout.id},transaction_id.eq.${selectedPayout.id}`,
+        )
+        .order('created_at', { ascending: true })
+        .limit(50);
+      if (error) {
+        console.warn('payout events fetch', error);
+        return [];
+      }
+      return data ?? [];
+    },
+  });
 
   const { data: accounts = [] } = useAccounts();
   const createPayout = useCreateMonetoPayout();
