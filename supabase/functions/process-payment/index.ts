@@ -142,19 +142,29 @@ serve(async (req) => {
       throw new Error('Merchant not found');
     }
 
-    const paymentData: PaymentRequest = await req.json();
-    // Normalize 'openbanking' (from web checkout) to 'open_banking' (provider value).
-    if ((paymentData as any).paymentMethod === 'openbanking') {
-      paymentData.paymentMethod = 'open_banking';
+    const rawBody = await req.json().catch(() => ({}));
+    // Normalize 'openbanking' (from web checkout) to 'open_banking' (provider value)
+    if ((rawBody as any).paymentMethod === 'openbanking') {
+      (rawBody as any).paymentMethod = 'open_banking';
     }
+
+    // Strict input validation — fail fast with `processor_validation_error`
+    // BEFORE any provider call so the UI can render the field-level errors.
+    const parsed = PaymentRequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      console.warn('[process-payment] validation failed', parsed.error.flatten());
+      return validationErrorResponse(parsed.error);
+    }
+    const paymentData: PaymentRequest = parsed.data as PaymentRequest;
     const { amount, currency, paymentMethod, customerEmail, description, idempotencyKey, cardDetails } = paymentData;
 
-    // Check idempotency — but if the cached response was a decline AND the
-    // client is explicitly retrying, bypass the cache and re-run the charge.
+    // Check idempotency — if a prior response exists for this key we return
+    // it WITH a `duplicate: true` flag so the UI can show the "Duplicate
+    // request" toast instead of treating it as a fresh charge.
     if (idempotencyKey && !paymentData.retry) {
       const { data: existingKey } = await supabase
         .from('idempotency_keys')
-        .select('response')
+        .select('response, created_at')
         .eq('key', idempotencyKey)
         .eq('merchant_id', merchant.id)
         .single();
@@ -165,7 +175,15 @@ serve(async (req) => {
         const cachedFailed = cachedTxStatus === 'failed' || cached?.error;
         if (!cachedFailed) {
           return new Response(
-            JSON.stringify(cached),
+            JSON.stringify({
+              ...cached,
+              duplicate: true,
+              idempotency_replayed: true,
+              idempotency_key: idempotencyKey,
+              error_code: 'idempotency_conflict',
+              code: 'idempotency_conflict',
+              first_seen_at: existingKey.created_at,
+            }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
