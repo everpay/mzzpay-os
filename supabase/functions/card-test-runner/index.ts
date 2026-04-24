@@ -279,9 +279,12 @@ async function runMatrix(
 
   // 2. Hosted checkout per scenario (visible in Matrix portal as orders).
   for (const sc of MATRIX_SCENARIOS) {
-    const orderId = `e2e_chk_${Date.now()}_${sc.currency}`;
+    // Matrix requires order_id ≤ 64 chars and a separate `reference` ≤ 64.
+    const stamp = Date.now().toString(36);
+    const orderId = `e2e_${stamp}_${sc.currency}`;
     const body = {
       order_id: orderId,
+      reference: orderId,
       order_description: "card-test-runner",
       amount: sc.amount,
       currency: sc.currency,

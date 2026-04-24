@@ -154,10 +154,13 @@ export function normalizeError(input: unknown): NormalizedError {
   return { code: "unknown", ...COPY.unknown, description: String(raw).slice(0, 240) };
 }
 
-export function notifyError(input: unknown, opts?: { fallback?: string }) {
+export function notifyError(
+  input: unknown,
+  opts?: { fallback?: string; description?: string },
+) {
   const norm = normalizeError(input);
   sonnerToast.error(norm.title, {
-    description: norm.description || opts?.fallback,
+    description: opts?.description ?? norm.description ?? opts?.fallback,
   });
   return norm;
 }
