@@ -11,11 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Send, Copy, ExternalLink, FileText, Loader2, Download, Search } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+
 import { formatCurrency } from '@/lib/format';
 import { Currency } from '@/lib/types';
 import { InvoiceLineItems, LineItem } from '@/components/InvoiceLineItems';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 const STATUS_FILTERS = ['all', 'draft', 'sent', 'paid', 'overdue'] as const;
 type StatusFilter = typeof STATUS_FILTERS[number];
@@ -90,7 +91,7 @@ export default function Invoices() {
 
   const handleCreate = async () => {
     if (!amount || !customerEmail) {
-      toast.error('Amount and email are required');
+      notifyError('Amount and email are required');
       return;
     }
 
@@ -125,13 +126,13 @@ export default function Invoices() {
 
       if (error) throw error;
 
-      toast.success('Invoice created');
+      notifySuccess('Invoice created');
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       setShowCreate(false);
       resetForm();
     } catch (error) {
       console.error(error);
-      toast.error('Failed to create invoice');
+      notifyError('Failed to create invoice');
     } finally {
       setIsCreating(false);
     }
@@ -167,11 +168,11 @@ export default function Invoices() {
         },
       });
 
-      toast.success('Invoice sent with payment link emailed to customer');
+      notifySuccess('Invoice sent with payment link emailed to customer');
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
     } catch (err) {
       console.error(err);
-      toast.error('Failed to send invoice');
+      notifyError('Failed to send invoice');
     }
   };
 
@@ -179,7 +180,7 @@ export default function Invoices() {
 
   const copyPaymentLink = (invoiceId: string) => {
     navigator.clipboard.writeText(getPaymentUrl(invoiceId));
-    toast.success('Payment link copied');
+    notifySuccess('Payment link copied');
   };
 
   const resetForm = () => {

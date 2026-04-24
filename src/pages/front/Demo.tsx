@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+
+import { notifySuccess } from '@/lib/error-toast';
 
 const PRIMARY = "hsl(172 72% 48%)";
 
@@ -34,10 +35,10 @@ export default function Demo() {
         body: { email, source: "demo_request" },
       });
       setDone(true);
-      toast.success("Demo request received! Our team will reach out within 24 hours.");
+      notifySuccess("Demo request received! Our team will reach out within 24 hours.");
       (e.target as HTMLFormElement).reset();
     } catch {
-      toast.success("Demo request received! Our team will reach out within 24 hours.");
+      notifySuccess("Demo request received! Our team will reach out within 24 hours.");
       setDone(true);
     } finally {
       setSubmitting(false);

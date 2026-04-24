@@ -2,9 +2,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Copy, ExternalLink } from 'lucide-react';
-import { toast } from 'sonner';
+
 import { useWalletTransactions, explorerUrl } from '@/hooks/useCryptoTransactions';
 import { format } from 'date-fns';
+import { notifySuccess } from '@/lib/error-toast';
 
 interface Props {
   walletId: string;
@@ -23,7 +24,7 @@ export function WalletTransactionsTable({ walletId, network }: Props) {
 
   const copy = (v: string) => {
     navigator.clipboard.writeText(v);
-    toast.success('Copied');
+    notifySuccess('Copied');
   };
 
   return (

@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Building2, FileText, CheckCircle2, Clock, AlertCircle, Upload, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
+
 import { CountrySelect } from '@/components/CountrySelect';
 import { BUSINESS_TYPES, getIndustryGroups, getMccByIndustry } from '@/data/business-categories';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 function useMerchantProfile() {
   return useQuery({
@@ -123,10 +124,10 @@ export function BusinessVerificationSection() {
         await supabase.from('merchants').update({ name: businessName }).eq('id', merchantId);
       }
 
-      toast.success('Business profile saved');
+      notifySuccess('Business profile saved');
       refetch();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save profile');
+      notifyError(err.message || 'Failed to save profile');
     } finally {
       setIsSaving(false);
     }
@@ -143,9 +144,9 @@ export function BusinessVerificationSection() {
       const { error } = await supabase.storage.from('kyb-documents').upload(path, file);
       if (error) throw error;
       setDocuments((prev) => [...prev, { name: file.name, path }]);
-      toast.success('Document uploaded');
+      notifySuccess('Document uploaded');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to upload document');
+      notifyError(err.message || 'Failed to upload document');
     } finally {
       setUploadingDoc(false);
       e.target.value = '';

@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Copy, ExternalLink, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+
 import { CryptoWallet, useDeposit, useWithdraw } from '@/hooks/useCryptoWallets';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 interface Props {
   wallet: CryptoWallet | null;
@@ -36,14 +37,14 @@ export function WalletActionDialog({ wallet, mode, onClose }: Props) {
   };
 
   const handleWithdraw = async () => {
-    if (!amount || !toAddress) { toast.error('Amount and address required'); return; }
+    if (!amount || !toAddress) { notifyError('Amount and address required'); return; }
     await withdraw.mutateAsync({ wallet_id: wallet.id, amount: Number(amount), to_address: toAddress });
     reset();
   };
 
   const copy = (val: string) => {
     navigator.clipboard.writeText(val);
-    toast.success('Copied');
+    notifySuccess('Copied');
   };
 
   return (

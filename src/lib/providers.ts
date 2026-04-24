@@ -1,4 +1,5 @@
 import { Currency, Provider } from './types';
+import { processorLabel } from './processor-labels';
 
 interface ProviderConfig {
   name: string;
@@ -11,42 +12,42 @@ interface ProviderConfig {
 export const providerConfigs: Record<Provider, ProviderConfig> = {
   mondo: {
     name: 'mondo',
-    displayName: 'Openbanking EU',
+    displayName: processorLabel('mondo'),
     supportedCurrencies: ['EUR', 'GBP'],
     regions: ['EU', 'UK'],
     methods: ['SEPA', 'Faster Payments', 'SEPA Direct Debit', 'Card'],
   },
   stripe: {
     name: 'stripe',
-    displayName: 'Stripe',
+    displayName: processorLabel('stripe'),
     supportedCurrencies: ['USD'],
     regions: ['US'],
     methods: ['Card', 'ACH'],
   },
   mzzpay: {
     name: 'mzzpay',
-    displayName: 'US/International',
+    displayName: processorLabel('mzzpay'),
     supportedCurrencies: ['USD', 'BRL', 'MXN', 'COP'],
     regions: ['US', 'GLOBAL'],
     methods: ['Card', 'ACH', 'PIX', 'Boleto'],
   },
   moneto: {
     name: 'moneto',
-    displayName: 'Moneto Wallet',
+    displayName: processorLabel('moneto'),
     supportedCurrencies: ['CAD'],
     regions: ['CA'],
     methods: ['Wallet', 'Bank Transfer'],
   },
   moneto_mpg: {
     name: 'moneto_mpg',
-    displayName: 'Moneto Payment Gateway',
+    displayName: processorLabel('moneto_mpg'),
     supportedCurrencies: ['CAD', 'USD'],
     regions: ['CA', 'US'],
     methods: ['Card'],
   },
   matrix: {
     name: 'matrix',
-    displayName: 'EU/International',
+    displayName: processorLabel('matrix'),
     supportedCurrencies: ['EUR', 'USD', 'GBP'],
     regions: ['EU', 'UK', 'GLOBAL'],
     methods: ['Card', 'APM', 'Subscription', 'Oneclick'],
@@ -55,7 +56,7 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
     // Same upstream endpoint as `mzzpay` — kept as a separate key for
     // historical migrations but presented under the same merged label.
     name: 'shieldhub',
-    displayName: 'US/International',
+    displayName: processorLabel('shieldhub'),
     supportedCurrencies: ['USD'],
     regions: ['US', 'GLOBAL'],
     methods: ['Card', '3DS'],

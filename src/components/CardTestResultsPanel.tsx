@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDate } from '@/lib/format';
+import { processorLabel } from '@/lib/processor-labels';
+import { JsonViewer } from '@/components/JsonViewer';
 
 type CardTestRun = {
   id: string;
@@ -31,6 +33,7 @@ type CardTestRun = {
   result_code: string | null;
   error_message: string | null;
   raw_response: Record<string, unknown> | null;
+  raw_request: Record<string, unknown> | null;
   created_at: string;
 };
 
@@ -38,14 +41,6 @@ interface Props {
   /** When true, render a denser variant suited to the dashboard. */
   compact?: boolean;
 }
-
-/** Map internal provider key → user-facing label (matches docs rebrand). */
-const providerLabel = (p: string) => {
-  if (p === 'matrix') return 'EU/International';
-  if (p === 'mzzpay' || p === 'shieldhub') return 'US/International';
-  if (p === 'mondo') return 'Openbanking EU';
-  return p;
-};
 
 /**
  * CardTestResultsPanel — surfaces every documented test-card probe sent to the
@@ -165,7 +160,7 @@ export function CardTestResultsPanel({ compact = false }: Props) {
                   >
                     <td className="py-2 pr-3">
                       <Badge variant="secondary" className="text-[10px]">
-                        {providerLabel(r.provider)} · {r.environment}
+                        {processorLabel(r.provider)} · {r.environment}
                       </Badge>
                     </td>
                     <td className="py-2 pr-3 text-foreground">{r.scenario}</td>
@@ -208,16 +203,16 @@ function CardTestRunDrawer({
   const isOk =
     ['approved', 'redirect', 'issued'].includes((run.result_status ?? '').toLowerCase());
 
-  // Best-effort: reconstruct the request payload that card-test-runner sent.
-  // The function does not persist the request, so we rebuild from known
-  // scenario semantics for transparency.
-  const reconstructedRequest = (() => {
+  // Prefer the request payload captured server-side at probe time. Fall back
+  // to a reconstructed shape for older rows that pre-date the `raw_request`
+  // column.
+  const requestPayload = run.raw_request ?? (() => {
     if (run.provider === 'matrix') {
       return {
         endpoint: 'POST https://api-sandbox.matrixpaysolution.com/v1/checkout/pay',
         order_id: `e2e_chk_*_${run.currency ?? ''}`,
         order_description: 'card-test-runner',
-        amount: run.amount ?? 1,
+        amount: run.amount ?? 10,
         currency: run.currency ?? 'EUR',
         country: 'NL',
         language: 'EN',
@@ -226,7 +221,7 @@ function CardTestRunDrawer({
     }
     return {
       endpoint: 'POST https://pgw.shieldhubpay.com/api/transaction',
-      amount: '1',
+      amount: '10',
       currency: 'USD',
       transaction_reference: '<uuid>',
       customer: { first: 'Card', last: 'Test', email: 'card-test@everpay.io' },
@@ -244,7 +239,7 @@ function CardTestRunDrawer({
       label: 'Probe initiated',
       state: 'done',
       icon: Globe,
-      detail: `${providerLabel(run.provider)} · ${run.environment}`,
+      detail: `${processorLabel(run.provider)} · ${run.environment}`,
     },
     {
       label: `Upstream HTTP ${run.upstream_http_status ?? 'n/a'}`,
@@ -273,7 +268,7 @@ function CardTestRunDrawer({
             {run.scenario}
           </SheetTitle>
           <SheetDescription>
-            {providerLabel(run.provider)} · {run.environment} · {formatDate(run.created_at)}
+            {processorLabel(run.provider)} · {run.environment} · {formatDate(run.created_at)}
           </SheetDescription>
         </SheetHeader>
 
@@ -321,31 +316,25 @@ function CardTestRunDrawer({
               <Fact label="Code" value={run.result_code ?? '—'} mono />
             </section>
 
-            {/* Reconstructed request payload */}
-            <section>
-              <h4 className="text-xs font-semibold uppercase text-muted-foreground tracking-wide mb-2">
-                Request payload (reconstructed)
-              </h4>
-              <pre className="rounded-md border border-border bg-muted/30 p-3 text-[11px] font-mono overflow-x-auto whitespace-pre-wrap break-words">
-{JSON.stringify(reconstructedRequest, null, 2)}
-              </pre>
-            </section>
+            {/* Raw provider request payload (PAN/CVV redacted) */}
+            <JsonViewer
+              label={run.raw_request ? 'Raw provider request' : 'Request payload (reconstructed)'}
+              data={requestPayload}
+            />
 
             {/* Raw provider response */}
-            <section>
-              <h4 className="text-xs font-semibold uppercase text-muted-foreground tracking-wide mb-2">
-                Raw provider response
-              </h4>
-              {run.raw_response ? (
-                <pre className="rounded-md border border-border bg-muted/30 p-3 text-[11px] font-mono overflow-x-auto whitespace-pre-wrap break-words max-h-96">
-{JSON.stringify(run.raw_response, null, 2)}
-                </pre>
-              ) : (
+            {run.raw_response ? (
+              <JsonViewer label="Raw provider response" data={run.raw_response} />
+            ) : (
+              <section>
+                <h4 className="text-xs font-semibold uppercase text-muted-foreground tracking-wide mb-2">
+                  Raw provider response
+                </h4>
                 <p className="text-xs text-muted-foreground italic">
                   No raw response captured (network error before any body was returned).
                 </p>
-              )}
-            </section>
+              </section>
+            )}
 
             {run.error_message && (
               <section>

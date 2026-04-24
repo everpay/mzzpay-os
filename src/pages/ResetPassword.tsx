@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, ArrowRight } from 'lucide-react';
-import { toast } from 'sonner';
+
 import { BrandLogo } from '@/components/BrandLogo';
 import { Link } from 'react-router-dom';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -20,10 +21,10 @@ export default function ResetPassword() {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      toast.success('Password updated successfully');
+      notifySuccess('Password updated successfully');
       navigate('/');
     } catch (error: any) {
-      toast.error(error.message);
+      notifyError(error.message);
     } finally {
       setLoading(false);
     }

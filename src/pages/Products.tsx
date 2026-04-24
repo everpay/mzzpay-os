@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Package, TrendingUp, AlertTriangle, ShoppingCart, Plus, Search, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 export default function Products() {
   const { user } = useAuth();
@@ -46,10 +47,10 @@ export default function Products() {
       const payload = { merchant_id: m.id, name: form.name, description: form.description, price: parseFloat(form.price), stock: parseInt(form.stock) || 0, category: form.category, product_type: form.product_type, sku: form.sku, image_url: form.image_url || null };
       const { error } = editing ? await supabase.from('products').update(payload).eq('id', editing.id) : await supabase.from('products').insert(payload);
       if (error) throw error;
-      toast.success(editing ? 'Updated' : 'Created'); setOpen(false); qc.invalidateQueries({ queryKey: ['products'] });
-    } catch (err: any) { toast.error(err.message); } finally { setBusy(false); }
+      notifySuccess(editing ? 'Updated' : 'Created'); setOpen(false); qc.invalidateQueries({ queryKey: ['products'] });
+    } catch (err: any) { notifyError(err.message); } finally { setBusy(false); }
   };
-  const del = async (id: string) => { const { error } = await supabase.from('products').delete().eq('id', id); if (error) toast.error(error.message); else { toast.success('Deleted'); qc.invalidateQueries({ queryKey: ['products'] }); } };
+  const del = async (id: string) => { const { error } = await supabase.from('products').delete().eq('id', id); if (error) notifyError(error.message); else { notifySuccess('Deleted'); qc.invalidateQueries({ queryKey: ['products'] }); } };
 
   return (
     <AppLayout>

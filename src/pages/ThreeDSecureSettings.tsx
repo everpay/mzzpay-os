@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 export default function ThreeDSecureSettings() {
   const { user } = useAuth();
@@ -32,7 +33,7 @@ export default function ThreeDSecureSettings() {
     if (!m) { setSaving(false); return; }
     const { error } = await supabase.from('three_ds_settings').upsert({ merchant_id: m.id, ...settings }, { onConflict: 'merchant_id' });
     setSaving(false);
-    if (error) toast.error(error.message); else toast.success('Saved');
+    if (error) notifyError(error.message); else notifySuccess('Saved');
   };
 
   return (

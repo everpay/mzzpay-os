@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 export interface CryptoWallet {
   id: string;
@@ -100,9 +101,9 @@ export function useCreateWallet() {
       invokeAction('create_wallet', vars),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crypto-wallets'] });
-      toast.success('Wallet created');
+      notifySuccess('Wallet created');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notifyError(e.message),
   });
 }
 
@@ -113,9 +114,9 @@ export function useCreateStore() {
       invokeAction('create_store', vars),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crypto-stores'] });
-      toast.success('Store created');
+      notifySuccess('Store created');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notifyError(e.message),
   });
 }
 
@@ -126,9 +127,9 @@ export function useDeposit() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crypto-wallets'] });
       qc.invalidateQueries({ queryKey: ['crypto-transactions'] });
-      toast.success('Deposit address generated');
+      notifySuccess('Deposit address generated');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notifyError(e.message),
   });
 }
 
@@ -140,9 +141,9 @@ export function useWithdraw() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crypto-wallets'] });
       qc.invalidateQueries({ queryKey: ['crypto-transactions'] });
-      toast.success('Withdrawal initiated');
+      notifySuccess('Withdrawal initiated');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notifyError(e.message),
   });
 }
 
@@ -152,9 +153,9 @@ export function useFreezeWallet() {
     mutationFn: (vars: { wallet_id: string }) => invokeAction('freeze_wallet', vars),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crypto-wallets'] });
-      toast.success('Wallet frozen');
+      notifySuccess('Wallet frozen');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notifyError(e.message),
   });
 }
 
@@ -164,8 +165,8 @@ export function useCloseWallet() {
     mutationFn: (vars: { wallet_id: string }) => invokeAction('close_wallet', vars),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crypto-wallets'] });
-      toast.success('Wallet closed');
+      notifySuccess('Wallet closed');
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notifyError(e.message),
   });
 }

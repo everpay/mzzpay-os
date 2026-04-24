@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Shield, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 interface VGSCardFormProps {
   onTokenReceived: (token: string) => void;
@@ -28,7 +29,7 @@ export function VGSCardForm({ onTokenReceived, isSubmitting = false }: VGSCardFo
     };
 
     script.onerror = () => {
-      toast.error('Failed to load VGS security module');
+      notifyError('Failed to load VGS security module');
       setIsLoading(false);
     };
 
@@ -85,10 +86,10 @@ export function VGSCardForm({ onTokenReceived, isSubmitting = false }: VGSCardFo
 
       setIsVGSReady(true);
       setIsLoading(false);
-      toast.success('Secure payment form loaded');
+      notifySuccess('Secure payment form loaded');
     } catch (error) {
       console.error('VGS initialization error:', error);
-      toast.error('Failed to initialize secure payment form');
+      notifyError('Failed to initialize secure payment form');
       setIsLoading(false);
     }
   };
@@ -109,7 +110,7 @@ export function VGSCardForm({ onTokenReceived, isSubmitting = false }: VGSCardFo
     e.preventDefault();
     
     if (!formRef.current) {
-      toast.error('Payment form not ready');
+      notifyError('Payment form not ready');
       return;
     }
 
@@ -126,25 +127,25 @@ export function VGSCardForm({ onTokenReceived, isSubmitting = false }: VGSCardFo
             const token = data.json?.card_number || data.json?.vgs_alias;
             if (token) {
               onTokenReceived(token);
-              toast.success('Card securely tokenized');
+              notifySuccess('Card securely tokenized');
             } else {
-              toast.error('Failed to tokenize card');
+              notifyError('Failed to tokenize card');
             }
           } else {
             console.error('VGS Submit Error:', data);
-            toast.error('Card validation failed');
+            notifyError('Card validation failed');
           }
           setIsLoading(false);
         },
         (errors: any) => {
           console.error('VGS Validation Errors:', errors);
-          toast.error('Please check your card details');
+          notifyError('Please check your card details');
           setIsLoading(false);
         }
       );
     } catch (error) {
       console.error('VGS Submit Error:', error);
-      toast.error('Failed to process card');
+      notifyError('Failed to process card');
       setIsLoading(false);
     }
   };

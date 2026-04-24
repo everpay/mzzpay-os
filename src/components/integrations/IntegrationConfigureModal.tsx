@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 interface Props {
   open: boolean;
@@ -25,11 +26,11 @@ export function IntegrationConfigureModal({ open, onOpenChange, integrationId, i
 
   const handleSave = async () => {
     if (!merchantId) {
-      toast.error('Merchant context not loaded');
+      notifyError('Merchant context not loaded');
       return;
     }
     if (!apiKey.trim()) {
-      toast.error('API key is required');
+      notifyError('API key is required');
       return;
     }
     setSaving(true);
@@ -44,13 +45,13 @@ export function IntegrationConfigureModal({ open, onOpenChange, integrationId, i
         is_active: true,
       });
       if (error) throw error;
-      toast.success(`${integrationName} connected`);
+      notifySuccess(`${integrationName} connected`);
       onOpenChange(false);
       setApiKey('');
       setApiSecret('');
       setLabel('');
     } catch (e: any) {
-      toast.error(e.message || 'Failed to save credentials');
+      notifyError(e.message || 'Failed to save credentials');
     } finally {
       setSaving(false);
     }

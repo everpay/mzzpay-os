@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RefreshCw, X, Plus, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+
+import { notifyError, notifySuccess } from '@/lib/error-toast';
 
 const DEFAULT_DECLINE_CODES = ['insufficient_funds', 'do_not_honor', 'try_again_later'];
 const SUGGESTED_CODES = [
@@ -75,8 +76,8 @@ export default function SmartRetry() {
       .from('retry_settings')
       .upsert({ merchant_id: merchantId, ...s }, { onConflict: 'merchant_id' });
     setSaving(false);
-    if (error) toast.error(error.message);
-    else toast.success('Smart Retry settings saved');
+    if (error) notifyError(error.message);
+    else notifySuccess('Smart Retry settings saved');
   };
 
   const addCode = (code: string) => {

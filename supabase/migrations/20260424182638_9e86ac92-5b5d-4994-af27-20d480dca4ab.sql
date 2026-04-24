@@ -1,0 +1,1 @@
+ALTER TABLE public.card_test_runs ADD COLUMN IF NOT EXISTS raw_request jsonb;
