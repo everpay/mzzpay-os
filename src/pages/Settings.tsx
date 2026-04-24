@@ -58,6 +58,7 @@ import { WebhooksSection as WebhooksSectionComponent } from "@/components/settin
 import { BusinessVerificationSection as BusinessVerificationSectionComponent } from "@/components/settings/BusinessVerificationSection";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CountrySelect } from "@/components/CountrySelect";
+import { CardTestResultsPanel } from "@/components/CardTestResultsPanel";
 
 type SettingsSection =
   | "main"
