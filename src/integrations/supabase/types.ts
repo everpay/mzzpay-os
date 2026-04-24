@@ -242,6 +242,71 @@ export type Database = {
         }
         Relationships: []
       }
+      card_test_runs: {
+        Row: {
+          amount: number | null
+          batch_id: string
+          card_brand: string | null
+          card_last4: string | null
+          created_at: string
+          currency: string | null
+          environment: string
+          error_message: string | null
+          id: string
+          merchant_id: string | null
+          provider: string
+          raw_response: Json | null
+          result_code: string | null
+          result_status: string | null
+          scenario: string
+          upstream_http_status: number | null
+        }
+        Insert: {
+          amount?: number | null
+          batch_id: string
+          card_brand?: string | null
+          card_last4?: string | null
+          created_at?: string
+          currency?: string | null
+          environment: string
+          error_message?: string | null
+          id?: string
+          merchant_id?: string | null
+          provider: string
+          raw_response?: Json | null
+          result_code?: string | null
+          result_status?: string | null
+          scenario: string
+          upstream_http_status?: number | null
+        }
+        Update: {
+          amount?: number | null
+          batch_id?: string
+          card_brand?: string | null
+          card_last4?: string | null
+          created_at?: string
+          currency?: string | null
+          environment?: string
+          error_message?: string | null
+          id?: string
+          merchant_id?: string | null
+          provider?: string
+          raw_response?: Json | null
+          result_code?: string | null
+          result_status?: string | null
+          scenario?: string
+          upstream_http_status?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_test_runs_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       card_velocity: {
         Row: {
           card_last4: string | null
