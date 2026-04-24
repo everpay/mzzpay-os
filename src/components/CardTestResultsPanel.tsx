@@ -143,9 +143,17 @@ export function CardTestResultsPanel({ compact = false }: Props) {
       <Card className="p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h3 className="font-heading text-lg font-bold text-foreground">Card test results</h3>
+            <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
+              Card test results
+              {liveCount > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                  <Radio className="h-3 w-3 animate-pulse" />
+                  live · {liveCount}
+                </span>
+              )}
+            </h3>
             <p className="text-xs text-muted-foreground">
-              Documented test cards sent to EU/International (Sandbox) + US/International (Production)
+              Documented test cards sent to EU/International (Matrix sandbox H2H + hosted) + US/International (Shieldhub production)
             </p>
           </div>
           <Button size="sm" onClick={triggerRun} disabled={running} className="gap-2">
