@@ -127,7 +127,7 @@ export function FrontHeader({
         <div className="max-w-7xl mx-auto flex h-[68px] items-center justify-between px-6">
           <Link to="/" className="flex items-center" onClick={closeMenu}>
             <BrandLogo
-              iconSizeClassName="h-20"
+              iconSizeClassName="h-24 md:h-28"
               wordmarkSizeClassName="text-2xl"
               textClassName={`transition-colors ${logoTextClass}`}
             />
