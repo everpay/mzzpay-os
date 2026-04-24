@@ -158,21 +158,14 @@ export function notifyError(input: unknown, opts?: { fallback?: string }) {
   const norm = normalizeError(input);
   sonnerToast.error(norm.title, {
     description: norm.description || opts?.fallback,
-    position: "top-center",
   });
   return norm;
 }
 
 export function notifySuccess(title: string, description?: string) {
-  sonnerToast.success(title, {
-    description,
-    position: "top-center",
-  });
+  sonnerToast.success(title, { description });
 }
 
 export function notifyInfo(title: string, description?: string) {
-  sonnerToast(title, {
-    description,
-    position: "top-center",
-  });
+  sonnerToast(title, { description });
 }
