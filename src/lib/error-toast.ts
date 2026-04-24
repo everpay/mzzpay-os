@@ -146,6 +146,16 @@ const COPY: Record<NormalizedErrorCode, { title: string; description: string }> 
 };
 
 const REGEX: Array<{ re: RegExp; code: NormalizedErrorCode }> = [
+  // Auth-specific (Supabase) — match BEFORE generic patterns
+  { re: /weak.?password|pwned|breach|password.*known/i, code: "weak_password" },
+  { re: /already.*registered|already.*exists|user.?already|email.*taken|duplicate.*user/i, code: "user_already_exists" },
+  { re: /email.*not.*confirm|confirm.*email|email_not_confirmed/i, code: "email_not_confirmed" },
+  { re: /invalid.?login|invalid.*credential|wrong.*password|incorrect.*password/i, code: "invalid_credentials" },
+  { re: /invalid.?email|email.*invalid|email_address_invalid/i, code: "invalid_email" },
+  // Processor config
+  { re: /processor.*not.*configured|missing.*acquirer|missing.*descriptor|processor_misconfigured/i, code: "processor_misconfigured" },
+  { re: /3ds.*fallback|fallback.*2d|not.*enrolled|3ds_fallback/i, code: "3ds_fallback_2d" },
+  // Payments
   { re: /idempot/i, code: "idempotency_conflict" },
   { re: /region|us\s?block|country.*block|geo.*block/i, code: "region_blocked" },
   { re: /3ds|three.?d.?secure|acs/i, code: "3ds_required" },
@@ -165,6 +175,17 @@ const REGEX: Array<{ re: RegExp; code: NormalizedErrorCode }> = [
   },
 ];
 
+const CODE_FIELD_MAP: Record<string, NormalizedErrorCode> = {
+  weak_password: "weak_password",
+  user_already_exists: "user_already_exists",
+  email_address_invalid: "invalid_email",
+  email_not_confirmed: "email_not_confirmed",
+  invalid_credentials: "invalid_credentials",
+  invalid_grant: "invalid_credentials",
+  processor_misconfigured: "processor_misconfigured",
+  "3ds_fallback_2d": "3ds_fallback_2d",
+};
+
 export function normalizeError(input: unknown): NormalizedError {
   if (!input) return { code: "unknown", ...COPY.unknown };
 
@@ -173,18 +194,24 @@ export function normalizeError(input: unknown): NormalizedError {
       ? input
       : (input as any)?.message ??
         (input as any)?.error?.message ??
+        (input as any)?.msg ??
         (input as any)?.error_description ??
         (input as any)?.statusText ??
         JSON.stringify(input);
 
   const codeField =
     (input as any)?.code ??
+    (input as any)?.error_code ??
     (input as any)?.error?.code ??
     (input as any)?.status_code ??
     null;
 
   if (typeof codeField === "string") {
     const c = codeField.toLowerCase();
+    if (CODE_FIELD_MAP[c]) {
+      const mapped = CODE_FIELD_MAP[c];
+      return { code: mapped, ...COPY[mapped] };
+    }
     if (c.includes("idempotency")) return { code: "idempotency_conflict", ...COPY.idempotency_conflict };
     if (c.includes("region") || c.includes("country")) return { code: "region_blocked", ...COPY.region_blocked };
     if (c.includes("declined") || c.includes("card_declined")) return { code: "card_declined", ...COPY.card_declined };
