@@ -27,6 +27,7 @@ export type NormalizedErrorCode =
   | "rate_limited"
   | "unauthorized"
   | "validation"
+  | "processor_validation_error"
   | "network"
   | "weak_password"
   | "user_already_exists"
