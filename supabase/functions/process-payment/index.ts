@@ -511,7 +511,7 @@ async function processMzzPayPayment(data: PaymentRequest) {
     };
   }
 
-  return parsed;
+  return { ...parsed, __three_ds_status: three_ds_status };
 }
 
 async function processMondoPayment(data: PaymentRequest) {
