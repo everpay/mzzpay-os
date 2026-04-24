@@ -61,9 +61,11 @@ export default function Checkout() {
   const [showRetryPanel, setShowRetryPanel] = useState(false);
   // Stable idempotency key for the lifetime of this checkout session.
   // Reusing the same key on retry guarantees the processor (and our DB) treats
-  // attempts as the SAME logical payment instead of new ones.
+  // attempts as the SAME logical payment instead of new ones. We always
+  // generate a UUID v4 client-side so that even links without a `ref` get a
+  // collision-resistant key.
   const [idempotencyKey] = useState(
-    () => `link_${ref || crypto.randomUUID()}_${Date.now()}`
+    () => `chk_${ref ? `${ref}_` : ''}${crypto.randomUUID()}`
   );
 
   const displayAmount = amount || customAmount;
