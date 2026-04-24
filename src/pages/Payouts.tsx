@@ -524,7 +524,12 @@ export default function Payouts() {
           </div>
           <div className="divide-y divide-border">
             {payouts.map((payout) => (
-              <div key={payout.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <button
+                type="button"
+                key={payout.id}
+                onClick={() => setSelectedPayout(payout)}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors text-left"
+              >
                 <div className="flex items-center gap-4">
                   <div className="p-2 rounded-lg bg-muted">{getStatusIcon(payout.status)}</div>
                   <div>
@@ -536,11 +541,46 @@ export default function Payouts() {
                   {getStatusBadge(payout.status)}
                   <p className="text-xs text-muted-foreground mt-1">{formatDate(payout.created_at)}</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
       )}
+
+      {/* Payout detail dialog with settlement timeline */}
+      <Dialog open={!!selectedPayout} onOpenChange={(o) => !o && setSelectedPayout(null)}>
+        <DialogContent className="sm:max-w-lg">
+          {selectedPayout && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {getStatusIcon(selectedPayout.status)}
+                  Payout {formatCurrency(selectedPayout.amount, selectedPayout.currency as any)}
+                </DialogTitle>
+                <DialogDescription>
+                  To •••• {selectedPayout.account_last4} · {selectedPayout.bank_name}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-5 pt-2">
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="rounded-md border border-border bg-background p-2.5">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Payout ID</p>
+                    <p className="font-mono text-[11px] text-foreground truncate">{selectedPayout.id}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background p-2.5">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Status</p>
+                    <div className="mt-0.5">{getStatusBadge(selectedPayout.status)}</div>
+                  </div>
+                </div>
+                <PayoutSettlementTimeline
+                  payout={selectedPayout}
+                  events={payoutEvents as any}
+                />
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="mt-8 rounded-xl border border-border bg-card/50 p-6">
         <div className="flex items-start gap-4">
