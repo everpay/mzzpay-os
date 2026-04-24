@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlayCircle, CheckCircle2, XCircle, Eye, ShieldCheck, Globe, Banknote } from 'lucide-react';
-import { useState } from 'react';
+import { Loader2, PlayCircle, CheckCircle2, XCircle, Eye, ShieldCheck, Globe, Banknote, Radio } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { notifyError, notifySuccess } from '@/lib/error-toast';
 import {
   Sheet,
@@ -53,6 +53,8 @@ interface Props {
 export function CardTestResultsPanel({ compact = false }: Props) {
   const [running, setRunning] = useState(false);
   const [selected, setSelected] = useState<CardTestRun | null>(null);
+  const [liveCount, setLiveCount] = useState(0);
+  const queryClient = useQueryClient();
 
   const { data: runs = [], isLoading, refetch } = useQuery({
     queryKey: ['card-test-runs', compact],
@@ -66,6 +68,31 @@ export function CardTestResultsPanel({ compact = false }: Props) {
       return (data ?? []) as CardTestRun[];
     },
   });
+
+  // Realtime: stream new probe rows into the table as the edge function
+  // writes them, so the merchant sees Matrix H2H attempts arriving live
+  // instead of having to refresh.
+  useEffect(() => {
+    const channel = supabase
+      .channel('card-test-runs-live')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'card_test_runs' },
+        () => {
+          setLiveCount((c) => c + 1);
+          queryClient.invalidateQueries({ queryKey: ['card-test-runs'] });
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'card_test_runs' },
+        () => queryClient.invalidateQueries({ queryKey: ['card-test-runs'] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const triggerRun = async () => {
     setRunning(true);
@@ -116,9 +143,17 @@ export function CardTestResultsPanel({ compact = false }: Props) {
       <Card className="p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h3 className="font-heading text-lg font-bold text-foreground">Card test results</h3>
+            <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
+              Card test results
+              {liveCount > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                  <Radio className="h-3 w-3 animate-pulse" />
+                  live · {liveCount}
+                </span>
+              )}
+            </h3>
             <p className="text-xs text-muted-foreground">
-              Documented test cards sent to EU/International (Sandbox) + US/International (Production)
+              Documented test cards sent to EU/International (Matrix sandbox H2H + hosted) + US/International (Shieldhub production)
             </p>
           </div>
           <Button size="sm" onClick={triggerRun} disabled={running} className="gap-2">
@@ -147,37 +182,48 @@ export function CardTestResultsPanel({ compact = false }: Props) {
                   <th className="py-2 pr-3 font-medium">HTTP</th>
                   <th className="py-2 pr-3 font-medium">Code</th>
                   <th className="py-2 pr-3 font-medium">Status</th>
+                  <th className="py-2 pr-3 font-medium">Provider event</th>
                   <th className="py-2 pr-3 font-medium">When</th>
                   <th className="py-2 pr-3 font-medium" />
                 </tr>
               </thead>
               <tbody>
-                {runs.map((r) => (
-                  <tr
-                    key={r.id}
-                    className="border-t border-border/50 hover:bg-muted/30 cursor-pointer"
-                    onClick={() => setSelected(r)}
-                  >
-                    <td className="py-2 pr-3">
-                      <Badge variant="secondary" className="text-[10px]">
-                        {processorLabel(r.provider)} · {r.environment}
-                      </Badge>
-                    </td>
-                    <td className="py-2 pr-3 text-foreground">{r.scenario}</td>
-                    <td className="py-2 pr-3 font-mono text-muted-foreground">
-                      {r.card_last4 ? `•••• ${r.card_last4}` : '—'}
-                    </td>
-                    <td className="py-2 pr-3 font-mono text-muted-foreground">{r.upstream_http_status ?? '—'}</td>
-                    <td className="py-2 pr-3 font-mono text-muted-foreground">{r.result_code ?? '—'}</td>
-                    <td className="py-2 pr-3">{statusBadge(r)}</td>
-                    <td className="py-2 pr-3 text-muted-foreground">
-                      {new Date(r.created_at).toLocaleTimeString()}
-                    </td>
-                    <td className="py-2 pr-3 text-muted-foreground">
-                      <Eye className="h-3.5 w-3.5" />
-                    </td>
-                  </tr>
-                ))}
+                {runs.map((r) => {
+                  const eventId = extractProviderEventId(r);
+                  const isMatrix = r.provider === 'matrix';
+                  return (
+                    <tr
+                      key={r.id}
+                      className="border-t border-border/50 hover:bg-muted/30 cursor-pointer"
+                      onClick={() => setSelected(r)}
+                    >
+                      <td className="py-2 pr-3">
+                        <Badge variant="secondary" className="text-[10px]">
+                          {processorLabel(r.provider)} · {r.environment}
+                          {isMatrix && r.scenario.toLowerCase().includes('h2h') && (
+                            <span className="ml-1 rounded bg-primary/15 px-1 text-primary">H2H</span>
+                          )}
+                        </Badge>
+                      </td>
+                      <td className="py-2 pr-3 text-foreground">{r.scenario}</td>
+                      <td className="py-2 pr-3 font-mono text-muted-foreground">
+                        {r.card_last4 ? `•••• ${r.card_last4}` : '—'}
+                      </td>
+                      <td className="py-2 pr-3 font-mono text-muted-foreground">{r.upstream_http_status ?? '—'}</td>
+                      <td className="py-2 pr-3 font-mono text-muted-foreground">{r.result_code ?? '—'}</td>
+                      <td className="py-2 pr-3">{statusBadge(r)}</td>
+                      <td className="py-2 pr-3 font-mono text-[10px] text-muted-foreground truncate max-w-[140px]" title={eventId ?? ''}>
+                        {eventId ?? '—'}
+                      </td>
+                      <td className="py-2 pr-3 text-muted-foreground">
+                        {new Date(r.created_at).toLocaleTimeString()}
+                      </td>
+                      <td className="py-2 pr-3 text-muted-foreground">
+                        <Eye className="h-3.5 w-3.5" />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -186,6 +232,22 @@ export function CardTestResultsPanel({ compact = false }: Props) {
 
       <CardTestRunDrawer run={selected} onClose={() => setSelected(null)} />
     </>
+  );
+}
+
+/** Pull the upstream transaction/event id out of whatever shape the
+ * processor returned. Matrix returns `transaction_id` / `order_id`,
+ * Shieldhub returns `id` / `transaction_reference`. */
+function extractProviderEventId(r: CardTestRun): string | null {
+  const raw = (r.raw_response ?? {}) as Record<string, any>;
+  return (
+    raw.transaction_id ??
+    raw.transaction_reference ??
+    raw.order_id ??
+    raw.id ??
+    raw.payment_id ??
+    raw.uuid ??
+    null
   );
 }
 

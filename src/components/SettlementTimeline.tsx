@@ -39,7 +39,10 @@ export function SettlementTimeline({ transaction, events }: Props) {
   const find = (matcher: (e: ProviderEvent) => boolean) => sorted.find(matcher);
 
   const created = { time: transaction.created_at };
-  const threeds = find(e => /3ds|redirect|acs/i.test(e.event_type));
+  const threedsStepUp = find(e => /three_ds\.step_up_required|3ds.*step_up|acs/i.test(e.event_type));
+  const threedsFallback = find(e => /three_ds\.fallback_2d|fallback_2d/i.test(e.event_type));
+  const threedsRequested = find(e => /three_ds\.requested|3ds.*requested/i.test(e.event_type));
+  const threeds = threedsStepUp ?? threedsFallback ?? threedsRequested ?? find(e => /3ds|redirect/i.test(e.event_type));
   const confirm = find(e =>
     /payment\.(completed|failed)|success|declined|error|approved/i.test(e.event_type),
   );
@@ -47,6 +50,24 @@ export function SettlementTimeline({ transaction, events }: Props) {
 
   const isFailed = transaction.status === 'failed';
   const isCompleted = transaction.status === 'completed';
+
+  // Pick a label/icon that matches the actual 3DS resolution.
+  let threedsLabel = '3DS / redirect';
+  let threedsDetail = threeds?.event_type;
+  let threedsState: Step['state'] = threeds ? 'done' : 'skipped';
+  let threedsIcon: typeof Zap = ShieldCheck;
+  if (threedsStepUp) {
+    threedsLabel = '3DS step-up required';
+    threedsDetail = 'Issuer enrolled — customer redirected to ACS';
+  } else if (threedsFallback) {
+    threedsLabel = '3DS not enrolled — fell back to 2D';
+    threedsDetail = 'Issuer not enrolled in 3DS · charge processed as 2D';
+    threedsState = 'done';
+    threedsIcon = AlertTriangle;
+  } else if (threedsRequested) {
+    threedsLabel = '3DS requested (enrolled)';
+    threedsDetail = 'three_ds: enrolled — awaiting issuer response';
+  }
 
   const steps: Step[] = [
     {
@@ -59,11 +80,11 @@ export function SettlementTimeline({ transaction, events }: Props) {
     },
     {
       key: '3ds',
-      label: '3DS / redirect',
+      label: threedsLabel,
       at: threeds?.created_at ?? null,
-      state: threeds ? 'done' : 'skipped',
-      icon: ShieldCheck,
-      detail: threeds?.event_type,
+      state: threedsState,
+      icon: threedsIcon,
+      detail: threedsDetail,
     },
     {
       key: 'confirm',

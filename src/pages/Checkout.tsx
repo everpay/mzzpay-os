@@ -133,6 +133,15 @@ export default function Checkout() {
       const { data, error } = await supabase.functions.invoke('process-payment', { body: payload });
       if (error) throw error;
 
+      // Processor not configured — surface the real reason instead of a decline.
+      if (data?.processorMisconfigured || data?.error_code === 'processor_misconfigured') {
+        notifyError(
+          { code: 'processor_misconfigured', message: data.error },
+          { description: data.error },
+        );
+        return;
+      }
+
       // 3DS redirect
       const provResp = data?.providerResponse || {};
       const threeDsRedirect = provResp['3d_secure_redirect_url'] || provResp.redirect_url;
