@@ -88,10 +88,9 @@ const MATRIX_CARDS: MatrixCardScenario[] = [
   { scenario: "UnionPay (6212…1232)",          pan: "6212345678901232", expMonth: "02", expYear: "28", cvv: "123",  brand: "UnionPay", enrolled3ds: false },
 ];
 
-const MATRIX_HOSTED_SCENARIOS = [
-  { scenario: "Matrix sandbox checkout (EUR $10)", amount: 10, currency: "EUR", country: "NL" },
-  { scenario: "Matrix sandbox checkout (USD $10 non-US billing)", amount: 10, currency: "USD", country: "NL" },
-];
+// Matrix is wired as H2H ONLY — every payment form in this project routes
+// card data straight into /v1/h2h/payment so the hosted-checkout endpoint is
+// intentionally not exercised by the battery test.
 
 async function runShieldhub(
   supabase: any,
