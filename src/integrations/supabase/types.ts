@@ -2423,28 +2423,34 @@ export type Database = {
           created_at: string
           event_type: string
           id: string
+          idempotency_key: string | null
           merchant_id: string
           payload: Json
           provider: string
           transaction_id: string | null
+          webhook_event_id: string | null
         }
         Insert: {
           created_at?: string
           event_type: string
           id?: string
+          idempotency_key?: string | null
           merchant_id: string
           payload?: Json
           provider: string
           transaction_id?: string | null
+          webhook_event_id?: string | null
         }
         Update: {
           created_at?: string
           event_type?: string
           id?: string
+          idempotency_key?: string | null
           merchant_id?: string
           payload?: Json
           provider?: string
           transaction_id?: string | null
+          webhook_event_id?: string | null
         }
         Relationships: [
           {
@@ -2639,6 +2645,115 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reconciliation_mismatches: {
+        Row: {
+          actual_amount: number | null
+          actual_currency: string | null
+          created_at: string
+          details: Json
+          expected_amount: number | null
+          expected_currency: string | null
+          fx_rate_actual: number | null
+          fx_rate_expected: number | null
+          id: string
+          merchant_id: string | null
+          mismatch_type: string
+          resolved_at: string | null
+          run_id: string | null
+          status: string
+          transaction_id: string | null
+        }
+        Insert: {
+          actual_amount?: number | null
+          actual_currency?: string | null
+          created_at?: string
+          details?: Json
+          expected_amount?: number | null
+          expected_currency?: string | null
+          fx_rate_actual?: number | null
+          fx_rate_expected?: number | null
+          id?: string
+          merchant_id?: string | null
+          mismatch_type: string
+          resolved_at?: string | null
+          run_id?: string | null
+          status?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          actual_amount?: number | null
+          actual_currency?: string | null
+          created_at?: string
+          details?: Json
+          expected_amount?: number | null
+          expected_currency?: string | null
+          fx_rate_actual?: number | null
+          fx_rate_expected?: number | null
+          id?: string
+          merchant_id?: string | null
+          mismatch_type?: string
+          resolved_at?: string | null
+          run_id?: string | null
+          status?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliation_mismatches_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_mismatches_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_mismatches_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reconciliation_runs: {
+        Row: {
+          id: string
+          mismatches_found: number
+          notes: Json
+          ran_at: string
+          status: string
+          transactions_checked: number
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          id?: string
+          mismatches_found?: number
+          notes?: Json
+          ran_at?: string
+          status?: string
+          transactions_checked?: number
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          id?: string
+          mismatches_found?: number
+          notes?: Json
+          ran_at?: string
+          status?: string
+          transactions_checked?: number
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
       }
       refunds: {
         Row: {

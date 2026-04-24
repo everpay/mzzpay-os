@@ -146,7 +146,7 @@ export const handler = async (req: Request): Promise<Response> => {
 
   try {
     const body = await req.json();
-    const { action, sandbox = true, ...params } = body;
+    const { action, sandbox = true, idempotency_key, merchant_id, ...params } = body;
 
     const customerCountry = params.country || params.billingDetails?.country || '';
     if (customerCountry === 'US') {
@@ -154,6 +154,28 @@ export const handler = async (req: Request): Promise<Response> => {
         error: 'Matrix Pay is not available for US-based customers',
         code: 'REGION_BLOCKED',
       }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Idempotency: replay cached response if the same key+merchant has been
+    // seen for any "create" action (pay/checkout/payout/refund/h2h_*).
+    const isCreateAction = /^(pay|checkout|refund|payout|h2h_)/.test(action || '');
+    if (idempotency_key && merchant_id && isCreateAction) {
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.39.3");
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      );
+      const { data: cached } = await supabase
+        .from('idempotency_keys')
+        .select('response')
+        .eq('key', idempotency_key)
+        .eq('merchant_id', merchant_id)
+        .maybeSingle();
+      if (cached?.response) {
+        return new Response(JSON.stringify({ ...(cached.response as Record<string, unknown>), idempotent_replay: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     const MATRIX_PUBLIC_KEY = Deno.env.get('MATRIX_PUBLIC_KEY');
@@ -166,48 +188,70 @@ export const handler = async (req: Request): Promise<Response> => {
       }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    let responseBody: Record<string, unknown>;
+    let httpStatus = 200;
+
     if (!MATRIX_SECRET_KEY) {
       console.log(`[Matrix] Simulation mode — action: ${action}`);
-      return new Response(JSON.stringify({
+      responseBody = {
         simulation: true, public_key_configured: true, project_id: MATRIX_PROJECT_ID,
         ...simulateResponse(action, params),
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      };
+    } else {
+      const baseUrl = sandbox ? SANDBOX_URL : LIVE_URL;
+      const endpoint = ENDPOINT_MAP[action];
+      if (!endpoint) {
+        return new Response(JSON.stringify({
+          error: `Unknown action: ${action}`, available_actions: Object.keys(ENDPOINT_MAP),
+        }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const credentials = `${MATRIX_PUBLIC_KEY}:${MATRIX_SECRET_KEY}`;
+      const authHeader = `Basic ${btoa(credentials)}`;
+      const enrichedParams = { ...params, project_id: MATRIX_PROJECT_ID };
+
+      console.log(`[Matrix] ${action} -> ${baseUrl}${endpoint}`);
+      const response = await fetch(`${baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
+        body: JSON.stringify(enrichedParams),
+      });
+
+      const responseText = await response.text();
+      let data: any;
+      try { data = JSON.parse(responseText); } catch { data = { raw_response: responseText }; }
+
+      if (data.code !== undefined) {
+        data.status_description = STATUS_CODE_MAP[data.code] || API_RESPONSE_CODES[data.code] || `Code ${data.code}`;
+      }
+      if (data.transactions) {
+        for (const tx of data.transactions) {
+          if (tx.code !== undefined) tx.status_description = STATUS_CODE_MAP[tx.code] || `Code ${tx.code}`;
+        }
+      }
+
+      responseBody = { sandbox, matrix_status: response.status, ...data };
+      httpStatus = response.ok ? 200 : response.status;
     }
 
-    const baseUrl = sandbox ? SANDBOX_URL : LIVE_URL;
-    const endpoint = ENDPOINT_MAP[action];
-    if (!endpoint) {
-      return new Response(JSON.stringify({
-        error: `Unknown action: ${action}`, available_actions: Object.keys(ENDPOINT_MAP),
-      }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const credentials = `${MATRIX_PUBLIC_KEY}:${MATRIX_SECRET_KEY}`;
-    const authHeader = `Basic ${btoa(credentials)}`;
-    const enrichedParams = { ...params, project_id: MATRIX_PROJECT_ID };
-
-    console.log(`[Matrix] ${action} -> ${baseUrl}${endpoint}`);
-    const response = await fetch(`${baseUrl}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
-      body: JSON.stringify(enrichedParams),
-    });
-
-    const responseText = await response.text();
-    let data: any;
-    try { data = JSON.parse(responseText); } catch { data = { raw_response: responseText }; }
-
-    if (data.code !== undefined) {
-      data.status_description = STATUS_CODE_MAP[data.code] || API_RESPONSE_CODES[data.code] || `Code ${data.code}`;
-    }
-    if (data.transactions) {
-      for (const tx of data.transactions) {
-        if (tx.code !== undefined) tx.status_description = STATUS_CODE_MAP[tx.code] || `Code ${tx.code}`;
+    // Persist idempotent response so replays return the same body.
+    if (idempotency_key && merchant_id && isCreateAction && httpStatus < 500) {
+      try {
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.39.3");
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        );
+        await supabase.from('idempotency_keys').upsert({
+          merchant_id, key: idempotency_key, response: responseBody,
+        }, { onConflict: 'merchant_id,key' });
+      } catch (e) {
+        console.error('[Matrix] idempotency cache failed:', e);
       }
     }
 
-    return new Response(JSON.stringify({ sandbox, matrix_status: response.status, ...data }), {
-      status: response.ok ? 200 : response.status,
+    return new Response(JSON.stringify(responseBody), {
+      status: httpStatus,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

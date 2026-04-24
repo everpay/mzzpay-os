@@ -25,7 +25,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { action, sandbox = true, payment_id, ...params } = body as Record<string, any>;
+    const { action, sandbox = true, payment_id, idempotency_key, merchant_id, ...params } = body as Record<string, any>;
 
     const MERCHANT_ID = Deno.env.get('MONETO_MPG_MERCHANT_ID');
     const MERCHANT_SECRET = Deno.env.get('MONETO_MPG_MERCHANT_SECRET');
@@ -38,25 +38,35 @@ serve(async (req) => {
       }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // Idempotency replay for charge / refund (token creation is naturally idempotent).
+    const cacheable = action === 'charge' || action === 'refund';
+    if (idempotency_key && merchant_id && cacheable) {
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.39.3");
+      const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      const { data: cached } = await sb.from('idempotency_keys')
+        .select('response').eq('key', idempotency_key).eq('merchant_id', merchant_id).maybeSingle();
+      if (cached?.response) {
+        return new Response(JSON.stringify({ ...(cached.response as Record<string, unknown>), idempotent_replay: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     const baseUrl = sandbox ? SANDBOX_URL : LIVE_URL;
     const auth = `Basic ${btoa(`${MERCHANT_ID}:${MERCHANT_SECRET}`)}`;
 
     let endpoint = '';
-    let method: 'POST' = 'POST';
+    const method: 'POST' = 'POST';
     let payload: any = params;
 
     switch (action) {
       case 'tokenize_payment_method':
         endpoint = '/payments/integration-api/payment-methods';
-        // Expect { channel_id, credit_card_info: {...} }
         if (!params.channel_id) payload = { channel_id: 'CREDIT_CARD', ...params };
         break;
-
       case 'charge':
         endpoint = '/payments/integration-api/payments';
-        // Expect { amount, order_id, payment_method_id, currency_code, metadata? }
         break;
-
       case 'refund':
         if (!payment_id) {
           return new Response(JSON.stringify({ error: 'payment_id is required for refund' }), {
@@ -64,9 +74,7 @@ serve(async (req) => {
           });
         }
         endpoint = `/payments/integration-api/payments/${payment_id}/refund`;
-        // Expect { amount, order_id, payment_method_id, currency_code, metadata? }
         break;
-
       default:
         return new Response(JSON.stringify({
           error: `Unknown action: ${action}`,
@@ -79,10 +87,7 @@ serve(async (req) => {
 
     const response = await fetch(url, {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': auth,
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': auth },
       body: JSON.stringify(payload),
     });
 
@@ -90,14 +95,22 @@ serve(async (req) => {
     let data: any;
     try { data = JSON.parse(text); } catch { data = { raw_response: text }; }
 
-    console.log(`[Moneto MPG] ${response.status} ${action}`);
+    const responseBody = { sandbox, moneto_status: response.status, action, ...data };
 
-    return new Response(JSON.stringify({
-      sandbox,
-      moneto_status: response.status,
-      action,
-      ...data,
-    }), {
+    if (idempotency_key && merchant_id && cacheable && response.status < 500) {
+      try {
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.39.3");
+        const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+        await sb.from('idempotency_keys').upsert(
+          { merchant_id, key: idempotency_key, response: responseBody },
+          { onConflict: 'merchant_id,key' },
+        );
+      } catch (e) {
+        console.error('[Moneto MPG] idempotency cache failed:', e);
+      }
+    }
+
+    return new Response(JSON.stringify(responseBody), {
       status: response.ok ? 200 : response.status,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
