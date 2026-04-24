@@ -135,6 +135,39 @@ export default function Checkout() {
       const { data, error } = await supabase.functions.invoke('process-payment', { body: payload });
       if (error) throw error;
 
+      // Strict server-side payload validation rejected the request before any
+      // processor call. Surface the field-level details so the merchant knows
+      // exactly what to fix.
+      if (data?.error_code === 'processor_validation_error' || data?.code === 'processor_validation_error') {
+        const fieldErrors = data?.validation?.fieldErrors ?? {};
+        const detail = Object.entries(fieldErrors)
+          .map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
+          .join('\n');
+        notifyError(
+          { code: 'processor_validation_error', message: data.error },
+          { description: detail || data.error },
+        );
+        return;
+      }
+
+      // Idempotency replay — backend recognized this key from a previous
+      // request and returned the cached response instead of charging twice.
+      // Treat as success but inform the customer.
+      if (data?.duplicate || data?.idempotency_replayed || data?.error_code === 'idempotency_conflict') {
+        notifyError(
+          { code: 'idempotency_conflict', message: 'Duplicate request' },
+          {
+            description:
+              'This payment was already processed. We returned the original result instead of charging twice.',
+          },
+        );
+        if (data?.transaction?.status === 'completed') {
+          setPaymentComplete(true);
+          redirectToOutcome('success', data.transaction?.id || '');
+        }
+        return;
+      }
+
       // Processor not configured — surface the real reason instead of a decline.
       if (data?.processorMisconfigured || data?.error_code === 'processor_misconfigured') {
         notifyError(
