@@ -90,7 +90,7 @@ const endpoints: EndpointRow[] = [
     request: "{ amount, currency, asset_id, customer_email?, return_url? }",
     response: "{ success, charge_id, address, network, expires_at }",
     status: "verified" },
-  { method: "POST", path: "/functions/v1/process-payment (open_banking)", source: "process-payment → MzzPay EUR", sourceType: "edge_function",
+  { method: "POST", path: "/functions/v1/process-payment (open_banking)", source: "process-payment → Openbanking EU", sourceType: "edge_function",
     request: "{ amount, currency: EUR|GBP, paymentMethod: 'open_banking', customer }",
     response: "{ success, transaction_id, redirect_url, status: pending }",
     status: "verified" },
