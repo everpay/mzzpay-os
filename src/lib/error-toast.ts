@@ -23,10 +23,17 @@ export type NormalizedErrorCode =
   | "invalid_card"
   | "fraud_suspected"
   | "3ds_required"
+  | "3ds_fallback_2d"
   | "rate_limited"
   | "unauthorized"
   | "validation"
   | "network"
+  | "weak_password"
+  | "user_already_exists"
+  | "invalid_email"
+  | "email_not_confirmed"
+  | "invalid_credentials"
+  | "processor_misconfigured"
   | "unknown";
 
 interface NormalizedError {
