@@ -35,7 +35,7 @@ const quickLinks = [
     icon: BookOpen,
   },
   {
-    title: "Matrix Pay (Gaming)",
+    title: "EU/International (Gaming)",
     description: "Specialised processing for gaming, casinos & lottery — non-US.",
     to: "/developers/api/payments",
     icon: Globe2,
