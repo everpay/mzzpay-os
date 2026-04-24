@@ -158,11 +158,12 @@ const REGEX: Array<{ re: RegExp; code: NormalizedErrorCode }> = [
   { re: /email.*not.*confirm|confirm.*email|email_not_confirmed/i, code: "email_not_confirmed" },
   { re: /invalid.?login|invalid.*credential|wrong.*password|incorrect.*password/i, code: "invalid_credentials" },
   { re: /invalid.?email|email.*invalid|email_address_invalid/i, code: "invalid_email" },
-  // Processor config
+  // Processor config / validation
   { re: /processor.*not.*configured|missing.*acquirer|missing.*descriptor|processor_misconfigured/i, code: "processor_misconfigured" },
+  { re: /processor_validation_error|payload.*validation|invalid.*payload/i, code: "processor_validation_error" },
   { re: /3ds.*fallback|fallback.*2d|not.*enrolled|3ds_fallback/i, code: "3ds_fallback_2d" },
   // Payments
-  { re: /idempot/i, code: "idempotency_conflict" },
+  { re: /idempot|duplicate.*request/i, code: "idempotency_conflict" },
   { re: /region|us\s?block|country.*block|geo.*block/i, code: "region_blocked" },
   { re: /3ds|three.?d.?secure|acs/i, code: "3ds_required" },
   { re: /insufficient/i, code: "insufficient_funds" },
