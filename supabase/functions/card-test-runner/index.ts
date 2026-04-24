@@ -323,38 +323,40 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing authorization" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { data: merchant } = await supabase
-      .from("merchants")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!merchant) {
-      return new Response(JSON.stringify({ error: "Merchant not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace("Bearer ", "").trim();
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     const body = await req.json().catch(() => ({}));
     const includeApproved = body?.include_approved === true;
     const providers = (body?.providers as string[] | undefined) ?? ["matrix", "shieldhub"];
+
+    let merchant: { id: string } | null = null;
+
+    // Mode 1 — service role caller may pass an explicit merchant_id
+    if (token && token === serviceKey && body?.merchant_id) {
+      const { data } = await supabase
+        .from("merchants").select("id").eq("id", body.merchant_id).maybeSingle();
+      merchant = data ?? null;
+    } else if (token) {
+      // Mode 2 — user JWT → derive merchant
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) {
+        const { data } = await supabase
+          .from("merchants").select("id").eq("user_id", user.id).maybeSingle();
+        merchant = data ?? null;
+      }
+    }
+
+    if (!merchant) {
+      return new Response(JSON.stringify({
+        error: "Unauthorized",
+        hint: "Pass a user JWT, or call with the service role key plus { merchant_id } in the body.",
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const batchId = crypto.randomUUID();
     const all: any[] = [];
