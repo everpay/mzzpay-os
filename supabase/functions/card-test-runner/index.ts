@@ -327,10 +327,6 @@ serve(async (req) => {
     const apiKeyHeader = req.headers.get("apikey") ?? "";
     const token = (authHeader.replace("Bearer ", "").trim()) || apiKeyHeader.trim();
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    console.log("[card-test-runner] auth check", {
-      hasAuth: !!authHeader, hasApiKey: !!apiKeyHeader,
-      tokenLen: token.length, isService: token === serviceKey,
-    });
 
     const body = await req.json().catch(() => ({}));
     const includeApproved = body?.include_approved === true;
@@ -338,8 +334,23 @@ serve(async (req) => {
 
     let merchant: { id: string } | null = null;
 
-    // Mode 1 — service role caller may pass an explicit merchant_id
-    if (token && token === serviceKey && body?.merchant_id) {
+    // Decode role from JWT (no verification — only used to branch logic).
+    let tokenRole: string | null = null;
+    try {
+      const part = token.split(".")[1];
+      if (part) {
+        const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+        tokenRole = json?.role ?? null;
+      }
+    } catch { /* ignore */ }
+
+    console.log("[card-test-runner] auth check", {
+      hasAuth: !!authHeader, hasApiKey: !!apiKeyHeader,
+      tokenLen: token.length, role: tokenRole,
+    });
+
+    // Mode 1 — service-role caller may pass an explicit merchant_id
+    if ((token === serviceKey || tokenRole === "service_role") && body?.merchant_id) {
       const { data } = await supabase
         .from("merchants").select("id").eq("id", body.merchant_id).maybeSingle();
       merchant = data ?? null;
@@ -357,6 +368,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         error: "Unauthorized",
         hint: "Pass a user JWT, or call with the service role key plus { merchant_id } in the body.",
+        debug: { role: tokenRole, hasMerchantId: !!body?.merchant_id },
       }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
