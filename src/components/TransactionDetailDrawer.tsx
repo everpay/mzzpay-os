@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield, Wifi, Globe, Monitor, AlertTriangle, MapPin, Phone } from 'lucide-react';
 import { CardBrandBadge } from '@/components/CardBrandBadge';
 import { PaymentMethodIcon } from '@/components/PaymentMethodIcon';
+import { SettlementTimeline } from '@/components/SettlementTimeline';
 
 interface TransactionDetailDrawerProps {
   transaction: Transaction | null;
@@ -231,6 +232,9 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
               )}
             </div>
           </div>
+
+          {/* Settlement Timeline */}
+          <SettlementTimeline transaction={transaction} events={relatedEvents} />
 
           {/* Event Timeline */}
           {relatedEvents.length > 0 && (
