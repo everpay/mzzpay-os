@@ -66,14 +66,14 @@ const SHIELDHUB_SCENARIOS: ShieldhubScenario[] = [
 
 const MATRIX_SCENARIOS = [
   {
-    scenario: "Matrix sandbox checkout (EUR)",
-    amount: 1,
+    scenario: "Matrix sandbox checkout (EUR $10)",
+    amount: 10,
     currency: "EUR",
     country: "NL",
   },
   {
-    scenario: "Matrix sandbox checkout (USD non-US billing)",
-    amount: 1,
+    scenario: "Matrix sandbox checkout (USD $10 non-US billing)",
+    amount: 10,
     currency: "USD",
     country: "NL", // US is region-blocked; NL is fine.
   },
@@ -109,7 +109,7 @@ async function runShieldhub(
   const results: any[] = [];
   for (const sc of scenarios) {
     const txRef = crypto.randomUUID();
-    const amount = "1";
+    const amount = "10";
     const hash = await sha256Hex(clientId + amount + txRef + apiSecret);
     const body = {
       amount,
@@ -155,6 +155,22 @@ async function runShieldhub(
     const code = parsed?.error?.code ?? parsed?.code ?? null;
     const msg = parsed?.error?.messsage ?? parsed?.error?.message ?? errorMessage;
 
+    // Persist a redacted copy of the request alongside the response so the UI
+    // drawer can show exactly what we sent (PAN/CVV redacted for PCI safety).
+    const redactedRequest = {
+      endpoint: SHIELDHUB_URL,
+      method: "POST",
+      headers: { "client-id": clientId, "client-hash": "<redacted>", "Content-Type": "application/json" },
+      body: {
+        ...body,
+        card: {
+          ...body.card,
+          number: `**** **** **** ${sc.pan.slice(-4)}`,
+          cvv: "***",
+        },
+      },
+    };
+
     const row = {
       merchant_id: merchantId,
       batch_id: batchId,
@@ -164,12 +180,13 @@ async function runShieldhub(
       card_last4: sc.pan.slice(-4),
       card_brand: "Visa",
       currency: "USD",
-      amount: 1,
+      amount: 10,
       upstream_http_status: httpStatus || null,
       result_status: status,
       result_code: code != null ? String(code) : null,
       error_message: msg,
       raw_response: parsed,
+      raw_request: redactedRequest,
     };
 
     await supabase.from("card_test_runs").insert(row);
