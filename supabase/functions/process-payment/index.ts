@@ -167,6 +167,20 @@ serve(async (req) => {
       providerResponse = await processMzzPayPayment(paymentData);
     }
 
+    // Fail fast on processor misconfiguration BEFORE we write a transaction
+    // row. This guarantees the merchant sees the real cause (missing acquirer
+    // setup) instead of a generic "provider failure" decline.
+    if (providerResponse?.code === 'processor_misconfigured') {
+      return new Response(
+        JSON.stringify({
+          error: providerResponse.error?.message ?? 'Processor not configured',
+          error_code: 'processor_misconfigured',
+          processorMisconfigured: true,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
     let vgsVaultResult = null;
     if (vgsVaultPromise) {
       try {
