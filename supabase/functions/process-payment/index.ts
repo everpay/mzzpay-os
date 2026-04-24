@@ -520,8 +520,16 @@ async function processMzzPayPayment(data: PaymentRequest) {
     };
   }
 
-  const descriptor = processor!.acquirer_descriptor;
-  const acquirerCountry = processor!.acquirer_country;
+  // Hard fallback — descriptor MUST be populated on every charge. The MID
+  // (EVERPAY 3D PTY) requires the soft descriptor "AXP*FER*AXP*FERES" or the
+  // gateway will reject with a generic decline. If the row was edited to a
+  // blank string we fall back to the canonical value rather than send empty.
+  const SHIELDHUB_DESCRIPTOR_FALLBACK = 'AXP*FER*AXP*FERES';
+  const descriptor =
+    (processor!.acquirer_descriptor && String(processor!.acquirer_descriptor).trim())
+      ? String(processor!.acquirer_descriptor).trim()
+      : SHIELDHUB_DESCRIPTOR_FALLBACK;
+  const acquirerCountry = processor!.acquirer_country || 'MX';
   const wants3ds = String(processor!.flow_type ?? '3DS').toUpperCase().includes('3DS');
 
   const body: any = {
