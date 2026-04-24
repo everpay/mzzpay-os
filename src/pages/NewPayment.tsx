@@ -14,6 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { VGSCardForm } from '@/components/VGSCardForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
+import { notifyError } from '@/lib/error-toast';
 
 // Detect region from browser locale / timezone
 function detectRegion(): { region: string; label: string; flag: string } {
