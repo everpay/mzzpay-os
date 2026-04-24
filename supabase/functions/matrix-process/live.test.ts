@@ -140,10 +140,11 @@ t("Matrix LIVE · customer_token issues token matching docs shape", async () => 
   });
   assertEnvelope(json, "customer_token");
   if (status === 200 && json.code === 0) {
-    const token = json.customer_token ?? json.id ?? json.token;
+    // Matrix returns the token under `data.customer_token` (verified live).
+    const token = json.data?.customer_token ?? json.customer_token ?? json.id ?? json.token;
     assertExists(
       token,
-      `customer_token: success response missing token field (checked customer_token, id, token). Body: ${JSON.stringify(json).slice(0, 200)}`,
+      `customer_token: success response missing token field (checked data.customer_token, customer_token, id, token). Body: ${JSON.stringify(json).slice(0, 200)}`,
     );
     assertEquals(typeof token, "string");
   }
