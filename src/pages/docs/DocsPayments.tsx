@@ -200,6 +200,81 @@ export default function DocsPayments() {
 
       <section className="space-y-4 pt-4 border-t border-border">
         <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Idempotency &amp; duplicate detection
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Always send a fresh <code>idempotencyKey</code> (UUID v4) per checkout attempt.
+          The browser SDK now generates one automatically on mount. If the backend finds
+          an existing match in <code>idempotency_keys</code>, the cached response is
+          returned with <code>duplicate: true</code> and the UI surfaces a{" "}
+          <strong>“Duplicate request”</strong> toast — no second charge is created.
+        </p>
+        <CodeBlock
+          language="curl"
+          code={`HTTP/1.1 200 OK
+{
+  "success": true,
+  "duplicate": true,
+  "transaction": { "id": "9b1c...", "status": "completed", "amount": 5000 }
+}`}
+        />
+      </section>
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Realtime timeline (provider_events)
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Each transaction emits a stream of <code>provider_events</code> rows as the
+          attempt progresses through the acquirer (validation, 3DS challenge, fallback
+          to 2D, Matrix H2H attempt outcome, capture, settlement). Subscribe via Supabase
+          Realtime to render a live timeline in your dashboard or detail drawer.
+        </p>
+        <CodeBlock
+          language="node"
+          code={`supabase
+  .channel(\`provider_events:\${transactionId}\`)
+  .on('postgres_changes', {
+    event: 'INSERT',
+    schema: 'public',
+    table: 'provider_events',
+    filter: \`transaction_id=eq.\${transactionId}\`,
+  }, ({ new: ev }) => {
+    // ev.event_type: 'validated' | '3ds_challenge' | 'fallback_2d'
+    //              | 'matrix_h2h_attempt' | 'authorized' | 'captured' | 'declined'
+    timeline.push(ev);
+  })
+  .subscribe();`}
+        />
+      </section>
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
+          Provider routing
+        </h2>
+        <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-5">
+          <li>
+            <strong>EUR / GBP</strong> → MzzPay EUR S2S.
+          </li>
+          <li>
+            <strong>USD (Mexico acquirer)</strong> → Shieldhub. The descriptor
+            <code className="mx-1">AXP*FER*AXP*FERES</code> is injected automatically;
+            it is non-empty on every request.
+          </li>
+          <li>
+            <strong>Matrix Partners merchants</strong> → routed via the H2H endpoint.
+            All other merchants use the standard hosted/S2S flow because every payment
+            form is generated from this project.
+          </li>
+          <li>
+            <strong>Visa / Mastercard only</strong> on the live Shieldhub MID; 3DS is
+            enforced when the card is enrolled.
+          </li>
+        </ul>
+      </section>
+
+      <section className="space-y-4 pt-4 border-t border-border">
+        <h2 className="text-2xl font-heading font-semibold tracking-tight">
           Lifecycle, routing & refund semantics
         </h2>
         <DocsContentSection sectionId="payments" />
