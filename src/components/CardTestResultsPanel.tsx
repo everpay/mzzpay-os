@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDate } from '@/lib/format';
+import { processorLabel } from '@/lib/processor-labels';
+import { JsonViewer } from '@/components/JsonViewer';
 
 type CardTestRun = {
   id: string;
@@ -31,6 +33,7 @@ type CardTestRun = {
   result_code: string | null;
   error_message: string | null;
   raw_response: Record<string, unknown> | null;
+  raw_request: Record<string, unknown> | null;
   created_at: string;
 };
 
@@ -38,14 +41,6 @@ interface Props {
   /** When true, render a denser variant suited to the dashboard. */
   compact?: boolean;
 }
-
-/** Map internal provider key → user-facing label (matches docs rebrand). */
-const providerLabel = (p: string) => {
-  if (p === 'matrix') return 'EU/International';
-  if (p === 'mzzpay' || p === 'shieldhub') return 'US/International';
-  if (p === 'mondo') return 'Openbanking EU';
-  return p;
-};
 
 /**
  * CardTestResultsPanel — surfaces every documented test-card probe sent to the
@@ -165,7 +160,7 @@ export function CardTestResultsPanel({ compact = false }: Props) {
                   >
                     <td className="py-2 pr-3">
                       <Badge variant="secondary" className="text-[10px]">
-                        {providerLabel(r.provider)} · {r.environment}
+                        {processorLabel(r.provider)} · {r.environment}
                       </Badge>
                     </td>
                     <td className="py-2 pr-3 text-foreground">{r.scenario}</td>
