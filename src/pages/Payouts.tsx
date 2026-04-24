@@ -194,11 +194,11 @@ export default function Payouts() {
         }
       } catch {}
 
-      toast.success('Payout initiated successfully');
+      notifySuccess('Payout initiated successfully');
       setIsOpen(false);
       resetForm();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create payout');
+      notifyError(error, { fallback: 'Failed to create payout' });
     }
   };
 
