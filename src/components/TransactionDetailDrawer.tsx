@@ -18,11 +18,11 @@ interface TransactionDetailDrawerProps {
 }
 
 export function TransactionDetailDrawer({ transaction, open, onOpenChange }: TransactionDetailDrawerProps) {
-  const { data: allEvents = [] } = useProviderEvents();
+  const { events: relatedEvents, isLoading: eventsLoading } = useTransactionProviderEvents(
+    open ? transaction?.id ?? null : null,
+  );
 
   if (!transaction) return null;
-
-  const relatedEvents = allEvents.filter((e) => e.transaction_id === transaction.id);
 
   // Extract VGS alias and card brand from enrichment events
   const tapixEvent = relatedEvents.find((e) => e.event_type === 'enrichment.completed');
