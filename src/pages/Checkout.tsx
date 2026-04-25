@@ -184,28 +184,41 @@ export default function Checkout() {
         return;
       }
 
-      // Matrix credential-format issue (Matrix returns code 3 + reason
-      // mentioning the offending field). Surface a friendly banner that tells
-      // the merchant exactly which key is malformed and the expected format.
+      // Matrix credential-format issue. Matrix returns either:
+      //   { code: 3, reason: "Invalid public_key format", details: { field: "public_key", expected_length: 35, actual_length: 32 } }
+      // or a flatter shape with `field` / `param` and a free-form `reason`.
+      // Parse defensively so we always know which key is wrong + expected length.
       const provResp0 = data?.providerResponse || {};
       const matrixCode = provResp0?.code ?? data?.code;
       const matrixReason: string =
         provResp0?.reason || provResp0?.message || data?.error || '';
+      const matrixDetails = provResp0?.details || provResp0?.error?.details || {};
+      const matrixField: string =
+        matrixDetails?.field || matrixDetails?.param || provResp0?.field || '';
       const isMatrixCredErr =
         (data?.transaction?.provider === 'matrix' || provResp0?.provider === 'matrix' ||
           /matrix/i.test(String(matrixReason))) &&
         (matrixCode === 3 || matrixCode === '3' ||
-          /invalid (public|secret) key|key.*format|must be \d+ characters/i.test(matrixReason));
+          /invalid (public|secret)[_ ]?key|key.*format|must be \d+ characters/i.test(matrixReason));
       if (isMatrixCredErr) {
-        const isSecret = /secret/i.test(matrixReason);
+        // Prefer structured `field` from details; fall back to keyword match in reason.
+        const fieldLc = String(matrixField || matrixReason).toLowerCase();
+        const isSecret = /secret/.test(fieldLc);
+        const isPublic = /public/.test(fieldLc) || !isSecret;
+        const expectedLen: number =
+          Number(matrixDetails?.expected_length) ||
+          Number((matrixReason.match(/must be (\d+) characters/i) || [])[1]) ||
+          35;
+        const actualLen: number | undefined =
+          Number(matrixDetails?.actual_length) || undefined;
         setMatrixCredIssue({
           field: isSecret ? 'MATRIX_SECRET_KEY' : 'MATRIX_PUBLIC_KEY',
-          expected: 'Exactly 35 characters, sandbox key from Matrix dashboard',
-          actual: provResp0?.details?.length ? `${provResp0.details.length} chars provided` : 'Malformed key',
-          raw: matrixReason,
+          expected: `Exactly ${expectedLen} characters — sandbox ${isSecret ? 'secret' : 'public'} key from Matrix dashboard`,
+          actual: actualLen ? `${actualLen} characters provided` : 'Malformed or missing key',
+          raw: matrixReason || `Matrix code ${matrixCode}`,
         });
         notifyError('Matrix credential format issue', {
-          description: 'Update the API key in your processor settings to continue.',
+          description: `Update ${isSecret ? 'MATRIX_SECRET_KEY' : 'MATRIX_PUBLIC_KEY'} in your processor settings to continue.`,
         });
         return;
       }
