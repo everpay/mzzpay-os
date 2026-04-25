@@ -483,7 +483,7 @@ export default function AdminProcessors() {
                 <CardTitle>Merchant Acquirer Assignments</CardTitle>
                 <CardDescription>Assign processors and MIDs to specific merchants.</CardDescription>
               </div>
-              <Dialog open={midDialog} onOpenChange={setMidDialog}>
+              <Dialog open={midDialog} onOpenChange={(o) => { setMidDialog(o); if (!o) setMidFormError(null); }}>
                 <DialogTrigger asChild>
                   <Button size="sm"><Plus className="h-4 w-4 mr-1" />Assign</Button>
                 </DialogTrigger>
