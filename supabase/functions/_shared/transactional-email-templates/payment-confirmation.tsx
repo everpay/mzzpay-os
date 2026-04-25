@@ -67,6 +67,7 @@ const PaymentConfirmationEmail = ({
     ['Status:', status],
     ['Method:', resolvedMethod],
     ['Description:', description],
+    ['Statement descriptor:', descriptor],
   ]
 
   return (
