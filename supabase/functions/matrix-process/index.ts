@@ -16,24 +16,35 @@ const corsHeaders = {
 const SANDBOX_URL = 'https://api-sandbox.matrixpaysolution.com';
 const LIVE_URL = 'https://api.matrixpaysolution.com';
 
-const STATUS_CODE_MAP: Record<number, string> = {
-  0: 'Successful transaction',
-  1003: 'No payment routes found',
-  1020: 'Transaction is suspended',
-  1030: 'Transaction is blocked',
-  1500: 'Internal error',
-  2010: 'Cancelled by customer',
-  2020: 'Declined by Antifraud',
-  2022: 'Declined by 3-D Secure',
-  2025: 'Declined by Bank',
-  2026: 'Declined by Bank: No Requisites',
-  2030: 'Limit reached',
-  2031: 'Customer limit reached',
-  2035: 'Card limit reached',
-  2040: 'Insufficient funds',
-  2050: 'Incorrect card data',
-  2099: 'Pending cascading after 3DS',
+// Matrix canonical transaction statuses (mirrors src/lib/matrix-status.ts).
+type MatrixStatus = 'initial' | 'pending' | 'success' | 'error' | 'declined' | 'suspended' | 'blocked';
+
+const STATUS_CODE_MAP: Record<number, { label: string; status: MatrixStatus }> = {
+  0:    { label: 'Successful transaction',                                 status: 'success' },
+  1003: { label: 'No payment routes found',                                status: 'error' },
+  1020: { label: 'Transaction is suspended',                               status: 'suspended' },
+  1030: { label: 'Transaction is blocked',                                 status: 'blocked' },
+  1500: { label: 'Internal error',                                         status: 'error' },
+  2010: { label: 'Cancelled by customer',                                  status: 'declined' },
+  2020: { label: 'Declined by Antifraud',                                  status: 'declined' },
+  2022: { label: 'Declined by 3-D Secure',                                 status: 'declined' },
+  2025: { label: 'Declined by Bank',                                       status: 'declined' },
+  2026: { label: 'Declined by Bank: No Requisites',                        status: 'declined' },
+  2030: { label: 'Limit reached',                                          status: 'declined' },
+  2031: { label: 'Customer limit reached',                                 status: 'declined' },
+  2035: { label: 'Card limit reached',                                     status: 'declined' },
+  2040: { label: 'Insufficient funds',                                     status: 'declined' },
+  2050: { label: 'Incorrect card data',                                    status: 'declined' },
+  2099: { label: 'Pending cascading after 3DS',                            status: 'pending' },
 };
+
+/** Resolve a Matrix `code` to its canonical Matrix status. */
+function matrixStatusForCode(code: number | string | null | undefined): MatrixStatus {
+  if (code === null || code === undefined) return 'pending';
+  const n = typeof code === 'string' ? Number(code) : code;
+  if (Number.isNaN(n)) return 'error';
+  return STATUS_CODE_MAP[n]?.status ?? 'error';
+}
 
 const API_RESPONSE_CODES: Record<number, string> = {
   0: 'Successful operation',
@@ -276,11 +287,17 @@ export const handler = async (req: Request): Promise<Response> => {
       try { data = JSON.parse(responseText); } catch { data = { raw_response: responseText }; }
 
       if (data.code !== undefined) {
-        data.status_description = STATUS_CODE_MAP[data.code] || API_RESPONSE_CODES[data.code] || `Code ${data.code}`;
+        const entry = STATUS_CODE_MAP[data.code];
+        data.status_description = entry?.label || API_RESPONSE_CODES[data.code] || `Code ${data.code}`;
+        data.matrix_status_canonical = matrixStatusForCode(data.code);
       }
       if (data.transactions) {
         for (const tx of data.transactions) {
-          if (tx.code !== undefined) tx.status_description = STATUS_CODE_MAP[tx.code] || `Code ${tx.code}`;
+          if (tx.code !== undefined) {
+            const tEntry = STATUS_CODE_MAP[tx.code];
+            tx.status_description = tEntry?.label || `Code ${tx.code}`;
+            tx.matrix_status_canonical = matrixStatusForCode(tx.code);
+          }
         }
       }
 
@@ -307,11 +324,14 @@ export const handler = async (req: Request): Promise<Response> => {
     // Emit a step event for the activity feed (project_details, customer_token_issued,
     // pay_submitted, settlement updates, etc).
     const codeVal = (responseBody as any).code;
+    const canonicalStatus = matrixStatusForCode(codeVal);
+    (responseBody as any).matrix_status_canonical = canonicalStatus;
     const stepPayload = {
       sandbox,
       simulation: (responseBody as any).simulation === true,
       code: codeVal ?? null,
       status: (responseBody as any).status ?? null,
+      matrix_status_canonical: canonicalStatus,
       reason: (responseBody as any).reason ?? null,
       matrix_status: (responseBody as any).matrix_status ?? httpStatus,
       order_id: params.order_id ?? null,

@@ -17,6 +17,7 @@ import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
 import { notifyError } from '@/lib/error-toast';
+import { ProcessorValidationRulesDrawer } from '@/components/ProcessorValidationRulesDrawer';
 
 // Detect region from browser locale / timezone
 function detectRegion(): { region: string; label: string; flag: string } {
@@ -406,20 +407,23 @@ export default function NewPayment() {
             <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Create Payment</h1>
             <p className="mt-1 text-sm text-muted-foreground">Route payment through optimal provider</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => {
-              setAmount(''); setEmail(''); setDescription('');
-              setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
-              setPaymentMethod('card'); setCardEntryMode('standard');
-              setValidationErrors({}); setResponseMessage(null); setVgsToken('');
-            }}
-          >
-            <RotateCcw className="h-4 w-4" />
-            Reset
-          </Button>
+          <div className="flex items-center gap-2">
+            <ProcessorValidationRulesDrawer provider={selectedProvider} />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                setAmount(''); setEmail(''); setDescription('');
+                setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
+                setPaymentMethod('card'); setCardEntryMode('standard');
+                setValidationErrors({}); setResponseMessage(null); setVgsToken('');
+              }}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset
+            </Button>
+          </div>
         </div>
       </div>
 

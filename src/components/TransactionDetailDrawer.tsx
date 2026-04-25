@@ -55,9 +55,27 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
               <span className="font-heading text-2xl font-bold text-foreground">
                 {formatCurrency(transaction.amount, transaction.currency)}
               </span>
-              <Badge variant={getStatusVariant(transaction.status)} className="text-xs">
-                {transaction.status}
-              </Badge>
+              <div className="flex flex-wrap items-center gap-1.5 justify-end">
+                <Badge variant={getStatusVariant(transaction.status)} className="text-xs">
+                  {transaction.status}
+                </Badge>
+                {(() => {
+                  // Surface the processor's canonical status (e.g. Matrix
+                  // suspended/blocked/declined) alongside our internal one
+                  // so support can disambiguate `processing` (= awaiting
+                  // review) from `processing` (= 3DS in flight).
+                  const raw = (transaction as any).processor_raw_response as Record<string, unknown> | null;
+                  const mxs = raw && typeof raw === 'object'
+                    ? ((raw as any).matrix_status_canonical as string | undefined)
+                    : undefined;
+                  if (!mxs || transaction.provider !== 'matrix') return null;
+                  return (
+                    <Badge variant={getStatusVariant(mxs)} className="text-[10px] capitalize">
+                      matrix:{mxs}
+                    </Badge>
+                  );
+                })()}
+              </div>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="h-3.5 w-3.5" />
