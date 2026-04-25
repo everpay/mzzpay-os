@@ -59,6 +59,13 @@ export default function Checkout() {
   const [lastFailedProvider, setLastFailedProvider] = useState('');
   const [lastProcessorError, setLastProcessorError] = useState('');
   const [showRetryPanel, setShowRetryPanel] = useState(false);
+  // Matrix credential-format banner (code 3 = invalid public/secret key format)
+  const [matrixCredIssue, setMatrixCredIssue] = useState<{
+    field: string;
+    expected: string;
+    actual: string;
+    raw: string;
+  } | null>(null);
   // Stable idempotency key for the lifetime of this checkout session.
   // Reusing the same key on retry guarantees the processor (and our DB) treats
   // attempts as the SAME logical payment instead of new ones. We always
@@ -95,7 +102,7 @@ export default function Checkout() {
     }
     if (paymentMethod === 'crypto') return; // handled by CryptoPaymentPanel
     setIsSubmitting(true);
-
+    setMatrixCredIssue(null);
     try {
       const payload: any = {
         amount: parseFloat(displayAmount),
@@ -174,6 +181,32 @@ export default function Checkout() {
           { code: 'processor_misconfigured', message: data.error },
           { description: data.error },
         );
+        return;
+      }
+
+      // Matrix credential-format issue (Matrix returns code 3 + reason
+      // mentioning the offending field). Surface a friendly banner that tells
+      // the merchant exactly which key is malformed and the expected format.
+      const provResp0 = data?.providerResponse || {};
+      const matrixCode = provResp0?.code ?? data?.code;
+      const matrixReason: string =
+        provResp0?.reason || provResp0?.message || data?.error || '';
+      const isMatrixCredErr =
+        (data?.transaction?.provider === 'matrix' || provResp0?.provider === 'matrix' ||
+          /matrix/i.test(String(matrixReason))) &&
+        (matrixCode === 3 || matrixCode === '3' ||
+          /invalid (public|secret) key|key.*format|must be \d+ characters/i.test(matrixReason));
+      if (isMatrixCredErr) {
+        const isSecret = /secret/i.test(matrixReason);
+        setMatrixCredIssue({
+          field: isSecret ? 'MATRIX_SECRET_KEY' : 'MATRIX_PUBLIC_KEY',
+          expected: 'Exactly 35 characters, sandbox key from Matrix dashboard',
+          actual: provResp0?.details?.length ? `${provResp0.details.length} chars provided` : 'Malformed key',
+          raw: matrixReason,
+        });
+        notifyError('Matrix credential format issue', {
+          description: 'Update the API key in your processor settings to continue.',
+        });
         return;
       }
 
@@ -352,6 +385,34 @@ export default function Checkout() {
                 <li key={`${i.field}-${i.message}`}>{i.message}</li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {matrixCredIssue && (
+          <div
+            data-testid="matrix-credential-banner"
+            role="alert"
+            className="rounded-xl border border-warning/50 bg-warning/10 p-4 text-sm"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0 text-warning" />
+              <div className="space-y-2 flex-1">
+                <p className="font-semibold text-foreground">Matrix credential format issue</p>
+                <p className="text-muted-foreground">
+                  The Matrix processor rejected the request because{' '}
+                  <span className="font-mono text-xs px-1 py-0.5 rounded bg-muted">{matrixCredIssue.field}</span>{' '}
+                  is not in the expected format.
+                </p>
+                <ul className="list-disc pl-5 space-y-0.5 text-xs text-muted-foreground">
+                  <li><span className="font-medium">Expected:</span> {matrixCredIssue.expected}</li>
+                  <li><span className="font-medium">Detected:</span> {matrixCredIssue.actual}</li>
+                </ul>
+                <p className="text-xs text-muted-foreground pt-1">
+                  Fix: open your Matrix dashboard, copy a fresh sandbox key, and update it in
+                  Admin → Processors → Matrix. Then retry this payment.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
