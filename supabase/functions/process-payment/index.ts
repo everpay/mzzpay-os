@@ -495,6 +495,29 @@ serve(async (req) => {
       payload: providerResponse,
     });
 
+    // Step event: normalized terminal/intermediate status from the processor.
+    const stepType =
+      txStatus === 'completed' ? 'payment.approved'
+      : txStatus === 'failed' ? 'payment.declined'
+      : txStatus === 'processing' ? 'payment.processing'
+      : 'payment.pending';
+    try {
+      await supabase.from('provider_events').insert({
+        merchant_id: merchant.id,
+        transaction_id: transaction.id,
+        provider,
+        event_type: stepType,
+        payload: {
+          status: txStatus,
+          provider_ref: providerResponse?.id ?? providerResponse?.transaction_id ?? null,
+          error_code: procErrorCode,
+          error_message: procErrorMessage,
+          settlement_amount: settlementAmount,
+          settlement_currency: settlementCurrency,
+        },
+      });
+    } catch (_) { /* best-effort */ }
+
     // 3DS lifecycle event — record whether the issuer was enrolled, the
     // step-up was required, or we fell back to a 2D charge. Surfaces in the
     // payment timeline UI so support can confirm the flow per transaction.
