@@ -212,7 +212,15 @@ export const handler = async (req: Request): Promise<Response> => {
       const encoder = new TextEncoder();
       const credentialBytes = encoder.encode(`${MATRIX_PUBLIC_KEY}:${MATRIX_SECRET_KEY}`);
       const authHeader = `Basic ${btoa(String.fromCharCode(...credentialBytes))}`;
-      const enrichedParams = { ...params, project_id: MATRIX_PROJECT_ID };
+      // Matrix's protobuf `GetProjectRequest.ApiKey` is the 35-rune public key,
+      // sent in the request body as `api_key` (NOT the project_id). The error
+      // `invalid GetProjectRequest.ApiKey: value length must be 35 runes`
+      // means the body's api_key field is missing/wrong length.
+      const enrichedParams = {
+        ...params,
+        project_id: MATRIX_PROJECT_ID,
+        api_key: MATRIX_PUBLIC_KEY,
+      };
 
       console.log(`[Matrix] ${action} -> ${baseUrl}${endpoint}`);
       const response = await fetch(`${baseUrl}${endpoint}`, {
