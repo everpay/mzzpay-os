@@ -24,6 +24,11 @@ interface Props {
   paymentMethod?: string
   receiptUrl?: string
   pdfUrl?: string
+  // Soft / statement descriptor — what the customer will see on their
+  // bank or card statement. Surfacing this in the email prevents
+  // chargebacks from "I don't recognize this charge" disputes.
+  descriptor?: string
+  supportEmail?: string
 }
 
 // Layout mirrors the acquirer-style receipt: a centered card with the
@@ -46,6 +51,8 @@ const PaymentConfirmationEmail = ({
   paymentMethod,
   receiptUrl,
   pdfUrl,
+  descriptor,
+  supportEmail,
 }: Props) => {
   const resolvedMethod = method || paymentMethod
   const resolvedCommissionCurrency = commissionCurrency || currency
@@ -60,6 +67,7 @@ const PaymentConfirmationEmail = ({
     ['Status:', status],
     ['Method:', resolvedMethod],
     ['Description:', description],
+    ['Statement descriptor:', descriptor],
   ]
 
   return (
@@ -107,6 +115,24 @@ const PaymentConfirmationEmail = ({
                   </Column>
                 )}
               </Row>
+            )}
+
+            {/* Statement-descriptor explainer. Customers who don't recognise
+                the line item on their statement charge back instead of
+                contacting support, so we show the exact descriptor string
+                and a clear "contact us" path before they dispute. */}
+            {descriptor && (
+              <Text style={descriptorNote}>
+                This charge will appear on your statement as{' '}
+                <strong style={descriptorMark}>{descriptor}</strong>
+                {supportEmail ? (
+                  <>
+                    . If you don't recognise it, please email{' '}
+                    <a href={`mailto:${supportEmail}`} style={descriptorLink}>{supportEmail}</a>{' '}
+                    before disputing.
+                  </>
+                ) : '.'}
+              </Text>
             )}
           </Section>
 
@@ -213,6 +239,29 @@ const smallNote = {
   margin: '0 0 16px',
 } as const
 
+const descriptorNote = {
+  fontSize: '12px',
+  color: '#475569',
+  lineHeight: '1.55',
+  textAlign: 'center' as const,
+  backgroundColor: '#f8fafc',
+  border: '1px solid #e2e8f0',
+  borderRadius: '6px',
+  padding: '10px 12px',
+  margin: '18px 0 0',
+} as const
+
+const descriptorMark = {
+  fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+  fontSize: '12px',
+  color: '#0f172a',
+} as const
+
+const descriptorLink = {
+  color: '#0f172a',
+  textDecoration: 'underline',
+} as const
+
 export const template = {
   component: PaymentConfirmationEmail,
   subject: (data: Record<string, any>) =>
@@ -232,6 +281,8 @@ export const template = {
     description: 'Order #8821',
     merchantName: 'MZZPay Demo Merchant',
     receiptUrl: 'https://mzzpay.io/receipts/tx-31fa59ff013aac831c1ef0b7f32',
-    pdfUrl: 'https://mzzpay.io/receipts/tx-31fa59ff013aac831c1ef0b7f32.pdf',
+    pdfUrl: 'https://sprjfzeyyihtfvxnfuhb.supabase.co/functions/v1/render-receipt-pdf?id=tx-31fa59ff013aac831c1ef0b7f32',
+    descriptor: 'AXP*FER*AXP*FERES',
+    supportEmail: 'support@mzzpay.io',
   },
 } satisfies TemplateEntry
