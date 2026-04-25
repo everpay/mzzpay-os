@@ -141,21 +141,51 @@ export default function AdminProcessors() {
     },
   });
 
-  // Assign MID
+  // Assign MID — with client- + server-side validation. Errors are exposed
+  // both via toast and via inline state so the dialog can show field-level
+  // problems and a banner without forcing the admin to re-open the dialog.
   const [midDialog, setMidDialog] = useState(false);
   const [newMid, setNewMid] = useState({ merchant_id: "", acquirer_id: "", mid: "", priority: 1 });
+  const [midFormError, setMidFormError] = useState<string | null>(null);
+
+  const validateMidPayload = (m: typeof newMid): string | null => {
+    if (!m.merchant_id) return "Merchant is required";
+    if (!m.acquirer_id) return "Acquirer is required";
+    const trimmed = (m.mid ?? "").trim();
+    if (!trimmed) return "MID is required";
+    if (trimmed.length < 3 || trimmed.length > 64) return "MID must be 3–64 characters";
+    if (!/^[A-Za-z0-9_\-./]+$/.test(trimmed)) {
+      return "MID may only contain letters, numbers, dashes, dots, slashes and underscores";
+    }
+    if (!Number.isFinite(Number(m.priority)) || Number(m.priority) < 0 || Number(m.priority) > 1000) {
+      return "Priority must be between 0 and 1000";
+    }
+    return null;
+  };
+
   const createMid = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase.from as any)("merchant_acquirer_mids").insert(newMid);
+      const reason = validateMidPayload(newMid);
+      if (reason) throw new Error(reason);
+      const { data, error } = await (supabase.from as any)("merchant_acquirer_mids")
+        .insert({ ...newMid, mid: newMid.mid.trim() })
+        .select("id")
+        .single();
       if (error) throw error;
+      if (!data) throw new Error("Insert was rejected by the server.");
     },
+    onMutate: () => setMidFormError(null),
     onSuccess: () => {
+      setMidFormError(null);
       notifySuccess("Acquirer assigned to merchant");
       setMidDialog(false);
       setNewMid({ merchant_id: "", acquirer_id: "", mid: "", priority: 1 });
       invalidate();
     },
-    onError: (e: any) => notifyError(e.message),
+    onError: (e: any) => {
+      setMidFormError(e?.message ?? "Failed to save assignment");
+      notifyError(e.message);
+    },
   });
   const deleteMid = useMutation({
     mutationFn: async (id: string) => {
