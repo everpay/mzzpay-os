@@ -118,10 +118,29 @@ export default function AdminProcessors() {
       if (!data) throw new Error("Update was rejected by the server (insufficient permissions).");
     },
     onMutate: ({ id }) => setOverrideError(`acquirer:${id}`, null),
-    onSuccess: (_d, vars) => { setOverrideError(`acquirer:${vars.id}`, null); notifySuccess("Acquirer updated"); invalidate(); },
+    onSuccess: (_d, vars) => {
+      setOverrideError(`acquirer:${vars.id}`, null);
+      notifySuccess("Acquirer updated");
+      auditOverride({
+        action: "succeeded",
+        field: "acquirers.active",
+        entityType: "acquirers",
+        entityId: vars.id,
+        requestedValue: vars.active,
+      });
+      invalidate();
+    },
     onError: (e: any, vars) => {
       setOverrideError(`acquirer:${vars.id}`, e?.message ?? "Update failed");
       notifyError(e.message);
+      auditOverride({
+        action: "failed",
+        field: "acquirers.active",
+        entityType: "acquirers",
+        entityId: vars.id,
+        requestedValue: vars.active,
+        errorMessage: e?.message ?? String(e),
+      });
     },
   });
 
@@ -165,11 +184,28 @@ export default function AdminProcessors() {
           ? "Gambling/casino card traffic will now route through Matrix Partners."
           : "Card traffic will fall back to the default Shieldhub MID.",
       );
+      auditOverride({
+        action: "succeeded",
+        field: "merchants.gambling_enabled",
+        entityType: "merchants",
+        entityId: vars.id,
+        merchantId: vars.id,
+        requestedValue: vars.enabled,
+      });
       invalidate();
     },
     onError: (e: any, vars) => {
       setOverrideError(`gambling:${vars.id}`, e?.message ?? "Update failed");
       notifyError(e);
+      auditOverride({
+        action: "failed",
+        field: "merchants.gambling_enabled",
+        entityType: "merchants",
+        entityId: vars.id,
+        merchantId: vars.id,
+        requestedValue: vars.enabled,
+        errorMessage: e?.message ?? String(e),
+      });
     },
   });
 
