@@ -677,6 +677,56 @@ export default function NewPayment() {
                   return <span className="text-xs text-foreground text-right">{fallback}</span>;
                 })()}
               </div>
+
+              {/* Server vs client mismatch warning. The tooltip above is built
+                  from the merchant's locally-cached rules; the actual processor
+                  selection happens server-side. If the rule the server picks
+                  doesn't match what we're about to show the operator, surface
+                  it before they submit so they can refresh / re-pull rules. */}
+              {(() => {
+                if (!serverRouting) return null;
+                const amt = amount ? parseFloat(amount) : undefined;
+                const clientMatched = (routingCtx?.rules ?? []).find((r: any) => {
+                  const cs = (r.currency_match ?? []).map((c: string) => c.toUpperCase());
+                  if (cs.length > 0 && !cs.includes(currency)) return false;
+                  if (amt != null) {
+                    if (r.amount_min != null && amt < Number(r.amount_min)) return false;
+                    if (r.amount_max != null && amt > Number(r.amount_max)) return false;
+                  }
+                  return true;
+                });
+                const clientId = clientMatched?.id ?? null;
+                const clientProvider = selectedProvider;
+                const ruleMismatch = clientId !== serverRouting.matched_rule_id;
+                const providerMismatch = clientProvider !== serverRouting.provider;
+                if (!ruleMismatch && !providerMismatch) return null;
+                return (
+                  <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-amber-600" />
+                      <div className="space-y-1 min-w-0">
+                        <div className="font-semibold text-foreground">Routing preview mismatch</div>
+                        <div className="text-muted-foreground">
+                          The server will route this payment differently than what's shown above. Refresh the page before submitting.
+                        </div>
+                        <div className="font-mono text-[11px] mt-1 space-y-0.5 text-foreground break-all">
+                          {providerMismatch && (
+                            <div>
+                              Provider — preview: <strong>{clientProvider}</strong>, server: <strong>{serverRouting.provider}</strong>
+                            </div>
+                          )}
+                          {ruleMismatch && (
+                            <div>
+                              Rule — preview: <strong>{clientId ?? 'none'}</strong>, server: <strong>{serverRouting.matched_rule_id ?? 'none'}</strong>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {['BRL', 'MXN', 'COP'].includes(currency) && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Settlement</span>
