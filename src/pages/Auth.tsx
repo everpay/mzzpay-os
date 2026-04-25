@@ -111,6 +111,11 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
         },
       });
       if (error) throw error;
+      // Track this attempt so the success screen can adapt for repeat users.
+      const isSameEmail = lastAttemptEmail === email;
+      setSignupAttempts(isSameEmail ? signupAttempts + 1 : 1);
+      setLastAttemptEmail(email);
+      setLastAttemptAt(Date.now());
       setSignupComplete(true);
       notifySuccess('Account created! Check your email to confirm.');
     } catch (error: any) {
@@ -119,6 +124,32 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
       notifyError(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Resend the signup confirmation email. Used when the user clicks
+  // "Resend confirmation email" on the post-signup screen. Respects the
+  // 60s cooldown enforced by Supabase to prevent spam.
+  const handleResendConfirmation = async () => {
+    if (secondsUntilResend > 0) {
+      notifyError(`Please wait ${secondsUntilResend}s before requesting another email.`);
+      return;
+    }
+    setResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) throw error;
+      setSignupAttempts(signupAttempts + 1);
+      setLastAttemptAt(Date.now());
+      notifySuccess('Confirmation email re-sent. Check your inbox.');
+    } catch (error: any) {
+      notifyError(error?.message || 'Could not resend email');
+    } finally {
+      setResending(false);
     }
   };
 
