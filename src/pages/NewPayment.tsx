@@ -14,6 +14,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { VGSCardForm } from '@/components/VGSCardForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 import { notifyError } from '@/lib/error-toast';
 
 // Detect region from browser locale / timezone
@@ -583,27 +585,69 @@ export default function NewPayment() {
                 <span className="text-sm text-muted-foreground">Currency</span>
                 <span className="text-sm font-medium text-foreground">{currency}</span>
               </div>
-              {/* Surface WHY this provider was picked so admins can spot mismatches. */}
+              {/* Surface WHY this provider was picked so admins can spot mismatches.
+                  When an override rule wins, expose the rule id/priority and its
+                  currency/amount filters in a tooltip so we can audit the match
+                  without leaving the page. */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Reason</span>
-                <span className="text-xs text-foreground text-right">
-                  {(() => {
-                    const amt = amount ? parseFloat(amount) : undefined;
-                    const matched = (routingCtx?.rules ?? []).find((r: any) => {
-                      const cs = (r.currency_match ?? []).map((c: string) => c.toUpperCase());
-                      if (cs.length > 0 && !cs.includes(currency)) return false;
-                      if (amt != null) {
-                        if (r.amount_min != null && amt < Number(r.amount_min)) return false;
-                        if (r.amount_max != null && amt > Number(r.amount_max)) return false;
-                      }
-                      return true;
-                    });
-                    if (matched) return `Override rule (priority ${matched.priority})`;
-                    if (paymentMethod === 'open_banking') return 'Open Banking → Mondo';
-                    if (routingCtx?.gamblingEnabled) return 'Gambling-enabled merchant';
-                    return 'Default policy';
-                  })()}
-                </span>
+                {(() => {
+                  const amt = amount ? parseFloat(amount) : undefined;
+                  const matched = (routingCtx?.rules ?? []).find((r: any) => {
+                    const cs = (r.currency_match ?? []).map((c: string) => c.toUpperCase());
+                    if (cs.length > 0 && !cs.includes(currency)) return false;
+                    if (amt != null) {
+                      if (r.amount_min != null && amt < Number(r.amount_min)) return false;
+                      if (r.amount_max != null && amt > Number(r.amount_max)) return false;
+                    }
+                    return true;
+                  });
+                  if (matched) {
+                    const cs = (matched.currency_match ?? []) as string[];
+                    const currencyLabel = cs.length ? cs.join(', ') : 'any currency';
+                    const min = matched.amount_min;
+                    const max = matched.amount_max;
+                    let amountLabel = 'any amount';
+                    if (min != null && max != null) amountLabel = `${min} – ${max}`;
+                    else if (min != null) amountLabel = `≥ ${min}`;
+                    else if (max != null) amountLabel = `≤ ${max}`;
+                    return (
+                      <TooltipProvider delayDuration={150}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center gap-1 text-xs text-foreground text-right cursor-help underline decoration-dotted underline-offset-2">
+                              Override rule (priority {matched.priority})
+                              <Info className="h-3 w-3 text-muted-foreground" aria-hidden />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="max-w-xs">
+                            <div className="space-y-1 text-xs">
+                              <div className="font-semibold">Matched rule</div>
+                              {matched.name && (
+                                <div><span className="text-muted-foreground">Name:</span> {matched.name}</div>
+                              )}
+                              <div className="font-mono break-all">
+                                <span className="text-muted-foreground">ID:</span> {matched.id}
+                              </div>
+                              <div><span className="text-muted-foreground">Priority:</span> {matched.priority}</div>
+                              <div><span className="text-muted-foreground">Currency:</span> {currencyLabel}</div>
+                              <div><span className="text-muted-foreground">Amount:</span> {amountLabel}</div>
+                              <div><span className="text-muted-foreground">Target:</span> {matched.target_provider}</div>
+                              {matched.fallback_provider && (
+                                <div><span className="text-muted-foreground">Fallback:</span> {matched.fallback_provider}</div>
+                              )}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  }
+                  const fallback =
+                    paymentMethod === 'open_banking' ? 'Open Banking → Mondo' :
+                    routingCtx?.gamblingEnabled ? 'Gambling-enabled merchant' :
+                    'Default policy';
+                  return <span className="text-xs text-foreground text-right">{fallback}</span>;
+                })()}
               </div>
               {['BRL', 'MXN', 'COP'].includes(currency) && (
                 <div className="flex items-center justify-between">
