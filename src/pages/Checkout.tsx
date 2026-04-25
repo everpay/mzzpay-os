@@ -219,19 +219,34 @@ export default function Checkout() {
         return;
       }
 
-      // Receipt email (best-effort)
-      if (customerEmail && data.transaction) {
+      // Receipt email (best-effort). Only fired for completed payments so the
+      // template's "Save as PDF" / "Copy link" buttons always have valid
+      // receipt + PDF URLs to point at. We import the URL builder lazily so a
+      // future move to a tenant-specific receipt domain only touches one file.
+      const txStatus = data?.transaction?.status;
+      const isCompleted =
+        txStatus === 'completed' || (data?.success === true && txStatus !== 'failed');
+      if (customerEmail && data.transaction && isCompleted) {
         try {
+          const { buildReceiptUrls } = await import('@/lib/receipt-urls');
+          const { receiptUrl, pdfUrl } = buildReceiptUrls(data.transaction.id);
           await supabase.functions.invoke('send-transactional-email', {
             body: {
-              type: 'payment_receipt',
-              to: customerEmail,
-              data: {
-                amount: parseFloat(displayAmount),
+              templateName: 'payment-confirmation',
+              recipientEmail: customerEmail,
+              idempotencyKey: `payment-confirmation-${data.transaction.id}`,
+              templateData: {
+                amount: parseFloat(displayAmount).toFixed(2),
                 currency,
-                transaction_id: data.transaction.id,
+                transactionId: data.transaction.id,
+                orderId: orderId || undefined,
+                type: paymentMethod === 'openbanking' ? 'Open Banking' : 'Card payment',
+                date: new Date().toISOString().replace('T', ' ').slice(0, 19),
+                status: 'Approved',
+                method: paymentMethod === 'openbanking' ? 'Open Banking' : 'Card',
                 description: description || `Payment ${ref}`,
-                date: new Date().toISOString(),
+                receiptUrl,
+                pdfUrl,
               },
             },
           });
