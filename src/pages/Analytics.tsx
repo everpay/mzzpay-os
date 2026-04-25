@@ -666,6 +666,7 @@ export default function Analytics() {
 
         {/* PROVIDERS TAB */}
         <TabsContent value="providers" className="space-y-4">
+          <PSPActivityFeed />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2">
