@@ -73,7 +73,7 @@ export default function AdminProcessors() {
   }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      await supabase.from("audit_logs").insert({
+      await (supabase.from as any)("audit_logs").insert({
         action: `processor_override_${params.action}`,
         entity_type: params.entityType,
         entity_id: params.entityId,
