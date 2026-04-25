@@ -461,6 +461,11 @@ export default function AdminProcessors() {
                         <TableCell className="text-right font-mono text-sm">{a.avg_latency_ms || 0}ms</TableCell>
                         <TableCell>
                           <Switch checked={a.active} onCheckedChange={(v) => toggleAcquirer.mutate({ id: a.id, active: v })} />
+                          {overrideErrors[`acquirer:${a.id}`] && (
+                            <p className="text-xs text-destructive mt-1" role="alert">
+                              {overrideErrors[`acquirer:${a.id}`]}
+                            </p>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
