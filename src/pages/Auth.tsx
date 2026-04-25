@@ -223,22 +223,75 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
           /* ── SIGNUP ── */
           <div className="rounded-3xl border border-border bg-card p-8 shadow-elevated">
             {signupComplete ? (
-              <div className="text-center py-4">
-                <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                  <CheckCircle2 className="h-9 w-9 text-primary" />
+              <div className="py-4">
+                <div className="text-center mb-6">
+                  <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <CheckCircle2 className="h-9 w-9 text-primary" />
+                  </div>
+                  <h2 className="font-display text-2xl font-bold text-foreground mb-2 tracking-tight">
+                    {signupAttempts > 1 ? "We've re-sent your confirmation" : "Check your email"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {signupAttempts > 1 ? (
+                      <>We sent another confirmation link to <span className="font-medium text-foreground">{email}</span>.</>
+                    ) : (
+                      <>We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>. Click it to activate your account, then sign in.</>
+                    )}
+                  </p>
                 </div>
-                <h2 className="font-display text-2xl font-bold text-foreground mb-2 tracking-tight">Check your email</h2>
-                <p className="text-sm text-muted-foreground mb-6">
-                  We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>.
-                  Click it to activate your account, then sign in.
-                </p>
-                <Button onClick={() => navigate('/login')} className="w-full gap-2" size="lg">
+
+                {/* Repeat-attempt guidance — only shown after the user has tried more than once. */}
+                {signupAttempts > 1 && (
+                  <Alert className="mb-4 bg-muted/40 border-border">
+                    <Info className="h-4 w-4" />
+                    <AlertTitle className="text-sm">Why am I seeing this?</AlertTitle>
+                    <AlertDescription className="text-xs text-muted-foreground space-y-1">
+                      <p>
+                        You've requested {signupAttempts} confirmation emails to this address. Each new request makes the previous link expire.
+                        Use the most recent email to confirm your account.
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Delivery timing & retry expectations — always visible on this screen. */}
+                <Alert className="mb-4 bg-muted/40 border-border">
+                  <Clock className="h-4 w-4" />
+                  <AlertTitle className="text-sm">Expected delivery</AlertTitle>
+                  <AlertDescription className="text-xs text-muted-foreground space-y-1">
+                    <p>Confirmation emails usually arrive in <strong>under 60 seconds</strong>. If yours hasn't shown up:</p>
+                    <ul className="list-disc list-inside space-y-0.5 ml-1">
+                      <li>Check your spam/junk folder</li>
+                      <li>Verify <span className="font-mono">{email}</span> is spelled correctly</li>
+                      <li>Wait the full 5 minutes — temporary network or DNS delays can extend delivery</li>
+                      <li>Whitelist <span className="font-mono">noreply@mzzpay.io</span> with your email provider</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+
+                <Button onClick={() => navigate('/login')} className="w-full gap-2 mb-3" size="lg">
                   Go to Sign In <ArrowRight className="h-4 w-4" />
                 </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={handleResendConfirmation}
+                  disabled={resending || secondsUntilResend > 0}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  {resending
+                    ? 'Resending…'
+                    : secondsUntilResend > 0
+                    ? `Resend available in ${secondsUntilResend}s`
+                    : 'Resend confirmation email'}
+                </Button>
+
                 <button
                   type="button"
-                  onClick={() => { setSignupComplete(false); setSignupStep(1); }}
-                  className="mt-4 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => { setSignupComplete(false); setSignupStep(1); setSignupAttempts(0); }}
+                  className="mt-4 text-xs text-muted-foreground hover:text-foreground w-full text-center block"
                 >
                   Used the wrong email? Start over
                 </button>
