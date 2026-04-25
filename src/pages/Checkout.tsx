@@ -102,7 +102,7 @@ export default function Checkout() {
     }
     if (paymentMethod === 'crypto') return; // handled by CryptoPaymentPanel
     setIsSubmitting(true);
-
+    setMatrixCredIssue(null);
     try {
       const payload: any = {
         amount: parseFloat(displayAmount),
