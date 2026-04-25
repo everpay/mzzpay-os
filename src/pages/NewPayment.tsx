@@ -198,6 +198,17 @@ export default function NewPayment() {
 
     if (!validate()) return;
 
+    // Hard block: never submit while the routing preview disagrees with the
+    // server-resolved route. Operator must refresh and re-confirm.
+    if (routingMismatch) {
+      setResponseMessage({
+        type: 'warning',
+        title: 'Routing preview is stale',
+        detail: 'Refresh routing rules in the preview panel before submitting this payment.',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
