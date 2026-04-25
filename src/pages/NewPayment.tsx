@@ -94,7 +94,7 @@ export default function NewPayment() {
         .maybeSingle();
       if (!merchant) return { gamblingEnabled: false, rules: [] as any[] };
       const { data: rules } = await (supabase.from as any)('routing_rules')
-        .select('priority, active, currency_match, amount_min, amount_max, target_provider, fallback_provider')
+        .select('id, name, priority, active, currency_match, amount_min, amount_max, target_provider, fallback_provider')
         .eq('merchant_id', merchant.id)
         .eq('active', true)
         .order('priority', { ascending: true });
