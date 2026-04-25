@@ -59,6 +59,38 @@ export default function AdminProcessors() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-processors"] });
 
+  // Best-effort audit trail for per-merchant processor override toggles. We
+  // intentionally do NOT await or surface failures — the audit row is a
+  // diagnostic, never a blocker for the actual mutation.
+  const auditOverride = async (params: {
+    action: "succeeded" | "failed";
+    field: string;            // the rejected/changed field, e.g. "gambling_enabled"
+    entityType: string;       // table name, e.g. "merchants"
+    entityId: string;
+    merchantId?: string | null;
+    requestedValue: unknown;
+    errorMessage?: string | null;
+  }) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase.from("audit_logs").insert({
+        action: `processor_override_${params.action}`,
+        entity_type: params.entityType,
+        entity_id: params.entityId,
+        user_id: user?.id ?? null,
+        merchant_id: params.merchantId ?? null,
+        metadata: {
+          field: params.field,
+          requested_value: params.requestedValue,
+          error_message: params.errorMessage ?? null,
+          source: "AdminProcessors",
+        },
+      });
+    } catch {
+      // swallow — audit logging must never break the UI flow
+    }
+  };
+
   // Inline error state per row — keyed by `${kind}:${id}`. Lets us render a
   // field-level message directly under the failing toggle instead of relying
   // only on toasts (which the admin may have dismissed).
