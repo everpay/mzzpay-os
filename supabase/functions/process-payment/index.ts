@@ -443,6 +443,27 @@ serve(async (req) => {
     else if (['DECLINED', 'FAILED', 'REJECTED', 'ERROR'].includes(ps)) txStatus = 'failed';
     else if (['REDIRECT', 'PENDING', '3DS', 'PROCESSING', 'INITIATED'].includes(ps)) txStatus = 'processing';
 
+    // Matrix-specific: derive internal status from the canonical Matrix status
+    // (which is itself derived from the numeric `code` field). This guarantees
+    // suspended (1020), blocked (1030), and the various decline codes
+    // (2010/2020/2022/2025/2026/2030/2031/2035/2040/2050) all land on the
+    // correct internal txStatus regardless of what `status` string Matrix
+    // returned at the envelope level.
+    if (provider === 'matrix') {
+      const mxs = (providerResponse as any).matrix_status_canonical as string | undefined;
+      if (mxs) {
+        switch (mxs) {
+          case 'success':   txStatus = 'completed'; break;
+          case 'pending':   txStatus = 'processing'; break;
+          case 'initial':   txStatus = 'pending'; break;
+          case 'suspended': txStatus = 'processing'; break;
+          case 'declined':
+          case 'blocked':
+          case 'error':     txStatus = 'failed'; break;
+        }
+      }
+    }
+
     // Surface processor error code/message + raw response on the transaction row
     const procErrorMessage =
       providerResponse?.error?.message ||
