@@ -141,15 +141,57 @@ function simulateResponse(action: string, params: any) {
   }
 }
 
+// Map a Matrix `action` to a normalized PSP step name for the activity feed.
+const STEP_FOR_ACTION: Record<string, string> = {
+  project_details: 'project_details',
+  customer_token: 'customer_token_issued',
+  pay: 'pay_submitted',
+  h2h_payment: 'pay_submitted',
+  h2h_p2p_init: 'pay_submitted',
+  checkout: 'checkout_initiated',
+  refund: 'refund_submitted',
+  payout: 'payout_submitted',
+  h2h_payout: 'payout_submitted',
+  status: 'status_polled',
+  order_status: 'status_polled',
+};
+
+async function logMatrixStep(
+  merchantId: string | undefined,
+  action: string,
+  payload: Record<string, unknown>,
+  transactionId?: string,
+) {
+  if (!merchantId) return;
+  try {
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.39.3");
+    const sb = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+    const step = STEP_FOR_ACTION[action] ?? action;
+    await sb.from('provider_events').insert({
+      merchant_id: merchantId,
+      transaction_id: transactionId ?? null,
+      provider: 'matrix',
+      event_type: `matrix.${step}`,
+      payload,
+    });
+  } catch (e) {
+    console.error('[Matrix] step log failed:', e);
+  }
+}
+
 export const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
     const body = await req.json();
-    const { action, sandbox = true, idempotency_key, merchant_id, ...params } = body;
+    const { action, sandbox = true, idempotency_key, merchant_id, transaction_id, ...params } = body;
 
     const customerCountry = params.country || params.billingDetails?.country || '';
     if (customerCountry === 'US') {
+      await logMatrixStep(merchant_id, action || 'unknown', { error: 'REGION_BLOCKED', country: 'US' }, transaction_id);
       return new Response(JSON.stringify({
         error: 'Matrix Pay is not available for US-based customers',
         code: 'REGION_BLOCKED',
@@ -261,6 +303,23 @@ export const handler = async (req: Request): Promise<Response> => {
         console.error('[Matrix] idempotency cache failed:', e);
       }
     }
+
+    // Emit a step event for the activity feed (project_details, customer_token_issued,
+    // pay_submitted, settlement updates, etc).
+    const codeVal = (responseBody as any).code;
+    const stepPayload = {
+      sandbox,
+      simulation: (responseBody as any).simulation === true,
+      code: codeVal ?? null,
+      status: (responseBody as any).status ?? null,
+      reason: (responseBody as any).reason ?? null,
+      matrix_status: (responseBody as any).matrix_status ?? httpStatus,
+      order_id: params.order_id ?? null,
+      reference: params.reference ?? null,
+      transaction_id: (responseBody as any).id ?? null,
+      customer_token_present: !!((responseBody as any).data?.customer_token || (responseBody as any).customer_token),
+    };
+    await logMatrixStep(merchant_id, action, stepPayload, transaction_id);
 
     return new Response(JSON.stringify(responseBody), {
       status: httpStatus,

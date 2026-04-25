@@ -72,6 +72,106 @@ function validationErrorResponse(zerr: z.ZodError) {
   );
 }
 
+/**
+ * Per-processor field validation. Returns a list of field-level errors so the
+ * caller can short-circuit BEFORE we ever reach the network. Each rule mirrors
+ * what the upstream processor would otherwise reject (Matrix's 35-rune api_key,
+ * Mondo's required IBAN/return URLs, Shieldhub's MID config, etc).
+ */
+type ProcessorErr = { field: string; message: string };
+function validateForProcessor(
+  provider: string,
+  paymentData: any,
+): ProcessorErr[] {
+  const errs: ProcessorErr[] = [];
+  const orderId: string | undefined = paymentData.orderId || paymentData.idempotencyKey;
+  const refOk = (s?: string) => !!s && /^[A-Za-z0-9_\-]{6,64}$/.test(s);
+
+  switch (provider) {
+    case 'matrix': {
+      // Matrix requires reference + customer_token chaining + ASCII order_id
+      if (!refOk(paymentData.reference)) {
+        errs.push({ field: 'reference', message: 'Matrix requires `reference` (6–64 chars, [A-Za-z0-9_-])' });
+      }
+      if (paymentData.paymentMethod === 'card' && !paymentData.customer_token && !paymentData.cardDetails) {
+        errs.push({ field: 'customer_token', message: 'Matrix card payments require a prior `customer_token` (call /v1/customer/token first) or inline cardDetails' });
+      }
+      if (orderId && !/^[A-Za-z0-9_\-]{6,64}$/.test(orderId)) {
+        errs.push({ field: 'orderId', message: 'Matrix `order_id` must be 6–64 chars [A-Za-z0-9_-]' });
+      }
+      if (paymentData.billing?.country === 'US') {
+        errs.push({ field: 'billing.country', message: 'Matrix is not available for US customers' });
+      }
+      break;
+    }
+    case 'mondo': {
+      if (paymentData.paymentMethod === 'open_banking') {
+        if (!paymentData.customerEmail) errs.push({ field: 'customerEmail', message: 'Mondo open-banking requires `customerEmail`' });
+        if (!paymentData.customer?.first || !paymentData.customer?.last) {
+          errs.push({ field: 'customer', message: 'Mondo requires customer.first and customer.last' });
+        }
+        if (!['EUR', 'GBP'].includes(paymentData.currency)) {
+          errs.push({ field: 'currency', message: 'Mondo open-banking only supports EUR or GBP' });
+        }
+      }
+      break;
+    }
+    case 'mzzpay': {
+      if (paymentData.paymentMethod === 'card') {
+        if (!paymentData.cardDetails) {
+          errs.push({ field: 'cardDetails', message: 'MzzPay card flow requires cardDetails' });
+        }
+        if (!paymentData.customerEmail) {
+          errs.push({ field: 'customerEmail', message: 'MzzPay requires `customerEmail` for client-hash signing' });
+        }
+      }
+      break;
+    }
+    case 'shieldhub': {
+      // Shieldhub supports Visa/MC only, USD MX MID
+      if (paymentData.paymentMethod !== 'card') {
+        errs.push({ field: 'paymentMethod', message: 'Shieldhub only supports card payments' });
+      }
+      if (paymentData.currency !== 'USD') {
+        errs.push({ field: 'currency', message: 'Shieldhub MID settles in USD only' });
+      }
+      if (!paymentData.customerEmail) {
+        errs.push({ field: 'customerEmail', message: 'Shieldhub requires `customerEmail`' });
+      }
+      if (!paymentData.billing?.country) {
+        errs.push({ field: 'billing.country', message: 'Shieldhub requires billing.country (ISO-2)' });
+      }
+      break;
+    }
+    case 'moneto':
+    case 'moneto_mpg': {
+      if (!paymentData.customerEmail) {
+        errs.push({ field: 'customerEmail', message: 'Moneto requires `customerEmail`' });
+      }
+      if (paymentData.paymentMethod === 'card' && !paymentData.cardDetails) {
+        errs.push({ field: 'cardDetails', message: 'Moneto card flow requires cardDetails' });
+      }
+      break;
+    }
+    default:
+      break;
+  }
+  return errs;
+}
+
+function processorValidationResponse(provider: string, errs: ProcessorErr[]) {
+  return new Response(
+    JSON.stringify({
+      error: `${provider}: ${errs.map((e) => `${e.field} — ${e.message}`).join('; ')}`,
+      error_code: 'processor_validation_error',
+      code: 'processor_validation_error',
+      provider,
+      validation: { fieldErrors: errs },
+    }),
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+  );
+}
+
 interface PaymentRequest {
   amount: number;
   currency: string;
@@ -241,15 +341,46 @@ serve(async (req) => {
     // - Everything else: MzzPay USD.
     if (paymentMethod === 'open_banking' && ['EUR', 'GBP'].includes(currency)) {
       provider = 'mondo';
-      providerResponse = await processMondoPayment(paymentData);
     } else if (paymentMethod === 'card') {
-      // Mondo card processing is disabled — always use MzzPay USD for card transactions.
       provider = 'mzzpay';
-      providerResponse = await processMzzPayPayment(paymentData);
     } else {
       provider = 'mzzpay';
+    }
+    // Allow explicit override (e.g. matrix/shieldhub/moneto) from the caller.
+    if ((paymentData as any).provider) provider = (paymentData as any).provider;
+
+    // Per-processor field validation — runs BEFORE network call so the UI
+    // gets a typed `processor_validation_error` with field-level details.
+    const procErrs = validateForProcessor(provider, paymentData);
+    if (procErrs.length) {
+      // Audit the rejection so it shows in the PSP activity feed.
+      try {
+        await supabase.from('provider_events').insert({
+          merchant_id: merchant.id,
+          provider,
+          event_type: 'request.validation_failed',
+          payload: { errors: procErrs, payment_method: paymentMethod, currency, amount },
+        });
+      } catch (_) { /* best-effort */ }
+      return processorValidationResponse(provider, procErrs);
+    }
+
+    // Step event: request submitted to processor
+    try {
+      await supabase.from('provider_events').insert({
+        merchant_id: merchant.id,
+        provider,
+        event_type: 'request.submitted',
+        payload: { payment_method: paymentMethod, currency, amount, order_id: paymentData.orderId ?? null },
+      });
+    } catch (_) { /* best-effort */ }
+
+    if (provider === 'mondo') {
+      providerResponse = await processMondoPayment(paymentData);
+    } else {
       providerResponse = await processMzzPayPayment(paymentData);
     }
+
 
     // Fail fast on processor misconfiguration BEFORE we write a transaction
     // row. This guarantees the merchant sees the real cause (missing acquirer
@@ -363,6 +494,29 @@ serve(async (req) => {
       event_type: 'payment.created',
       payload: providerResponse,
     });
+
+    // Step event: normalized terminal/intermediate status from the processor.
+    const stepType =
+      txStatus === 'completed' ? 'payment.approved'
+      : txStatus === 'failed' ? 'payment.declined'
+      : txStatus === 'processing' ? 'payment.processing'
+      : 'payment.pending';
+    try {
+      await supabase.from('provider_events').insert({
+        merchant_id: merchant.id,
+        transaction_id: transaction.id,
+        provider,
+        event_type: stepType,
+        payload: {
+          status: txStatus,
+          provider_ref: providerResponse?.id ?? providerResponse?.transaction_id ?? null,
+          error_code: procErrorCode,
+          error_message: procErrorMessage,
+          settlement_amount: settlementAmount,
+          settlement_currency: settlementCurrency,
+        },
+      });
+    } catch (_) { /* best-effort */ }
 
     // 3DS lifecycle event — record whether the issuer was enrolled, the
     // step-up was required, or we fell back to a 2D charge. Surfaces in the
