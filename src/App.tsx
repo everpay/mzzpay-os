@@ -70,6 +70,7 @@ import SmartRetry from "./pages/SmartRetry";
 import ProcessorRouting from "./pages/ProcessorRouting";
 import MultiAcquirer from "./pages/MultiAcquirer";
 import AdminProcessors from "./pages/admin/AdminProcessors";
+import AdminEmailLog from "./pages/admin/AdminEmailLog";
 import ProcessorAnalyticsPage from "./pages/ProcessorAnalyticsPage";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 import FrontPricing from "./pages/front/Pricing";
@@ -221,6 +222,7 @@ const AppRoutes = () => (
     <Route path="/processor-analytics" element={<ProtectedRoute><ProcessorAnalyticsPage /></ProtectedRoute>} />
     <Route path="/multi-acquirer" element={<ProtectedRoute><MultiAcquirer /></ProtectedRoute>} />
     <Route path="/admin/processors" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><AdminProcessors /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/admin/email-log" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><AdminEmailLog /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/integrations" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><Integrations /></RoleProtectedRoute></ProtectedRoute>} />
     {/* Redirect old routes */}
     <Route path="/new-payment" element={<Navigate to="/payments/new" replace />} />
