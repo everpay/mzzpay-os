@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, GitBranch, DollarSign, Server, AlertTriangle } from "lucide-react";
 import { RoutingAnalyticsWidget } from "@/components/admin/RoutingAnalyticsWidget";
+import { SystemStatusPanel } from "@/components/admin/SystemStatusPanel";
 import { validateRoutingRule } from "@/lib/routing-rules-validation";
 import { notifyError, notifySuccess } from '@/lib/error-toast';
 
@@ -58,14 +59,38 @@ export default function AdminProcessors() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-processors"] });
 
-  // Toggle acquirer active
+  // Inline error state per row — keyed by `${kind}:${id}`. Lets us render a
+  // field-level message directly under the failing toggle instead of relying
+  // only on toasts (which the admin may have dismissed).
+  const [overrideErrors, setOverrideErrors] = useState<Record<string, string>>({});
+  const setOverrideError = (key: string, msg: string | null) =>
+    setOverrideErrors((prev) => {
+      const next = { ...prev };
+      if (msg) next[key] = msg;
+      else delete next[key];
+      return next;
+    });
+
+  // Toggle acquirer active — inline error if the update is rejected
+  // (typically by RLS for non-admins, or a network failure).
   const toggleAcquirer = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
-      const { error } = await (supabase.from as any)("acquirers").update({ active }).eq("id", id);
+      const { data, error } = await (supabase.from as any)("acquirers")
+        .update({ active })
+        .eq("id", id)
+        .select("id")
+        .single();
       if (error) throw error;
+      // Server-side validation: the row must exist and have been updated.
+      // RLS silently filtering us out returns a missing row, not an error.
+      if (!data) throw new Error("Update was rejected by the server (insufficient permissions).");
     },
-    onSuccess: () => { notifySuccess("Acquirer updated"); invalidate(); },
-    onError: (e: any) => notifyError(e.message),
+    onMutate: ({ id }) => setOverrideError(`acquirer:${id}`, null),
+    onSuccess: (_d, vars) => { setOverrideError(`acquirer:${vars.id}`, null); notifySuccess("Acquirer updated"); invalidate(); },
+    onError: (e: any, vars) => {
+      setOverrideError(`acquirer:${vars.id}`, e?.message ?? "Update failed");
+      notifyError(e.message);
+    },
   });
 
   // Super-admin per-merchant Matrix (gambling) enable flag.
@@ -74,13 +99,34 @@ export default function AdminProcessors() {
   // "Admins can update merchants" policy added in 20260424_*.
   const toggleGambling = useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
-      const { error } = await supabase
+      // Client-side validation — the only required input is a real merchant id.
+      if (!id || typeof id !== "string") {
+        throw new Error("Missing merchant id");
+      }
+      if (typeof enabled !== "boolean") {
+        throw new Error("Toggle value must be true or false");
+      }
+      const { data, error } = await supabase
         .from("merchants")
         .update({ gambling_enabled: enabled })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id, gambling_enabled")
+        .single();
       if (error) throw error;
+      // Server-side enforcement check: if RLS blocked the write, .single()
+      // returns null — convert that to a clear inline error.
+      if (!data) {
+        throw new Error("You do not have permission to change this merchant's routing.");
+      }
+      // Defensive: confirm the server actually persisted the requested value.
+      if (data.gambling_enabled !== enabled) {
+        throw new Error("Server rejected the override and reverted the value.");
+      }
+      return data;
     },
+    onMutate: ({ id }) => setOverrideError(`gambling:${id}`, null),
     onSuccess: (_d, vars) => {
+      setOverrideError(`gambling:${vars.id}`, null);
       notifySuccess(
         vars.enabled ? "Matrix enabled for merchant" : "Matrix disabled for merchant",
         vars.enabled
@@ -89,24 +135,57 @@ export default function AdminProcessors() {
       );
       invalidate();
     },
-    onError: (e: any) => notifyError(e),
+    onError: (e: any, vars) => {
+      setOverrideError(`gambling:${vars.id}`, e?.message ?? "Update failed");
+      notifyError(e);
+    },
   });
 
-  // Assign MID
+  // Assign MID — with client- + server-side validation. Errors are exposed
+  // both via toast and via inline state so the dialog can show field-level
+  // problems and a banner without forcing the admin to re-open the dialog.
   const [midDialog, setMidDialog] = useState(false);
   const [newMid, setNewMid] = useState({ merchant_id: "", acquirer_id: "", mid: "", priority: 1 });
+  const [midFormError, setMidFormError] = useState<string | null>(null);
+
+  const validateMidPayload = (m: typeof newMid): string | null => {
+    if (!m.merchant_id) return "Merchant is required";
+    if (!m.acquirer_id) return "Acquirer is required";
+    const trimmed = (m.mid ?? "").trim();
+    if (!trimmed) return "MID is required";
+    if (trimmed.length < 3 || trimmed.length > 64) return "MID must be 3–64 characters";
+    if (!/^[A-Za-z0-9_\-./]+$/.test(trimmed)) {
+      return "MID may only contain letters, numbers, dashes, dots, slashes and underscores";
+    }
+    if (!Number.isFinite(Number(m.priority)) || Number(m.priority) < 0 || Number(m.priority) > 1000) {
+      return "Priority must be between 0 and 1000";
+    }
+    return null;
+  };
+
   const createMid = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase.from as any)("merchant_acquirer_mids").insert(newMid);
+      const reason = validateMidPayload(newMid);
+      if (reason) throw new Error(reason);
+      const { data, error } = await (supabase.from as any)("merchant_acquirer_mids")
+        .insert({ ...newMid, mid: newMid.mid.trim() })
+        .select("id")
+        .single();
       if (error) throw error;
+      if (!data) throw new Error("Insert was rejected by the server.");
     },
+    onMutate: () => setMidFormError(null),
     onSuccess: () => {
+      setMidFormError(null);
       notifySuccess("Acquirer assigned to merchant");
       setMidDialog(false);
       setNewMid({ merchant_id: "", acquirer_id: "", mid: "", priority: 1 });
       invalidate();
     },
-    onError: (e: any) => notifyError(e.message),
+    onError: (e: any) => {
+      setMidFormError(e?.message ?? "Failed to save assignment");
+      notifyError(e.message);
+    },
   });
   const deleteMid = useMutation({
     mutationFn: async (id: string) => {
@@ -340,6 +419,8 @@ export default function AdminProcessors() {
         </p>
       </div>
 
+      <SystemStatusPanel />
+
       <RoutingAnalyticsWidget />
 
       <Tabs defaultValue="acquirers" className="space-y-4">
@@ -380,6 +461,11 @@ export default function AdminProcessors() {
                         <TableCell className="text-right font-mono text-sm">{a.avg_latency_ms || 0}ms</TableCell>
                         <TableCell>
                           <Switch checked={a.active} onCheckedChange={(v) => toggleAcquirer.mutate({ id: a.id, active: v })} />
+                          {overrideErrors[`acquirer:${a.id}`] && (
+                            <p className="text-xs text-destructive mt-1" role="alert">
+                              {overrideErrors[`acquirer:${a.id}`]}
+                            </p>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -397,7 +483,7 @@ export default function AdminProcessors() {
                 <CardTitle>Merchant Acquirer Assignments</CardTitle>
                 <CardDescription>Assign processors and MIDs to specific merchants.</CardDescription>
               </div>
-              <Dialog open={midDialog} onOpenChange={setMidDialog}>
+              <Dialog open={midDialog} onOpenChange={(o) => { setMidDialog(o); if (!o) setMidFormError(null); }}>
                 <DialogTrigger asChild>
                   <Button size="sm"><Plus className="h-4 w-4 mr-1" />Assign</Button>
                 </DialogTrigger>
@@ -424,15 +510,39 @@ export default function AdminProcessors() {
                     </div>
                     <div>
                       <Label>MID</Label>
-                      <Input value={newMid.mid} onChange={(e) => setNewMid({ ...newMid, mid: e.target.value })} placeholder="merchant identifier" />
+                      <Input
+                        value={newMid.mid}
+                        onChange={(e) => setNewMid({ ...newMid, mid: e.target.value })}
+                        placeholder="merchant identifier"
+                        aria-invalid={!!midFormError && /MID/i.test(midFormError)}
+                      />
                     </div>
                     <div>
                       <Label>Priority</Label>
-                      <Input type="number" value={newMid.priority} onChange={(e) => setNewMid({ ...newMid, priority: Number(e.target.value) })} />
+                      <Input
+                        type="number"
+                        value={newMid.priority}
+                        onChange={(e) => setNewMid({ ...newMid, priority: Number(e.target.value) })}
+                        aria-invalid={!!midFormError && /priority/i.test(midFormError)}
+                      />
                     </div>
                   </div>
+                  {midFormError && (
+                    <Alert variant="destructive" className="mt-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>{midFormError}</AlertDescription>
+                    </Alert>
+                  )}
                   <DialogFooter>
-                    <Button onClick={() => createMid.mutate()} disabled={!newMid.merchant_id || !newMid.acquirer_id || !newMid.mid}>Save</Button>
+                    <Button
+                      onClick={() => createMid.mutate()}
+                      disabled={
+                        createMid.isPending ||
+                        validateMidPayload(newMid) !== null
+                      }
+                    >
+                      Save
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -742,7 +852,13 @@ export default function AdminProcessors() {
                             onCheckedChange={(v) =>
                               toggleGambling.mutate({ id: m.id, enabled: v })
                             }
+                            aria-invalid={!!overrideErrors[`gambling:${m.id}`]}
                           />
+                          {overrideErrors[`gambling:${m.id}`] && (
+                            <p className="text-xs text-destructive mt-1" role="alert">
+                              {overrideErrors[`gambling:${m.id}`]}
+                            </p>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

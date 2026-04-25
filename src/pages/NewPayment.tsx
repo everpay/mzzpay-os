@@ -10,7 +10,7 @@ import { resolveProvider } from '@/lib/providers';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, ArrowRight, Loader2, Globe, MapPin, CheckCircle2, XCircle, AlertTriangle, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { VGSCardForm } from '@/components/VGSCardForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
@@ -77,7 +77,38 @@ export default function NewPayment() {
   const [threeDSTxId, setThreeDSTxId] = useState('');
 
   const queryClient = useQueryClient();
-  const selectedProvider = resolveProvider(currency, undefined, { paymentMethod });
+
+  // Pull the merchant's per-merchant routing overrides so the Routing Preview
+  // mirrors EXACTLY what process-payment will pick at submit time:
+  //   - merchants.gambling_enabled  → Matrix routing for casino/sportsbook
+  //   - routing_rules               → currency/amount overrides (highest priority wins)
+  const { data: routingCtx } = useQuery({
+    queryKey: ['new-payment-routing-context'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { gamblingEnabled: false, rules: [] as any[] };
+      const { data: merchant } = await supabase
+        .from('merchants')
+        .select('id, gambling_enabled')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!merchant) return { gamblingEnabled: false, rules: [] as any[] };
+      const { data: rules } = await (supabase.from as any)('routing_rules')
+        .select('priority, active, currency_match, amount_min, amount_max, target_provider, fallback_provider')
+        .eq('merchant_id', merchant.id)
+        .eq('active', true)
+        .order('priority', { ascending: true });
+      return { gamblingEnabled: !!merchant.gambling_enabled, rules: rules ?? [] };
+    },
+    staleTime: 60_000,
+  });
+
+  const selectedProvider = resolveProvider(currency, undefined, {
+    paymentMethod,
+    gamblingEnabled: routingCtx?.gamblingEnabled,
+    amount: amount ? parseFloat(amount) : undefined,
+    rules: routingCtx?.rules,
+  });
   // UUID-based idempotency key generated client-side once per page load.
   // Same key on retries guarantees the backend treats them as the SAME logical
   // payment (returns the cached response with `duplicate: true`).
@@ -551,6 +582,28 @@ export default function NewPayment() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Currency</span>
                 <span className="text-sm font-medium text-foreground">{currency}</span>
+              </div>
+              {/* Surface WHY this provider was picked so admins can spot mismatches. */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Reason</span>
+                <span className="text-xs text-foreground text-right">
+                  {(() => {
+                    const amt = amount ? parseFloat(amount) : undefined;
+                    const matched = (routingCtx?.rules ?? []).find((r: any) => {
+                      const cs = (r.currency_match ?? []).map((c: string) => c.toUpperCase());
+                      if (cs.length > 0 && !cs.includes(currency)) return false;
+                      if (amt != null) {
+                        if (r.amount_min != null && amt < Number(r.amount_min)) return false;
+                        if (r.amount_max != null && amt > Number(r.amount_max)) return false;
+                      }
+                      return true;
+                    });
+                    if (matched) return `Override rule (priority ${matched.priority})`;
+                    if (paymentMethod === 'open_banking') return 'Open Banking → Mondo';
+                    if (routingCtx?.gamblingEnabled) return 'Gambling-enabled merchant';
+                    return 'Default policy';
+                  })()}
+                </span>
               </div>
               {['BRL', 'MXN', 'COP'].includes(currency) && (
                 <div className="flex items-center justify-between">

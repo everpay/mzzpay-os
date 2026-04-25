@@ -65,6 +65,21 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
 };
 
 /**
+ * Lightweight shape of a `routing_rules` row that the client cares about
+ * when previewing the selected processor. Mirrors the merchant-scoped
+ * subset of fields used by the routing engine in process-payment.
+ */
+export interface RoutingRuleLite {
+  priority: number;
+  active?: boolean | null;
+  currency_match?: string[] | null;
+  amount_min?: number | null;
+  amount_max?: number | null;
+  target_provider: string;
+  fallback_provider?: string | null;
+}
+
+/**
  * Default routing for every checkout/payment form on the platform.
  *
  * Per product decision (2026-04):
@@ -74,16 +89,47 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
  *  - **Matrix Partners** is gated behind `merchants.gambling_enabled`
  *    (super_admin only) for casino/lottery/sportsbook/sweepstakes.
  *
+ * Per-merchant `routing_rules` overrides take precedence over the default
+ * policy (highest priority wins) when a rule's currency/amount filters
+ * match the candidate transaction. This MUST stay in sync with the
+ * server-side selection logic in `supabase/functions/process-payment`.
+ *
  * `paymentMethod` lets callers force open-banking even when the currency
  * would normally route to Shieldhub.
  */
 export function resolveProvider(
   currency: Currency,
   region?: string,
-  opts?: { paymentMethod?: string; gamblingEnabled?: boolean },
+  opts?: {
+    paymentMethod?: string;
+    gamblingEnabled?: boolean;
+    amount?: number;
+    rules?: RoutingRuleLite[];
+  },
 ): Provider {
+  // 1. Explicit per-merchant override rules win first. We sort ascending by
+  // priority (lower number = higher priority — matches the admin UI ordering)
+  // and pick the first ACTIVE rule whose filters cover the candidate.
+  const rules = (opts?.rules ?? [])
+    .filter((r) => r.active !== false)
+    .sort((a, b) => Number(a.priority) - Number(b.priority));
+  for (const r of rules) {
+    const currencies = (r.currency_match ?? []).map((c) => c.toUpperCase());
+    if (currencies.length > 0 && !currencies.includes(currency)) continue;
+    if (opts?.amount != null) {
+      if (r.amount_min != null && opts.amount < Number(r.amount_min)) continue;
+      if (r.amount_max != null && opts.amount > Number(r.amount_max)) continue;
+    }
+    return r.target_provider as Provider;
+  }
+
+  // 2. Open banking always takes the Mondo path.
   if (opts?.paymentMethod === 'open_banking') return 'mondo';
+
+  // 3. Gambling-class merchants route to Matrix when admin-enabled.
   if (opts?.gamblingEnabled) return 'matrix';
+
+  // 4. Default — Shieldhub for everyone else.
   return 'shieldhub';
 }
 
