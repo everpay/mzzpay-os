@@ -61,6 +61,7 @@ import AuditTrail from "./pages/AuditTrail";
 import EmailDnsBundle from "./pages/EmailDnsBundle";
 import LlmsTxt from "./pages/LlmsTxt";
 import BrandGlyph from "./pages/BrandGlyph";
+import Receipt from "./pages/Receipt";
 
 import Products from "./pages/Products";
 import Integrations from "./pages/Integrations";
@@ -191,6 +192,7 @@ const AppRoutes = () => (
     <Route path="/payment-links" element={<ProtectedRoute><PaymentLinks /></ProtectedRoute>} />
     <Route path="/checkout" element={<Checkout />} />
     <Route path="/pay/:invoiceId" element={<PayInvoice />} />
+    <Route path="/receipts/:id" element={<Receipt />} />
     <Route path="/subscriptions" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Subscriptions /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/portal" element={<ProtectedRoute><CustomerPortal /></ProtectedRoute>} />
     <Route path="/chargebacks" element={<ProtectedRoute><Chargebacks /></ProtectedRoute>} />
