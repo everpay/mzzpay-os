@@ -144,6 +144,33 @@ export default function NewPayment() {
     retry: false,
   });
 
+  // Hoist the mismatch decision so the submit button + handler can block on
+  // it. The detailed warning UI in the Routing Preview re-derives the same
+  // values for display.
+  const clientMatchedRule = (() => {
+    const amt = amount ? parseFloat(amount) : undefined;
+    return (routingCtx?.rules ?? []).find((r: any) => {
+      const cs = (r.currency_match ?? []).map((c: string) => c.toUpperCase());
+      if (cs.length > 0 && !cs.includes(currency)) return false;
+      if (amt != null) {
+        if (r.amount_min != null && amt < Number(r.amount_min)) return false;
+        if (r.amount_max != null && amt > Number(r.amount_max)) return false;
+      }
+      return true;
+    }) as any;
+  })();
+  const routingMismatch = !!serverRouting && (
+    (clientMatchedRule?.id ?? null) !== serverRouting.matched_rule_id ||
+    selectedProvider !== serverRouting.provider
+  );
+
+  const refreshRouting = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['new-payment-routing-context'] }),
+      queryClient.invalidateQueries({ queryKey: ['resolve-routing'] }),
+    ]);
+  };
+
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
 
