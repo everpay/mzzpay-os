@@ -1,54 +1,50 @@
 /// <reference types="npm:@types/react@18.3.1" />
 
 import * as React from 'npm:react@18.3.1'
+
 import {
   Body,
   Button,
   Container,
   Head,
   Heading,
-  Hr,
   Html,
   Link,
   Preview,
-  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
-import { BRAND, FOOTER_LINE, styles } from '../email-branding.ts'
-import { BrandHeader } from './_brand-header.tsx'
 
 interface InviteEmailProps {
-  siteName?: string
-  siteUrl?: string
-  confirmationUrl?: string
+  siteName: string
+  siteUrl: string
+  confirmationUrl: string
 }
 
 export const InviteEmail = ({
-  siteUrl = BRAND.siteUrl,
-  confirmationUrl = '#',
+  siteName,
+  siteUrl,
+  confirmationUrl,
 }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>You've been invited to join {BRAND.name}</Preview>
-    <Body style={styles.main}>
-      <Container style={styles.container}>
-        <BrandHeader />
-        <Heading style={styles.h1}>You've been invited</Heading>
-        <Text style={styles.text}>
+    <Preview>You've been invited to join {siteName}</Preview>
+    <Body style={main}>
+      <Container style={container}>
+        <Heading style={h1}>You've been invited</Heading>
+        <Text style={text}>
           You've been invited to join{' '}
-          <Link href={siteUrl} style={styles.link}>{BRAND.name}</Link>. Accept the invitation to set up your merchant account.
+          <Link href={siteUrl} style={link}>
+            <strong>{siteName}</strong>
+          </Link>
+          . Click the button below to accept the invitation and create your
+          account.
         </Text>
-        <Section style={styles.buttonWrapper}>
-          <Button style={styles.button} href={confirmationUrl}>Accept invitation</Button>
-        </Section>
-        <Text style={styles.smallText}>
-          Or paste this link into your browser:<br />
-          <Link href={confirmationUrl} style={styles.link}>{confirmationUrl}</Link>
-        </Text>
-        <Hr style={styles.hr} />
-        <Text style={styles.footer}>
-          If you weren't expecting this invitation, you can safely ignore this email.<br />
-          {FOOTER_LINE}
+        <Button style={button} href={confirmationUrl}>
+          Accept Invitation
+        </Button>
+        <Text style={footer}>
+          If you weren't expecting this invitation, you can safely ignore this
+          email.
         </Text>
       </Container>
     </Body>
@@ -56,3 +52,28 @@ export const InviteEmail = ({
 )
 
 export default InviteEmail
+
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const container = { padding: '20px 25px' }
+const h1 = {
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 20px',
+}
+const text = {
+  fontSize: '14px',
+  color: '#55575d',
+  lineHeight: '1.5',
+  margin: '0 0 25px',
+}
+const link = { color: 'inherit', textDecoration: 'underline' }
+const button = {
+  backgroundColor: '#000000',
+  color: '#ffffff',
+  fontSize: '14px',
+  borderRadius: '8px',
+  padding: '12px 20px',
+  textDecoration: 'none',
+}
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
