@@ -104,7 +104,8 @@ Deno.serve(async (req) => {
   // Fire all three probes in parallel for a snappy panel.
   const [shieldRes, mondoRes, routesRes, shieldErr, mondoErr] = await Promise.all([
     probe("https://api.shieldhub.com/", { timeoutMs: 6000 }),
-    probe("https://api.openbanking.mondopayments.io/", { timeoutMs: 6000 }),
+    // Mondo Open Banking S2S endpoint actually used by process-payment.
+    probe("https://server-to-server.getmondo.co/", { timeoutMs: 6000 }),
     probe(`${SUPABASE_URL}/functions/v1/processor-routes`, {
       timeoutMs: 6000,
       // No auth header on purpose — a 401 means the function is alive.
