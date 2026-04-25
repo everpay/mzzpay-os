@@ -337,6 +337,42 @@ export default function NewPayment() {
         detail: `${amount} ${currency} via ${selectedProvider} — ID: ${data.transaction.id.slice(0, 8)}`,
       });
 
+      // Customer receipt email — best effort, never blocks the success flow.
+      // Includes the statement descriptor so the customer recognises the
+      // charge on their bank statement.
+      if (email && data.transaction?.id) {
+        try {
+          const { buildReceiptUrls } = await import('@/lib/receipt-urls');
+          const { receiptUrl, pdfUrl } = buildReceiptUrls(data.transaction.id);
+          const { data: proc } = await (supabase.from as any)('payment_processors')
+            .select('acquirer_descriptor')
+            .eq('name', selectedProvider)
+            .maybeSingle();
+          await supabase.functions.invoke('send-transactional-email', {
+            body: {
+              templateName: 'payment-confirmation',
+              recipientEmail: email,
+              idempotencyKey: `payment-confirmation-${data.transaction.id}`,
+              templateData: {
+                amount: parseFloat(amount).toFixed(2),
+                currency,
+                transactionId: data.transaction.id,
+                type: paymentMethod === 'open_banking' ? 'Open Banking' : 'Card payment',
+                method: paymentMethod === 'open_banking' ? 'Open Banking' : 'Card',
+                date: new Date().toISOString().replace('T', ' ').slice(0, 19),
+                status: 'Approved',
+                description,
+                receiptUrl,
+                pdfUrl,
+                descriptor: proc?.acquirer_descriptor ?? undefined,
+              },
+            },
+          });
+        } catch (emailErr) {
+          console.error('Failed to send customer receipt:', emailErr);
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       setAmount(''); setEmail(''); setDescription('');
       setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
