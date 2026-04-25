@@ -34,6 +34,26 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
   const [businessCurrency, setBusinessCurrency] = useState('USD');
   const [country, setCountry] = useState('US');
 
+  // Repeat-attempt tracking — counts how many times the same email has been
+  // submitted in this session. Drives the "we already sent it" guidance UI.
+  const [signupAttempts, setSignupAttempts] = useState(0);
+  const [lastAttemptAt, setLastAttemptAt] = useState<number | null>(null);
+  const [lastAttemptEmail, setLastAttemptEmail] = useState<string>('');
+  const [resending, setResending] = useState(false);
+  const [secondsUntilResend, setSecondsUntilResend] = useState(0);
+
+  // Cooldown timer between resend attempts (60s, matches Supabase rate limit).
+  useEffect(() => {
+    if (!lastAttemptAt) return;
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - lastAttemptAt) / 1000);
+      setSecondsUntilResend(Math.max(0, 60 - elapsed));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [lastAttemptAt]);
+
   useEffect(() => {
     setIsLogin(defaultMode === 'login');
     setSignupStep(1);
