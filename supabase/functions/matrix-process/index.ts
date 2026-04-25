@@ -206,8 +206,12 @@ export const handler = async (req: Request): Promise<Response> => {
         }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      const credentials = `${MATRIX_PUBLIC_KEY}:${MATRIX_SECRET_KEY}`;
-      const authHeader = `Basic ${btoa(credentials)}`;
+      // Match Everpay Platform OS auth construction exactly — encode UTF-8
+      // bytes first, then base64. Plain `btoa(string)` can mis-encode keys
+      // that contain extended characters and produces a 401 / code 30401.
+      const encoder = new TextEncoder();
+      const credentialBytes = encoder.encode(`${MATRIX_PUBLIC_KEY}:${MATRIX_SECRET_KEY}`);
+      const authHeader = `Basic ${btoa(String.fromCharCode(...credentialBytes))}`;
       const enrichedParams = { ...params, project_id: MATRIX_PROJECT_ID };
 
       console.log(`[Matrix] ${action} -> ${baseUrl}${endpoint}`);
