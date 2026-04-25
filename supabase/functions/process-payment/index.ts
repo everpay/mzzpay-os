@@ -341,15 +341,46 @@ serve(async (req) => {
     // - Everything else: MzzPay USD.
     if (paymentMethod === 'open_banking' && ['EUR', 'GBP'].includes(currency)) {
       provider = 'mondo';
-      providerResponse = await processMondoPayment(paymentData);
     } else if (paymentMethod === 'card') {
-      // Mondo card processing is disabled — always use MzzPay USD for card transactions.
       provider = 'mzzpay';
-      providerResponse = await processMzzPayPayment(paymentData);
     } else {
       provider = 'mzzpay';
+    }
+    // Allow explicit override (e.g. matrix/shieldhub/moneto) from the caller.
+    if ((paymentData as any).provider) provider = (paymentData as any).provider;
+
+    // Per-processor field validation — runs BEFORE network call so the UI
+    // gets a typed `processor_validation_error` with field-level details.
+    const procErrs = validateForProcessor(provider, paymentData);
+    if (procErrs.length) {
+      // Audit the rejection so it shows in the PSP activity feed.
+      try {
+        await supabase.from('provider_events').insert({
+          merchant_id: merchant.id,
+          provider,
+          event_type: 'request.validation_failed',
+          payload: { errors: procErrs, payment_method: paymentMethod, currency, amount },
+        });
+      } catch (_) { /* best-effort */ }
+      return processorValidationResponse(provider, procErrs);
+    }
+
+    // Step event: request submitted to processor
+    try {
+      await supabase.from('provider_events').insert({
+        merchant_id: merchant.id,
+        provider,
+        event_type: 'request.submitted',
+        payload: { payment_method: paymentMethod, currency, amount, order_id: paymentData.orderId ?? null },
+      });
+    } catch (_) { /* best-effort */ }
+
+    if (provider === 'mondo') {
+      providerResponse = await processMondoPayment(paymentData);
+    } else {
       providerResponse = await processMzzPayPayment(paymentData);
     }
+
 
     // Fail fast on processor misconfiguration BEFORE we write a transaction
     // row. This guarantees the merchant sees the real cause (missing acquirer
