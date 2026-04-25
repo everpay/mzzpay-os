@@ -67,6 +67,8 @@ export default function Checkout() {
     actual: string;
     raw: string;
   } | null>(null);
+  const [matrixHelpOpen, setMatrixHelpOpen] = useState(false);
+  const [matrixRetrying, setMatrixRetrying] = useState(false);
   // Stable idempotency key for the lifetime of this checkout session.
   // Reusing the same key on retry guarantees the processor (and our DB) treats
   // attempts as the SAME logical payment instead of new ones. We always
