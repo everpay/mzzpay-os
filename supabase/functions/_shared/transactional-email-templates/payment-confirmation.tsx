@@ -116,6 +116,24 @@ const PaymentConfirmationEmail = ({
                 )}
               </Row>
             )}
+
+            {/* Statement-descriptor explainer. Customers who don't recognise
+                the line item on their statement charge back instead of
+                contacting support, so we show the exact descriptor string
+                and a clear "contact us" path before they dispute. */}
+            {descriptor && (
+              <Text style={descriptorNote}>
+                This charge will appear on your statement as{' '}
+                <strong style={descriptorMark}>{descriptor}</strong>
+                {supportEmail ? (
+                  <>
+                    . If you don't recognise it, please email{' '}
+                    <a href={`mailto:${supportEmail}`} style={descriptorLink}>{supportEmail}</a>{' '}
+                    before disputing.
+                  </>
+                ) : '.'}
+              </Text>
+            )}
           </Section>
 
           {merchantName && (
