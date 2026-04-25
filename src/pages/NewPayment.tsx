@@ -583,6 +583,28 @@ export default function NewPayment() {
                 <span className="text-sm text-muted-foreground">Currency</span>
                 <span className="text-sm font-medium text-foreground">{currency}</span>
               </div>
+              {/* Surface WHY this provider was picked so admins can spot mismatches. */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Reason</span>
+                <span className="text-xs text-foreground text-right">
+                  {(() => {
+                    const amt = amount ? parseFloat(amount) : undefined;
+                    const matched = (routingCtx?.rules ?? []).find((r: any) => {
+                      const cs = (r.currency_match ?? []).map((c: string) => c.toUpperCase());
+                      if (cs.length > 0 && !cs.includes(currency)) return false;
+                      if (amt != null) {
+                        if (r.amount_min != null && amt < Number(r.amount_min)) return false;
+                        if (r.amount_max != null && amt > Number(r.amount_max)) return false;
+                      }
+                      return true;
+                    });
+                    if (matched) return `Override rule (priority ${matched.priority})`;
+                    if (paymentMethod === 'open_banking') return 'Open Banking → Mondo';
+                    if (routingCtx?.gamblingEnabled) return 'Gambling-enabled merchant';
+                    return 'Default policy';
+                  })()}
+                </span>
+              </div>
               {['BRL', 'MXN', 'COP'].includes(currency) && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Settlement</span>
