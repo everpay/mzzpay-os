@@ -388,6 +388,34 @@ export default function Checkout() {
           </div>
         )}
 
+        {matrixCredIssue && (
+          <div
+            data-testid="matrix-credential-banner"
+            role="alert"
+            className="rounded-xl border border-warning/50 bg-warning/10 p-4 text-sm"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0 text-warning" />
+              <div className="space-y-2 flex-1">
+                <p className="font-semibold text-foreground">Matrix credential format issue</p>
+                <p className="text-muted-foreground">
+                  The Matrix processor rejected the request because{' '}
+                  <span className="font-mono text-xs px-1 py-0.5 rounded bg-muted">{matrixCredIssue.field}</span>{' '}
+                  is not in the expected format.
+                </p>
+                <ul className="list-disc pl-5 space-y-0.5 text-xs text-muted-foreground">
+                  <li><span className="font-medium">Expected:</span> {matrixCredIssue.expected}</li>
+                  <li><span className="font-medium">Detected:</span> {matrixCredIssue.actual}</li>
+                </ul>
+                <p className="text-xs text-muted-foreground pt-1">
+                  Fix: open your Matrix dashboard, copy a fresh sandbox key, and update it in
+                  Admin → Processors → Matrix. Then retry this payment.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">
           {/* Customer Info */}
