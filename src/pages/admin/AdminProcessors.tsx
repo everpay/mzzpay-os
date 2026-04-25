@@ -510,15 +510,39 @@ export default function AdminProcessors() {
                     </div>
                     <div>
                       <Label>MID</Label>
-                      <Input value={newMid.mid} onChange={(e) => setNewMid({ ...newMid, mid: e.target.value })} placeholder="merchant identifier" />
+                      <Input
+                        value={newMid.mid}
+                        onChange={(e) => setNewMid({ ...newMid, mid: e.target.value })}
+                        placeholder="merchant identifier"
+                        aria-invalid={!!midFormError && /MID/i.test(midFormError)}
+                      />
                     </div>
                     <div>
                       <Label>Priority</Label>
-                      <Input type="number" value={newMid.priority} onChange={(e) => setNewMid({ ...newMid, priority: Number(e.target.value) })} />
+                      <Input
+                        type="number"
+                        value={newMid.priority}
+                        onChange={(e) => setNewMid({ ...newMid, priority: Number(e.target.value) })}
+                        aria-invalid={!!midFormError && /priority/i.test(midFormError)}
+                      />
                     </div>
                   </div>
+                  {midFormError && (
+                    <Alert variant="destructive" className="mt-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>{midFormError}</AlertDescription>
+                    </Alert>
+                  )}
                   <DialogFooter>
-                    <Button onClick={() => createMid.mutate()} disabled={!newMid.merchant_id || !newMid.acquirer_id || !newMid.mid}>Save</Button>
+                    <Button
+                      onClick={() => createMid.mutate()}
+                      disabled={
+                        createMid.isPending ||
+                        validateMidPayload(newMid) !== null
+                      }
+                    >
+                      Save
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
