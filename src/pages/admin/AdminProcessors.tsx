@@ -419,6 +419,8 @@ export default function AdminProcessors() {
         </p>
       </div>
 
+      <SystemStatusPanel />
+
       <RoutingAnalyticsWidget />
 
       <Tabs defaultValue="acquirers" className="space-y-4">
