@@ -852,7 +852,13 @@ export default function AdminProcessors() {
                             onCheckedChange={(v) =>
                               toggleGambling.mutate({ id: m.id, enabled: v })
                             }
+                            aria-invalid={!!overrideErrors[`gambling:${m.id}`]}
                           />
+                          {overrideErrors[`gambling:${m.id}`] && (
+                            <p className="text-xs text-destructive mt-1" role="alert">
+                              {overrideErrors[`gambling:${m.id}`]}
+                            </p>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
