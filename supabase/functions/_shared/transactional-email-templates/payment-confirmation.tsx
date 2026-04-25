@@ -24,6 +24,11 @@ interface Props {
   paymentMethod?: string
   receiptUrl?: string
   pdfUrl?: string
+  // Soft / statement descriptor — what the customer will see on their
+  // bank or card statement. Surfacing this in the email prevents
+  // chargebacks from "I don't recognize this charge" disputes.
+  descriptor?: string
+  supportEmail?: string
 }
 
 // Layout mirrors the acquirer-style receipt: a centered card with the
@@ -46,6 +51,8 @@ const PaymentConfirmationEmail = ({
   paymentMethod,
   receiptUrl,
   pdfUrl,
+  descriptor,
+  supportEmail,
 }: Props) => {
   const resolvedMethod = method || paymentMethod
   const resolvedCommissionCurrency = commissionCurrency || currency
