@@ -239,6 +239,29 @@ const smallNote = {
   margin: '0 0 16px',
 } as const
 
+const descriptorNote = {
+  fontSize: '12px',
+  color: '#475569',
+  lineHeight: '1.55',
+  textAlign: 'center' as const,
+  backgroundColor: '#f8fafc',
+  border: '1px solid #e2e8f0',
+  borderRadius: '6px',
+  padding: '10px 12px',
+  margin: '18px 0 0',
+} as const
+
+const descriptorMark = {
+  fontFamily: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+  fontSize: '12px',
+  color: '#0f172a',
+} as const
+
+const descriptorLink = {
+  color: '#0f172a',
+  textDecoration: 'underline',
+} as const
+
 export const template = {
   component: PaymentConfirmationEmail,
   subject: (data: Record<string, any>) =>
@@ -258,6 +281,8 @@ export const template = {
     description: 'Order #8821',
     merchantName: 'MZZPay Demo Merchant',
     receiptUrl: 'https://mzzpay.io/receipts/tx-31fa59ff013aac831c1ef0b7f32',
-    pdfUrl: 'https://mzzpay.io/receipts/tx-31fa59ff013aac831c1ef0b7f32.pdf',
+    pdfUrl: 'https://sprjfzeyyihtfvxnfuhb.supabase.co/functions/v1/render-receipt-pdf?id=tx-31fa59ff013aac831c1ef0b7f32',
+    descriptor: 'AXP*FER*AXP*FERES',
+    supportEmail: 'support@mzzpay.io',
   },
 } satisfies TemplateEntry
