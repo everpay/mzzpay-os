@@ -412,8 +412,17 @@ export default function Checkout() {
           >
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0 text-warning" />
-              <div className="space-y-2 flex-1">
-                <p className="font-semibold text-foreground">Matrix credential format issue</p>
+              <div className="space-y-3 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-semibold text-foreground">Matrix credential format issue</p>
+                  <button
+                    type="button"
+                    onClick={() => setMatrixHelpOpen(true)}
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <HelpCircle className="h-3 w-3" /> Setup checklist
+                  </button>
+                </div>
                 <p className="text-muted-foreground">
                   The Matrix processor rejected the request because{' '}
                   <span className="font-mono text-xs px-1 py-0.5 rounded bg-muted">{matrixCredIssue.field}</span>{' '}
@@ -422,15 +431,77 @@ export default function Checkout() {
                 <ul className="list-disc pl-5 space-y-0.5 text-xs text-muted-foreground">
                   <li><span className="font-medium">Expected:</span> {matrixCredIssue.expected}</li>
                   <li><span className="font-medium">Detected:</span> {matrixCredIssue.actual}</li>
+                  <li><span className="font-medium">Raw provider message:</span> <span className="font-mono">{matrixCredIssue.raw}</span></li>
                 </ul>
-                <p className="text-xs text-muted-foreground pt-1">
-                  Fix: open your Matrix dashboard, copy a fresh sandbox key, and update it in
-                  Admin → Processors → Matrix. Then retry this payment.
-                </p>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="default"
+                    disabled={matrixRetrying || isSubmitting}
+                    onClick={async () => {
+                      // Re-submits with the SAME idempotencyKey — the backend
+                      // will treat this as a continuation of the same logical
+                      // payment after the merchant fixes their credentials.
+                      setMatrixRetrying(true);
+                      setMatrixCredIssue(null);
+                      try {
+                        await handleSubmit(undefined, { isRetry: true });
+                      } finally {
+                        setMatrixRetrying(false);
+                      }
+                    }}
+                  >
+                    {matrixRetrying
+                      ? (<><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Retrying…</>)
+                      : (<><RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Fix credentials and retry</>)}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    Same idempotency key — won't double-charge.
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         )}
+
+        <Dialog open={matrixHelpOpen} onOpenChange={setMatrixHelpOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Matrix sandbox setup checklist</DialogTitle>
+              <DialogDescription>
+                Quick reference for fixing a credential format error.
+              </DialogDescription>
+            </DialogHeader>
+            <ol className="list-decimal pl-5 space-y-2 text-sm text-foreground">
+              <li>
+                Open your Matrix dashboard → <span className="font-medium">Sandbox → API Keys</span>.
+              </li>
+              <li>
+                Both <span className="font-mono text-xs">public_key</span> and{' '}
+                <span className="font-mono text-xs">secret_key</span> must be{' '}
+                <span className="font-medium">exactly 35 characters</span> (sandbox format).
+                Live keys differ — don't paste a live key into sandbox.
+              </li>
+              <li>
+                Copy the key with no leading/trailing whitespace and no surrounding quotes.
+              </li>
+              <li>
+                In MZZPay, go to{' '}
+                <span className="font-medium">Admin → Processors → Matrix</span> and paste the
+                key into the corresponding field. Save.
+              </li>
+              <li>
+                Return here and click <span className="font-medium">Fix credentials and retry</span>.
+                The original payment intent will be reused (same idempotency key).
+              </li>
+            </ol>
+            <p className="text-xs text-muted-foreground pt-2">
+              Still failing? The provider's raw message above usually names the bad field
+              (e.g. <span className="font-mono">public_key</span> or <span className="font-mono">secret_key</span>) and the expected length.
+            </p>
+          </DialogContent>
+        </Dialog>
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">
