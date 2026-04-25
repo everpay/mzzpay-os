@@ -77,7 +77,38 @@ export default function NewPayment() {
   const [threeDSTxId, setThreeDSTxId] = useState('');
 
   const queryClient = useQueryClient();
-  const selectedProvider = resolveProvider(currency, undefined, { paymentMethod });
+
+  // Pull the merchant's per-merchant routing overrides so the Routing Preview
+  // mirrors EXACTLY what process-payment will pick at submit time:
+  //   - merchants.gambling_enabled  → Matrix routing for casino/sportsbook
+  //   - routing_rules               → currency/amount overrides (highest priority wins)
+  const { data: routingCtx } = useQuery({
+    queryKey: ['new-payment-routing-context'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { gamblingEnabled: false, rules: [] as any[] };
+      const { data: merchant } = await supabase
+        .from('merchants')
+        .select('id, gambling_enabled')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!merchant) return { gamblingEnabled: false, rules: [] as any[] };
+      const { data: rules } = await (supabase.from as any)('routing_rules')
+        .select('priority, active, currency_match, amount_min, amount_max, target_provider, fallback_provider')
+        .eq('merchant_id', merchant.id)
+        .eq('active', true)
+        .order('priority', { ascending: true });
+      return { gamblingEnabled: !!merchant.gambling_enabled, rules: rules ?? [] };
+    },
+    staleTime: 60_000,
+  });
+
+  const selectedProvider = resolveProvider(currency, undefined, {
+    paymentMethod,
+    gamblingEnabled: routingCtx?.gamblingEnabled,
+    amount: amount ? parseFloat(amount) : undefined,
+    rules: routingCtx?.rules,
+  });
   // UUID-based idempotency key generated client-side once per page load.
   // Same key on retries guarantees the backend treats them as the SAME logical
   // payment (returns the cached response with `duplicate: true`).
