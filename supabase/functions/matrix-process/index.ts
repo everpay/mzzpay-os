@@ -304,6 +304,23 @@ export const handler = async (req: Request): Promise<Response> => {
       }
     }
 
+    // Emit a step event for the activity feed (project_details, customer_token_issued,
+    // pay_submitted, settlement updates, etc).
+    const codeVal = (responseBody as any).code;
+    const stepPayload = {
+      sandbox,
+      simulation: (responseBody as any).simulation === true,
+      code: codeVal ?? null,
+      status: (responseBody as any).status ?? null,
+      reason: (responseBody as any).reason ?? null,
+      matrix_status: (responseBody as any).matrix_status ?? httpStatus,
+      order_id: params.order_id ?? null,
+      reference: params.reference ?? null,
+      transaction_id: (responseBody as any).id ?? null,
+      customer_token_present: !!((responseBody as any).data?.customer_token || (responseBody as any).customer_token),
+    };
+    await logMatrixStep(merchant_id, action, stepPayload, transaction_id);
+
     return new Response(JSON.stringify(responseBody), {
       status: httpStatus,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
