@@ -287,11 +287,17 @@ export const handler = async (req: Request): Promise<Response> => {
       try { data = JSON.parse(responseText); } catch { data = { raw_response: responseText }; }
 
       if (data.code !== undefined) {
-        data.status_description = STATUS_CODE_MAP[data.code] || API_RESPONSE_CODES[data.code] || `Code ${data.code}`;
+        const entry = STATUS_CODE_MAP[data.code];
+        data.status_description = entry?.label || API_RESPONSE_CODES[data.code] || `Code ${data.code}`;
+        data.matrix_status_canonical = matrixStatusForCode(data.code);
       }
       if (data.transactions) {
         for (const tx of data.transactions) {
-          if (tx.code !== undefined) tx.status_description = STATUS_CODE_MAP[tx.code] || `Code ${tx.code}`;
+          if (tx.code !== undefined) {
+            const tEntry = STATUS_CODE_MAP[tx.code];
+            tx.status_description = tEntry?.label || `Code ${tx.code}`;
+            tx.matrix_status_canonical = matrixStatusForCode(tx.code);
+          }
         }
       }
 
@@ -318,11 +324,14 @@ export const handler = async (req: Request): Promise<Response> => {
     // Emit a step event for the activity feed (project_details, customer_token_issued,
     // pay_submitted, settlement updates, etc).
     const codeVal = (responseBody as any).code;
+    const canonicalStatus = matrixStatusForCode(codeVal);
+    (responseBody as any).matrix_status_canonical = canonicalStatus;
     const stepPayload = {
       sandbox,
       simulation: (responseBody as any).simulation === true,
       code: codeVal ?? null,
       status: (responseBody as any).status ?? null,
+      matrix_status_canonical: canonicalStatus,
       reason: (responseBody as any).reason ?? null,
       matrix_status: (responseBody as any).matrix_status ?? httpStatus,
       order_id: params.order_id ?? null,
