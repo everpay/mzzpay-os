@@ -116,6 +116,34 @@ export default function NewPayment() {
   // payment (returns the cached response with `duplicate: true`).
   const [idempotencyKey] = useState(() => `idk_${crypto.randomUUID()}`);
 
+  // Authoritative server-side resolution. The Routing Preview tooltip is
+  // derived from client-side state, but actual processor selection happens
+  // server-side in process-payment. We re-run the same algorithm in
+  // `resolve-routing` and compare — if the matched rule ID differs we surface
+  // a mismatch warning so the operator never trusts a stale tooltip.
+  const debouncedAmount = amount ? parseFloat(amount) : null;
+  const { data: serverRouting } = useQuery({
+    queryKey: ['resolve-routing', currency, debouncedAmount, paymentMethod],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('resolve-routing', {
+        body: {
+          currency,
+          amount: debouncedAmount,
+          paymentMethod,
+        },
+      });
+      if (error) throw error;
+      return data as {
+        provider: string;
+        reason: string;
+        matched_rule_id: string | null;
+        matched_rule: { id: string; priority: number; target_provider: string } | null;
+      };
+    },
+    staleTime: 15_000,
+    retry: false,
+  });
+
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
 
