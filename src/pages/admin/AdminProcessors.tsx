@@ -58,14 +58,38 @@ export default function AdminProcessors() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-processors"] });
 
-  // Toggle acquirer active
+  // Inline error state per row — keyed by `${kind}:${id}`. Lets us render a
+  // field-level message directly under the failing toggle instead of relying
+  // only on toasts (which the admin may have dismissed).
+  const [overrideErrors, setOverrideErrors] = useState<Record<string, string>>({});
+  const setOverrideError = (key: string, msg: string | null) =>
+    setOverrideErrors((prev) => {
+      const next = { ...prev };
+      if (msg) next[key] = msg;
+      else delete next[key];
+      return next;
+    });
+
+  // Toggle acquirer active — inline error if the update is rejected
+  // (typically by RLS for non-admins, or a network failure).
   const toggleAcquirer = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
-      const { error } = await (supabase.from as any)("acquirers").update({ active }).eq("id", id);
+      const { data, error } = await (supabase.from as any)("acquirers")
+        .update({ active })
+        .eq("id", id)
+        .select("id")
+        .single();
       if (error) throw error;
+      // Server-side validation: the row must exist and have been updated.
+      // RLS silently filtering us out returns a missing row, not an error.
+      if (!data) throw new Error("Update was rejected by the server (insufficient permissions).");
     },
-    onSuccess: () => { notifySuccess("Acquirer updated"); invalidate(); },
-    onError: (e: any) => notifyError(e.message),
+    onMutate: ({ id }) => setOverrideError(`acquirer:${id}`, null),
+    onSuccess: (_d, vars) => { setOverrideError(`acquirer:${vars.id}`, null); notifySuccess("Acquirer updated"); invalidate(); },
+    onError: (e: any, vars) => {
+      setOverrideError(`acquirer:${vars.id}`, e?.message ?? "Update failed");
+      notifyError(e.message);
+    },
   });
 
   // Super-admin per-merchant Matrix (gambling) enable flag.
@@ -74,13 +98,34 @@ export default function AdminProcessors() {
   // "Admins can update merchants" policy added in 20260424_*.
   const toggleGambling = useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
-      const { error } = await supabase
+      // Client-side validation — the only required input is a real merchant id.
+      if (!id || typeof id !== "string") {
+        throw new Error("Missing merchant id");
+      }
+      if (typeof enabled !== "boolean") {
+        throw new Error("Toggle value must be true or false");
+      }
+      const { data, error } = await supabase
         .from("merchants")
         .update({ gambling_enabled: enabled })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id, gambling_enabled")
+        .single();
       if (error) throw error;
+      // Server-side enforcement check: if RLS blocked the write, .single()
+      // returns null — convert that to a clear inline error.
+      if (!data) {
+        throw new Error("You do not have permission to change this merchant's routing.");
+      }
+      // Defensive: confirm the server actually persisted the requested value.
+      if (data.gambling_enabled !== enabled) {
+        throw new Error("Server rejected the override and reverted the value.");
+      }
+      return data;
     },
+    onMutate: ({ id }) => setOverrideError(`gambling:${id}`, null),
     onSuccess: (_d, vars) => {
+      setOverrideError(`gambling:${vars.id}`, null);
       notifySuccess(
         vars.enabled ? "Matrix enabled for merchant" : "Matrix disabled for merchant",
         vars.enabled
@@ -89,7 +134,10 @@ export default function AdminProcessors() {
       );
       invalidate();
     },
-    onError: (e: any) => notifyError(e),
+    onError: (e: any, vars) => {
+      setOverrideError(`gambling:${vars.id}`, e?.message ?? "Update failed");
+      notifyError(e);
+    },
   });
 
   // Assign MID
