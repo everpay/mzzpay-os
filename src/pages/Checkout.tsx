@@ -184,6 +184,32 @@ export default function Checkout() {
         return;
       }
 
+      // Matrix credential-format issue (Matrix returns code 3 + reason
+      // mentioning the offending field). Surface a friendly banner that tells
+      // the merchant exactly which key is malformed and the expected format.
+      const provResp0 = data?.providerResponse || {};
+      const matrixCode = provResp0?.code ?? data?.code;
+      const matrixReason: string =
+        provResp0?.reason || provResp0?.message || data?.error || '';
+      const isMatrixCredErr =
+        (data?.transaction?.provider === 'matrix' || provResp0?.provider === 'matrix' ||
+          /matrix/i.test(String(matrixReason))) &&
+        (matrixCode === 3 || matrixCode === '3' ||
+          /invalid (public|secret) key|key.*format|must be \d+ characters/i.test(matrixReason));
+      if (isMatrixCredErr) {
+        const isSecret = /secret/i.test(matrixReason);
+        setMatrixCredIssue({
+          field: isSecret ? 'MATRIX_SECRET_KEY' : 'MATRIX_PUBLIC_KEY',
+          expected: 'Exactly 35 characters, sandbox key from Matrix dashboard',
+          actual: provResp0?.details?.length ? `${provResp0.details.length} chars provided` : 'Malformed key',
+          raw: matrixReason,
+        });
+        notifyError('Matrix credential format issue', {
+          description: 'Update the API key in your processor settings to continue.',
+        });
+        return;
+      }
+
       // 3DS redirect
       const provResp = data?.providerResponse || {};
       const threeDsRedirect = provResp['3d_secure_redirect_url'] || provResp.redirect_url;
