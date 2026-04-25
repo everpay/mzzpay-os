@@ -39,13 +39,21 @@ export function formatRelativeTime(dateStr: string): string {
   return `${days}d ago`;
 }
 
-export function getStatusVariant(status: TransactionStatus | PayoutStatus) {
+export function getStatusVariant(status: TransactionStatus | PayoutStatus | string) {
   switch (status) {
+    // Internal statuses
     case 'completed': return 'success' as const;
     case 'processing': return 'warning' as const;
     case 'pending': return 'secondary' as const;
     case 'failed': return 'destructive' as const;
     case 'refunded': return 'outline' as const;
+    // Matrix canonical statuses (initial/pending/success/error/declined/suspended/blocked)
+    case 'success': return 'success' as const;
+    case 'initial': return 'secondary' as const;
+    case 'declined':
+    case 'error': return 'destructive' as const;
+    case 'suspended': return 'warning' as const;
+    case 'blocked': return 'destructive' as const;
     default: return 'secondary' as const;
   }
 }
