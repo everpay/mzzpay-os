@@ -59,6 +59,13 @@ export default function Checkout() {
   const [lastFailedProvider, setLastFailedProvider] = useState('');
   const [lastProcessorError, setLastProcessorError] = useState('');
   const [showRetryPanel, setShowRetryPanel] = useState(false);
+  // Matrix credential-format banner (code 3 = invalid public/secret key format)
+  const [matrixCredIssue, setMatrixCredIssue] = useState<{
+    field: string;
+    expected: string;
+    actual: string;
+    raw: string;
+  } | null>(null);
   // Stable idempotency key for the lifetime of this checkout session.
   // Reusing the same key on retry guarantees the processor (and our DB) treats
   // attempts as the SAME logical payment instead of new ones. We always
