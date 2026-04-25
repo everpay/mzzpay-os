@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, Bitcoin, AlertTriangle, RefreshCw } from 'lucide-react';
+import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, Bitcoin, AlertTriangle, RefreshCw, HelpCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
@@ -66,6 +67,8 @@ export default function Checkout() {
     actual: string;
     raw: string;
   } | null>(null);
+  const [matrixHelpOpen, setMatrixHelpOpen] = useState(false);
+  const [matrixRetrying, setMatrixRetrying] = useState(false);
   // Stable idempotency key for the lifetime of this checkout session.
   // Reusing the same key on retry guarantees the processor (and our DB) treats
   // attempts as the SAME logical payment instead of new ones. We always
@@ -184,28 +187,41 @@ export default function Checkout() {
         return;
       }
 
-      // Matrix credential-format issue (Matrix returns code 3 + reason
-      // mentioning the offending field). Surface a friendly banner that tells
-      // the merchant exactly which key is malformed and the expected format.
+      // Matrix credential-format issue. Matrix returns either:
+      //   { code: 3, reason: "Invalid public_key format", details: { field: "public_key", expected_length: 35, actual_length: 32 } }
+      // or a flatter shape with `field` / `param` and a free-form `reason`.
+      // Parse defensively so we always know which key is wrong + expected length.
       const provResp0 = data?.providerResponse || {};
       const matrixCode = provResp0?.code ?? data?.code;
       const matrixReason: string =
         provResp0?.reason || provResp0?.message || data?.error || '';
+      const matrixDetails = provResp0?.details || provResp0?.error?.details || {};
+      const matrixField: string =
+        matrixDetails?.field || matrixDetails?.param || provResp0?.field || '';
       const isMatrixCredErr =
         (data?.transaction?.provider === 'matrix' || provResp0?.provider === 'matrix' ||
           /matrix/i.test(String(matrixReason))) &&
         (matrixCode === 3 || matrixCode === '3' ||
-          /invalid (public|secret) key|key.*format|must be \d+ characters/i.test(matrixReason));
+          /invalid (public|secret)[_ ]?key|key.*format|must be \d+ characters/i.test(matrixReason));
       if (isMatrixCredErr) {
-        const isSecret = /secret/i.test(matrixReason);
+        // Prefer structured `field` from details; fall back to keyword match in reason.
+        const fieldLc = String(matrixField || matrixReason).toLowerCase();
+        const isSecret = /secret/.test(fieldLc);
+        const isPublic = /public/.test(fieldLc) || !isSecret;
+        const expectedLen: number =
+          Number(matrixDetails?.expected_length) ||
+          Number((matrixReason.match(/must be (\d+) characters/i) || [])[1]) ||
+          35;
+        const actualLen: number | undefined =
+          Number(matrixDetails?.actual_length) || undefined;
         setMatrixCredIssue({
           field: isSecret ? 'MATRIX_SECRET_KEY' : 'MATRIX_PUBLIC_KEY',
-          expected: 'Exactly 35 characters, sandbox key from Matrix dashboard',
-          actual: provResp0?.details?.length ? `${provResp0.details.length} chars provided` : 'Malformed key',
-          raw: matrixReason,
+          expected: `Exactly ${expectedLen} characters — sandbox ${isSecret ? 'secret' : 'public'} key from Matrix dashboard`,
+          actual: actualLen ? `${actualLen} characters provided` : 'Malformed or missing key',
+          raw: matrixReason || `Matrix code ${matrixCode}`,
         });
         notifyError('Matrix credential format issue', {
-          description: 'Update the API key in your processor settings to continue.',
+          description: `Update ${isSecret ? 'MATRIX_SECRET_KEY' : 'MATRIX_PUBLIC_KEY'} in your processor settings to continue.`,
         });
         return;
       }
@@ -396,8 +412,17 @@ export default function Checkout() {
           >
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0 text-warning" />
-              <div className="space-y-2 flex-1">
-                <p className="font-semibold text-foreground">Matrix credential format issue</p>
+              <div className="space-y-3 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-semibold text-foreground">Matrix credential format issue</p>
+                  <button
+                    type="button"
+                    onClick={() => setMatrixHelpOpen(true)}
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <HelpCircle className="h-3 w-3" /> Setup checklist
+                  </button>
+                </div>
                 <p className="text-muted-foreground">
                   The Matrix processor rejected the request because{' '}
                   <span className="font-mono text-xs px-1 py-0.5 rounded bg-muted">{matrixCredIssue.field}</span>{' '}
@@ -406,15 +431,77 @@ export default function Checkout() {
                 <ul className="list-disc pl-5 space-y-0.5 text-xs text-muted-foreground">
                   <li><span className="font-medium">Expected:</span> {matrixCredIssue.expected}</li>
                   <li><span className="font-medium">Detected:</span> {matrixCredIssue.actual}</li>
+                  <li><span className="font-medium">Raw provider message:</span> <span className="font-mono">{matrixCredIssue.raw}</span></li>
                 </ul>
-                <p className="text-xs text-muted-foreground pt-1">
-                  Fix: open your Matrix dashboard, copy a fresh sandbox key, and update it in
-                  Admin → Processors → Matrix. Then retry this payment.
-                </p>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="default"
+                    disabled={matrixRetrying || isSubmitting}
+                    onClick={async () => {
+                      // Re-submits with the SAME idempotencyKey — the backend
+                      // will treat this as a continuation of the same logical
+                      // payment after the merchant fixes their credentials.
+                      setMatrixRetrying(true);
+                      setMatrixCredIssue(null);
+                      try {
+                        await handleSubmit(undefined, { isRetry: true });
+                      } finally {
+                        setMatrixRetrying(false);
+                      }
+                    }}
+                  >
+                    {matrixRetrying
+                      ? (<><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Retrying…</>)
+                      : (<><RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Fix credentials and retry</>)}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    Same idempotency key — won't double-charge.
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         )}
+
+        <Dialog open={matrixHelpOpen} onOpenChange={setMatrixHelpOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Matrix sandbox setup checklist</DialogTitle>
+              <DialogDescription>
+                Quick reference for fixing a credential format error.
+              </DialogDescription>
+            </DialogHeader>
+            <ol className="list-decimal pl-5 space-y-2 text-sm text-foreground">
+              <li>
+                Open your Matrix dashboard → <span className="font-medium">Sandbox → API Keys</span>.
+              </li>
+              <li>
+                Both <span className="font-mono text-xs">public_key</span> and{' '}
+                <span className="font-mono text-xs">secret_key</span> must be{' '}
+                <span className="font-medium">exactly 35 characters</span> (sandbox format).
+                Live keys differ — don't paste a live key into sandbox.
+              </li>
+              <li>
+                Copy the key with no leading/trailing whitespace and no surrounding quotes.
+              </li>
+              <li>
+                In MZZPay, go to{' '}
+                <span className="font-medium">Admin → Processors → Matrix</span> and paste the
+                key into the corresponding field. Save.
+              </li>
+              <li>
+                Return here and click <span className="font-medium">Fix credentials and retry</span>.
+                The original payment intent will be reused (same idempotency key).
+              </li>
+            </ol>
+            <p className="text-xs text-muted-foreground pt-2">
+              Still failing? The provider's raw message above usually names the bad field
+              (e.g. <span className="font-mono">public_key</span> or <span className="font-mono">secret_key</span>) and the expected length.
+            </p>
+          </DialogContent>
+        </Dialog>
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">
