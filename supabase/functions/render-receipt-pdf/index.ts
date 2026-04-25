@@ -8,13 +8,87 @@
 // the customer will see on their statement.
 
 import { jsPDF } from 'https://esm.sh/jspdf@2.5.1';
-import { loadReceipt } from '../public-receipt/index.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+interface ReceiptPayload {
+  id: string;
+  amount: string;
+  currency: string;
+  status: string;
+  provider: string;
+  type: string;
+  method: string;
+  description: string | null;
+  date: string;
+  orderId: string | null;
+  customerEmail: string | null;
+  cardLast4: string | null;
+  cardBrand: string | null;
+  merchant: { name: string; supportEmail: string | null; logoUrl: string | null; primaryColor: string | null };
+  descriptor: string | null;
+}
+
+async function loadReceipt(transactionId: string): Promise<ReceiptPayload | null> {
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+  const { data: tx, error } = await admin
+    .from('transactions')
+    .select(
+      'id, amount, currency, status, provider, payment_method_type, description, created_at, customer_email, card_last4, card_brand, merchant_id'
+    )
+    .eq('id', transactionId)
+    .maybeSingle();
+
+  if (error || !tx) return null;
+  if (tx.status !== 'completed') return null;
+
+  const [{ data: merchant }, { data: processor }] = await Promise.all([
+    admin
+      .from('merchants')
+      .select('name, receipt_support_email, receipt_logo_url, receipt_primary_color')
+      .eq('id', tx.merchant_id)
+      .maybeSingle(),
+    (admin.from as any)('payment_processors')
+      .select('acquirer_descriptor')
+      .eq('name', tx.provider)
+      .maybeSingle(),
+  ]);
+
+  return {
+    id: tx.id,
+    amount: Number(tx.amount).toFixed(2),
+    currency: tx.currency,
+    status: 'Approved',
+    provider: tx.provider,
+    type: tx.payment_method_type === 'open_banking' ? 'Open Banking' : 'Card payment',
+    method: tx.card_brand
+      ? `${tx.card_brand.toUpperCase()} •••• ${tx.card_last4 ?? ''}`
+      : tx.payment_method_type === 'open_banking'
+      ? 'Open Banking'
+      : 'Card',
+    description: tx.description ?? null,
+    date: new Date(tx.created_at).toISOString().replace('T', ' ').slice(0, 19),
+    orderId: null,
+    customerEmail: tx.customer_email ?? null,
+    cardLast4: tx.card_last4 ?? null,
+    cardBrand: tx.card_brand ?? null,
+    merchant: {
+      name: merchant?.name ?? 'MZZPay Merchant',
+      supportEmail: merchant?.receipt_support_email ?? null,
+      logoUrl: merchant?.receipt_logo_url ?? null,
+      primaryColor: merchant?.receipt_primary_color ?? null,
+    },
+    descriptor: processor?.acquirer_descriptor ?? null,
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
