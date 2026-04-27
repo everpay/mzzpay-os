@@ -31,6 +31,8 @@ import {
 
 import { CardBrandBadge } from '@/components/CardBrandBadge';
 import { notifyError, notifySuccess } from '@/lib/error-toast';
+import { usePagination } from '@/hooks/usePagination';
+import { TablePagination } from '@/components/TablePagination';
 
 interface Customer {
   id: string;
@@ -100,6 +102,8 @@ export default function Customers() {
       (c.last_name || '').toLowerCase().includes(q)
     );
   }, [customers, search]);
+
+  const pg = usePagination(filtered, 25);
 
   const customerTransactions = useMemo(() => {
     if (!viewCustomer) return [];
@@ -281,7 +285,7 @@ export default function Customers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map(c => {
+                {pg.pageItems.map(c => {
                   const addr = c.billing_address as any;
                   return (
                     <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50">
@@ -317,6 +321,20 @@ export default function Customers() {
                 })}
               </TableBody>
             </Table>
+            <TablePagination
+              page={pg.page}
+              pageCount={pg.pageCount}
+              pageSize={pg.pageSize}
+              total={pg.total}
+              from={pg.from}
+              to={pg.to}
+              canPrev={pg.canPrev}
+              canNext={pg.canNext}
+              onPageChange={pg.setPage}
+              onPageSizeChange={pg.setPageSize}
+              label="customers"
+              className="px-4"
+            />
           </CardContent>
         </Card>
       )}
