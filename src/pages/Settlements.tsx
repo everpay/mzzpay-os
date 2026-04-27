@@ -8,6 +8,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { Landmark, Clock, CheckCircle2, ArrowUpRight, Banknote, TrendingUp } from 'lucide-react';
+import { usePagination } from '@/hooks/usePagination';
+import { TablePagination } from '@/components/TablePagination';
 
 export default function Settlements() {
   const [statusFilter, setStatusFilter] = useState('all');
@@ -46,7 +48,7 @@ export default function Settlements() {
       </div>
       <Card className="mb-6">
         <CardHeader><CardTitle>Settlement Batches</CardTitle><CardDescription>Processor-level records with fee breakdown</CardDescription></CardHeader>
-        <CardContent>{isLoading ? <div className="flex justify-center py-12"><div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div> : <Table><TableHeader><TableRow><TableHead>Batch</TableHead><TableHead>Processor</TableHead><TableHead>Currency</TableHead><TableHead className="text-right">Gross</TableHead><TableHead className="text-right">Fee</TableHead><TableHead className="text-right">Net</TableHead><TableHead>Scheduled</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{filtered.map(s => <TableRow key={s.id}><TableCell className="font-mono text-xs">{s.batch_id || s.id.slice(0,8)}</TableCell><TableCell className="capitalize text-sm">{s.processor || '—'}</TableCell><TableCell className="text-sm">{s.currency || 'USD'}</TableCell><TableCell className="text-right font-mono text-sm">{formatCurrency(Number(s.gross_amount) || 0, (s.currency || 'USD') as any)}</TableCell><TableCell className="text-right font-mono text-sm text-destructive">{formatCurrency(Number(s.fee) || 0, (s.currency || 'USD') as any)}</TableCell><TableCell className="text-right font-mono text-sm font-medium">{formatCurrency(Number(s.net_amount) || 0, (s.currency || 'USD') as any)}</TableCell><TableCell className="text-sm text-muted-foreground">{s.scheduled_at ? formatDate(s.scheduled_at) : '—'}</TableCell><TableCell>{sb(s.status)}</TableCell></TableRow>)}{!filtered.length && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No settlements</TableCell></TableRow>}</TableBody></Table>}</CardContent>
+        <CardContent>{isLoading ? <div className="flex justify-center py-12"><div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div> : <SettlementsTable rows={filtered} sb={sb} />}</CardContent>
       </Card>
     </AppLayout>
   );
