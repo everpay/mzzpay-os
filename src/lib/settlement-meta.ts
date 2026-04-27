@@ -36,7 +36,7 @@ export type RisonpayMeta = ProviderSettlementMeta;
 /**
  * Settlement-day SLA per PSP. Single place to change if a contract changes.
  *   - Shieldhub  → T+7 (card MID, MX acquirer)
- *   - Risonpay   → T+7 (card; APMs settle T+1)
+ *   - Risonpay   → T+4 (card; APMs settle T+1)
  *   - Matrix     → T+4
  *
  * Back-compat: the original signature was `settlementDaysFor(paymentMethod)`
