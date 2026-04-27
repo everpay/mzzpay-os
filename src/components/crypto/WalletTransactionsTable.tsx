@@ -49,7 +49,7 @@ export function WalletTransactionsTable({ walletId, network }: Props) {
             <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground text-sm">Loading...</TableCell></TableRow>
           ) : txs.length === 0 ? (
             <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground text-sm">No transactions yet</TableCell></TableRow>
-          ) : txs.map((t) => {
+          ) : pg.pageItems.map((t) => {
             const url = explorerUrl(network, t.tx_hash);
             return (
               <TableRow key={t.id}>
@@ -81,6 +81,14 @@ export function WalletTransactionsTable({ walletId, network }: Props) {
           })}
         </TableBody>
       </Table>
+      <TablePagination
+        page={pg.page} pageCount={pg.pageCount} pageSize={pg.pageSize}
+        total={pg.total} from={pg.from} to={pg.to}
+        canPrev={pg.canPrev} canNext={pg.canNext}
+        onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize}
+        label="transactions"
+        className="px-3"
+      />
     </div>
   );
 }
