@@ -153,6 +153,27 @@ function validateForProcessor(
       }
       break;
     }
+    case 'risonpay': {
+      // RisonPay (CDN) — EU/EEA primary + non-OFAC global fallback
+      if (!paymentData.customerEmail) {
+        errs.push({ field: 'customerEmail', message: 'RisonPay requires `customerEmail`' });
+      }
+      if (Number(paymentData.amount) < 10) {
+        errs.push({ field: 'amount', message: 'RisonPay minimum amount is 10.00 (EUR/GBP/USD)' });
+      }
+      if (!['EUR', 'GBP', 'USD'].includes(paymentData.currency)) {
+        errs.push({ field: 'currency', message: 'RisonPay supports EUR, GBP, USD only' });
+      }
+      if (paymentData.paymentMethod === 'card' && !paymentData.cardDetails) {
+        errs.push({ field: 'cardDetails', message: 'RisonPay server-side card capture requires cardDetails (number, cvv, expire, holder)' });
+      }
+      // Block OFAC at validation time as well as routing time.
+      const c = (paymentData.billing?.country || '').toUpperCase();
+      if (['CU','IR','KP','SY','RU','BY','VE','MM'].includes(c)) {
+        errs.push({ field: 'billing.country', message: `RisonPay cannot process payments from sanctioned jurisdiction ${c}` });
+      }
+      break;
+    }
     default:
       break;
   }
