@@ -570,7 +570,7 @@ Deno.test({ ...TEST_OPTS,
       transaction_id: txA!.id, merchant_id: mA.id,
       payload: { secret: "merchant-A-only" },
     }).select("id").single();
-    const { data: poA } = await a.from("payouts").insert({
+    const { data: poA } = await a.from("settlements").insert({
       merchant_id: mA.id, amount: 100, currency: "EUR",
       status: "pending", method: "bank_transfer",
     }).select("id").single();
@@ -589,7 +589,7 @@ Deno.test({ ...TEST_OPTS,
         .select("id, payload").eq("id", evA.id);
       assertEquals(guessEv?.length ?? 0, 0, "anon must NOT read A's provider_event by guessed id");
 
-      const { data: guessPo } = await anon.from("payouts")
+      const { data: guessPo } = await anon.from("settlements")
         .select("id").eq("id", poA.id);
       assertEquals(guessPo?.length ?? 0, 0, "anon must NOT read A's payout by guessed id");
 
@@ -606,11 +606,11 @@ Deno.test({ ...TEST_OPTS,
       const { data: bulkEv } = await anon.from("provider_events")
         .select("id").in("id", [evA.id]);
       assertEquals(bulkEv?.length ?? 0, 0, ".in() guess must not bypass RLS for provider_events");
-      const { data: bulkPo } = await anon.from("payouts")
+      const { data: bulkPo } = await anon.from("settlements")
         .select("id").in("id", [poA.id]);
       assertEquals(bulkPo?.length ?? 0, 0, ".in() guess must not bypass RLS for payouts");
     } finally {
-      await a.from("payouts").delete().eq("id", poA.id);
+      await a.from("settlements").delete().eq("id", poA.id);
       await a.from("provider_events").delete().eq("id", evA.id);
       await a.from("transactions").delete().eq("id", txA.id);
     }
