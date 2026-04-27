@@ -111,23 +111,9 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
         },
       });
       if (error) throw error;
-      const welcomeEmail = email.trim().toLowerCase();
-      const merchantName = businessName || `${displayName}'s Business`;
-      const { error: welcomeError } = await supabase.functions.invoke('send-transactional-email', {
-        body: {
-          templateName: 'customer-welcome',
-          recipientEmail: welcomeEmail,
-          idempotencyKey: `customer-welcome-${welcomeEmail}`,
-          templateData: {
-            name: displayName,
-            merchantName,
-            dashboardUrl: `${window.location.origin}/dashboard`,
-          },
-        },
-      });
-      if (welcomeError) {
-        console.warn('Welcome email could not be queued', welcomeError);
-      }
+      // Welcome email is sent after the user confirms their email
+      // (handled in AuthContext on the first confirmed SIGNED_IN event),
+      // so it doesn't get blocked by the unconfirmed state.
       // Track this attempt so the success screen can adapt for repeat users.
       const isSameEmail = lastAttemptEmail === email;
       setSignupAttempts(isSameEmail ? signupAttempts + 1 : 1);
