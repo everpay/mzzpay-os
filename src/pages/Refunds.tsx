@@ -126,14 +126,14 @@ export default function Refunds() {
 }
 
 function RefundsTableInline({ refunds, statusBadge }: { refunds: any[]; statusBadge: (s: string) => JSX.Element }) {
-  const { page, setPage, pageSize, setPageSize, totalPages, pageItems } = usePagination(refunds, 25);
+  const pg = usePagination(refunds, 25);
   return (
     <>
       <Table>
         <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>Amount</TableHead><TableHead>Reason</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
         <TableBody>
-          {pageItems.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No refunds yet</TableCell></TableRow> :
-            pageItems.map((r: any) => (
+          {pg.pageItems.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No refunds yet</TableCell></TableRow> :
+            pg.pageItems.map((r: any) => (
               <TableRow key={r.id}>
                 <TableCell className="text-sm">{formatDate(r.created_at)}</TableCell>
                 <TableCell className="text-sm">{r.transaction?.customer_email || '—'}</TableCell>
@@ -144,7 +144,7 @@ function RefundsTableInline({ refunds, statusBadge }: { refunds: any[]; statusBa
             ))}
         </TableBody>
       </Table>
-      <TablePagination page={page} setPage={setPage} pageSize={pageSize} setPageSize={setPageSize} totalPages={totalPages} totalItems={refunds.length} />
+      <TablePagination page={pg.page} pageCount={pg.pageCount} pageSize={pg.pageSize} total={pg.total} from={pg.from} to={pg.to} canPrev={pg.canPrev} canNext={pg.canNext} onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} label="refunds" />
     </>
   );
 }

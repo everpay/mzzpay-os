@@ -55,14 +55,14 @@ export default function Settlements() {
 }
 
 function SettlementsTableInline({ rows, sb }: { rows: any[]; sb: (s: string | null) => JSX.Element }) {
-  const { page, setPage, pageSize, setPageSize, totalPages, pageItems } = usePagination(rows, 25);
+  const pg = usePagination(rows, 25);
   return (
     <>
       <Table>
         <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Provider</TableHead><TableHead>Gross</TableHead><TableHead>Fee</TableHead><TableHead>Net</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
         <TableBody>
-          {pageItems.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No settlements</TableCell></TableRow> :
-            pageItems.map((s: any) => (
+          {pg.pageItems.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No settlements</TableCell></TableRow> :
+            pg.pageItems.map((s: any) => (
               <TableRow key={s.id}>
                 <TableCell className="text-sm">{formatDate(s.created_at)}</TableCell>
                 <TableCell className="text-sm capitalize">{s.provider || '—'}</TableCell>
@@ -74,7 +74,7 @@ function SettlementsTableInline({ rows, sb }: { rows: any[]; sb: (s: string | nu
             ))}
         </TableBody>
       </Table>
-      <TablePagination page={page} setPage={setPage} pageSize={pageSize} setPageSize={setPageSize} totalPages={totalPages} totalItems={rows.length} />
+      <TablePagination page={pg.page} pageCount={pg.pageCount} pageSize={pg.pageSize} total={pg.total} from={pg.from} to={pg.to} canPrev={pg.canPrev} canNext={pg.canNext} onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} label="settlements" />
     </>
   );
 }
