@@ -165,6 +165,72 @@ Deno.serve(async (req) => {
     )
   }
 
+  // 2b. Server-side idempotency check.
+  // If a caller-supplied idempotencyKey was provided (i.e. not the auto-generated
+  // messageId fallback), refuse to send the same logical email twice. Protects
+  // against duplicate sends across devices, localStorage clears, or auth-state
+  // listeners firing more than once.
+  const callerProvidedIdempotency =
+    !!idempotencyKey && idempotencyKey !== messageId
+
+  if (callerProvidedIdempotency) {
+    const { data: existingIdem, error: idemLookupError } = await supabase
+      .from('email_idempotency_keys')
+      .select('key, message_id')
+      .eq('key', idempotencyKey)
+      .maybeSingle()
+
+    if (idemLookupError) {
+      console.error('Idempotency lookup failed — refusing to send', {
+        error: idemLookupError,
+        idempotencyKey,
+      })
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify idempotency status' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (existingIdem) {
+      console.log('Email skipped — idempotency key already used', {
+        idempotencyKey,
+        templateName,
+        previousMessageId: existingIdem.message_id,
+      })
+      return new Response(
+        JSON.stringify({
+          success: true,
+          reason: 'duplicate_idempotency_key',
+          messageId: existingIdem.message_id,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Reserve the key BEFORE enqueuing — concurrent calls race on the PK.
+    const { error: idemInsertError } = await supabase
+      .from('email_idempotency_keys')
+      .insert({
+        key: idempotencyKey,
+        template_name: templateName,
+        recipient_email: effectiveRecipient.toLowerCase(),
+        message_id: messageId,
+      })
+
+    if (idemInsertError) {
+      // Most likely a unique-constraint violation from a concurrent send —
+      // treat as duplicate and short-circuit.
+      console.log('Idempotency key reservation conflicted — treating as duplicate', {
+        idempotencyKey,
+        error: idemInsertError.message,
+      })
+      return new Response(
+        JSON.stringify({ success: true, reason: 'duplicate_idempotency_key' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
   // 3. Get or create unsubscribe token (one token per email address)
   const normalizedEmail = effectiveRecipient.toLowerCase()
   let unsubscribeToken: string
