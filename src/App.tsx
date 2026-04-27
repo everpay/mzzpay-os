@@ -189,14 +189,14 @@ const AppRoutes = () => (
     <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
     <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
-    <Route path="/wallets" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Wallets /></RoleProtectedRoute></ProtectedRoute>} />
-    <Route path="/payouts" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Payouts /></RoleProtectedRoute></ProtectedRoute>} />
-    <Route path="/payments/new" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><NewPayment /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/wallets" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><Wallets /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/payouts" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><Payouts /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/payments/new" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><NewPayment /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/payment-links" element={<ProtectedRoute><PaymentLinks /></ProtectedRoute>} />
     <Route path="/checkout" element={<Checkout />} />
     <Route path="/pay/:invoiceId" element={<PayInvoice />} />
     <Route path="/receipts/:id" element={<Receipt />} />
-    <Route path="/subscriptions" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Subscriptions /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/subscriptions" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><Subscriptions /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/portal" element={<ProtectedRoute><CustomerPortal /></ProtectedRoute>} />
     <Route path="/chargebacks" element={<ProtectedRoute><Chargebacks /></ProtectedRoute>} />
     <Route path="/chargebacks/disputes" element={<ProtectedRoute><MerchantDisputes /></ProtectedRoute>} />
@@ -205,19 +205,19 @@ const AppRoutes = () => (
     <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/reseller" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['reseller']}><ResellerPortal /></RoleProtectedRoute></ProtectedRoute>} />
-    <Route path="/analytics" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Analytics /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/analytics" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><Analytics /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/refunds" element={<ProtectedRoute><Refunds /></ProtectedRoute>} />
-    <Route path="/settlements" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Settlements /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/settlements" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><Settlements /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/reconciliation" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><Reconciliation /></RoleProtectedRoute></ProtectedRoute>} />
-    <Route path="/reports" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Reports /></RoleProtectedRoute></ProtectedRoute>} />
-    <Route path="/bank-accounts" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><BankAccounts /></RoleProtectedRoute></ProtectedRoute>} />
-    <Route path="/recipients" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Recipients /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/reports" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><Reports /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/bank-accounts" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><BankAccounts /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/recipients" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><Recipients /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/treasury" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><Treasury /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/audit-trail" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><AuditTrail /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/admin/risonpay-ledger-audit" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><RisonpayLedgerAudit /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/settings/email-dns" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><EmailDnsBundle /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/webhooks" element={<Navigate to="/settings" replace />} />
-    <Route path="/products" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','reseller','developer','compliance_officer','agent','employee']}><Products /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/products" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><Products /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/kyc" element={<Navigate to="/settings" replace />} />
     <Route path="/risk" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><RiskProfile /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/chargeflow" element={<Navigate to="/chargebacks" replace />} />
