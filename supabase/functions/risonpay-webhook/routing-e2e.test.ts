@@ -529,13 +529,13 @@ Deno.test({ ...TEST_OPTS,
 });
 
 // ============================================================
-// 6. RLS hardening: merchants cannot read peers' tx / payouts / events
+// 6. RLS hardening: merchants cannot read peers' tx / settlements / events
 // ============================================================
 //
 // Even if a malicious merchant guesses another merchant's UUIDs, RLS must
 // block access to:
 //   - transactions
-//   - payouts
+//   - settlements
 //   - provider_events
 //
 // We seed two merchants with one row in each table, then try to read each
@@ -545,7 +545,7 @@ Deno.test({ ...TEST_OPTS,
 // test runner can't do — but the anon path exercises the same RLS clause
 // (`merchant_id IN (select id from merchants where user_id = auth.uid())`).
 Deno.test({ ...TEST_OPTS,
-  name: "e2e/rls: merchants cannot read peers' transactions / payouts / provider_events",
+  name: "e2e/rls: merchants cannot read peers' transactions / settlements / provider_events",
   ignore: SHOULD_SKIP,
   fn: async () => {
     const a = admin();
@@ -595,7 +595,7 @@ Deno.test({ ...TEST_OPTS,
 
       const { data: guessPo } = await anon.from("settlements")
         .select("id").eq("id", poA.id);
-      assertEquals(guessPo?.length ?? 0, 0, "anon must NOT read A's payout by guessed id");
+      assertEquals(guessPo?.length ?? 0, 0, "anon must NOT read A's settlement by guessed id");
 
       // Even broad enumeration scoped to mB.id must NOT leak A's rows.
       const { data: enumTx } = await anon.from("transactions")
@@ -612,7 +612,7 @@ Deno.test({ ...TEST_OPTS,
       assertEquals(bulkEv?.length ?? 0, 0, ".in() guess must not bypass RLS for provider_events");
       const { data: bulkPo } = await anon.from("settlements")
         .select("id").in("id", [poA.id]);
-      assertEquals(bulkPo?.length ?? 0, 0, ".in() guess must not bypass RLS for payouts");
+      assertEquals(bulkPo?.length ?? 0, 0, ".in() guess must not bypass RLS for settlements");
     } finally {
       await a.from("settlements").delete().eq("id", poA.id);
       await a.from("provider_events").delete().eq("id", evA.id);
