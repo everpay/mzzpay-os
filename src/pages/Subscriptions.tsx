@@ -536,3 +536,145 @@ export default function Subscriptions() {
     </AppLayout>
   );
 }
+
+function PlansTable({ plans, getStatusBadge }: { plans: any[]; getStatusBadge: (s: string) => any }) {
+  const pg = usePagination(plans, 25);
+  return (
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Plan ID</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Price</TableHead>
+            <TableHead>Billing period</TableHead>
+            <TableHead>Trial</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {pg.pageItems.map((plan: any) => (
+            <TableRow key={plan.id}>
+              <TableCell className="font-mono text-xs">{plan.id.slice(0, 12)}…</TableCell>
+              <TableCell className="font-medium">{plan.name}</TableCell>
+              <TableCell className="font-mono">{formatCurrency(plan.amount, plan.currency)}</TableCell>
+              <TableCell>{plan.interval_count} {plan.billing_period_unit || plan.interval}</TableCell>
+              <TableCell>
+                {plan.trial_enabled
+                  ? <Badge variant="outline" className="text-xs">{plan.trial_duration} {plan.trial_unit}</Badge>
+                  : <span className="text-muted-foreground text-xs">—</span>}
+              </TableCell>
+              <TableCell className="text-sm text-muted-foreground">{new Date(plan.created_at).toLocaleDateString()}</TableCell>
+              <TableCell>{getStatusBadge(plan.status || 'active')}</TableCell>
+            </TableRow>
+          ))}
+          {!plans.length && (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
+                No plans created yet. Click "Add plan" to create one.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+      <TablePagination
+        page={pg.page} pageCount={pg.pageCount} pageSize={pg.pageSize}
+        total={pg.total} from={pg.from} to={pg.to}
+        canPrev={pg.canPrev} canNext={pg.canNext}
+        onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize}
+        label="plans"
+      />
+    </>
+  );
+}
+
+function SubscriptionsTable({
+  subscriptions, getStatusBadge, onChangePlan, onRetry, onSendReminder, isRetrying,
+}: {
+  subscriptions: any[];
+  getStatusBadge: (s: string) => any;
+  onChangePlan: (sub: any) => void;
+  onRetry: (id: string) => void;
+  onSendReminder: (sub: any) => void;
+  isRetrying: string | null;
+}) {
+  const pg = usePagination(subscriptions, 25);
+  return (
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Customer</TableHead>
+            <TableHead>Plan</TableHead>
+            <TableHead>Amount</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Next Billing</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {pg.pageItems.map((sub: any) => (
+            <TableRow key={sub.id}>
+              <TableCell>
+                <div>
+                  <div className="font-medium">{sub.customer?.first_name} {sub.customer?.last_name}</div>
+                  <div className="text-xs text-muted-foreground">{sub.customer?.email}</div>
+                </div>
+              </TableCell>
+              <TableCell>{sub.plan?.name}</TableCell>
+              <TableCell className="font-mono">{formatCurrency(sub.plan?.amount, sub.plan?.currency)}</TableCell>
+              <TableCell>{getStatusBadge(sub.status)}</TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                {sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString() : '—'}
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onChangePlan(sub)}>
+                        <ArrowUpDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Change Plan</TooltipContent>
+                  </Tooltip>
+                  {sub.status === 'past_due' && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-warning"
+                          onClick={() => onRetry(sub.id)} disabled={isRetrying === sub.id}>
+                          <RefreshCw className={`h-3.5 w-3.5 ${isRetrying === sub.id ? 'animate-spin' : ''}`} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Retry Payment</TooltipContent>
+                    </Tooltip>
+                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onSendReminder(sub)}>
+                        <Bell className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Send Reminder</TooltipContent>
+                  </Tooltip>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+          {!subscriptions.length && (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No active subscriptions</TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+      <TablePagination
+        page={pg.page} pageCount={pg.pageCount} pageSize={pg.pageSize}
+        total={pg.total} from={pg.from} to={pg.to}
+        canPrev={pg.canPrev} canNext={pg.canNext}
+        onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize}
+        label="subscriptions"
+      />
+    </>
+  );
+}
