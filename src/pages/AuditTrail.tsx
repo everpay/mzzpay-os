@@ -123,7 +123,3 @@ function AuditLogsTable({ logs, loading, ac }: { logs: any[]; loading: boolean; 
     </>
   );
 }
-      </div>
-    </AppLayout>
-  );
-}
