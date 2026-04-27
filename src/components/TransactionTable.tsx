@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
 import { TransactionDetailDrawer } from './TransactionDetailDrawer';
 import { PaymentMethodIcon } from './PaymentMethodIcon';
+import { RisonpaySettlementBadge } from './RisonpaySettlementBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertCircle } from 'lucide-react';
 
@@ -93,7 +94,12 @@ export function TransactionTable({ transactions, compact = false }: TransactionT
                   )}
                 </td>
                 <td className="px-4 py-3 hidden sm:table-cell">
-                  <Badge variant="provider">{tx.provider}</Badge>
+                  <div className="flex flex-col gap-1">
+                    <Badge variant="provider">{tx.provider}</Badge>
+                    {tx.provider === 'risonpay' && (
+                      <RisonpaySettlementBadge raw={(tx as any).processor_raw_response} status={tx.status} />
+                    )}
+                  </div>
                 </td>
                 {!compact && (
                   <>
