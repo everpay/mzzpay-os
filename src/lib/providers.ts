@@ -180,6 +180,7 @@ export function getProviderColor(provider: Provider): string {
     case 'moneto_mpg': return 'hsl(var(--chart-5))';
     case 'matrix': return 'hsl(var(--chart-4))';
     case 'shieldhub': return 'hsl(var(--chart-2))';
+    case 'risonpay': return 'hsl(var(--primary))';
     default: return 'hsl(var(--chart-1))';
   }
 }
