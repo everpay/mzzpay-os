@@ -94,9 +94,9 @@ describe("deriveBadge — UI mirrors webhook output", () => {
 
     // T+0 hours → scheduled
     expect(deriveBadge({ _risonpay_meta: meta }, "completed", received)).toBe("scheduled");
-    // T+2d (exactly window) → still scheduled
-    expect(deriveBadge({ _risonpay_meta: meta }, "completed", new Date(received.getTime() + 2 * 86400_000))).toBe("scheduled");
-    // T+2d + 7h → delayed
-    expect(deriveBadge({ _risonpay_meta: meta }, "completed", new Date(received.getTime() + 2 * 86400_000 + 7 * 3600_000))).toBe("delayed");
+    // T+7d (exactly window) → still scheduled
+    expect(deriveBadge({ _risonpay_meta: meta }, "completed", new Date(received.getTime() + 7 * 86400_000))).toBe("scheduled");
+    // T+7d + 7h → delayed
+    expect(deriveBadge({ _risonpay_meta: meta }, "completed", new Date(received.getTime() + 7 * 86400_000 + 7 * 3600_000))).toBe("delayed");
   });
 });
