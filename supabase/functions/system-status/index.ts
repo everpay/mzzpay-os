@@ -99,7 +99,37 @@ async function fetchLastError(
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  // Require an authenticated admin caller — this endpoint exposes upstream
+  // failure details that must not leak to the public internet.
+  const authHeader = req.headers.get("Authorization") || "";
+  if (!authHeader.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const token = authHeader.replace("Bearer ", "");
+  const { data: claims, error: claimsErr } = await userClient.auth.getClaims(token);
+  if (claimsErr || !claims?.claims?.sub) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const userId = claims.claims.sub;
+
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+  // Server-side role gate.
+  const { data: roleRows } = await admin
+    .from("user_roles").select("role").eq("user_id", userId);
+  const isAdmin = (roleRows ?? []).some((r: any) => r.role === "super_admin" || r.role === "admin");
+  if (!isAdmin) {
+    return new Response(JSON.stringify({ error: "forbidden" }), {
+      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   // Fire all three probes in parallel for a snappy panel.
   const [shieldRes, mondoRes, routesRes, shieldErr, mondoErr] = await Promise.all([

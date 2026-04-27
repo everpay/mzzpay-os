@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { verifyHmacSignature } from "../_shared/verify-webhook.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-chargeflow-signature',
 };
 
 serve(async (req) => {
@@ -16,7 +17,22 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const payload = await req.json();
+    const rawBody = await req.text();
+    const signature = req.headers.get('x-chargeflow-signature') || req.headers.get('x-signature');
+    const verify = await verifyHmacSignature({
+      secret: Deno.env.get('CHARGEFLOW_WEBHOOK_SECRET') ?? Deno.env.get('CHARGEFLOW_API_KEY'),
+      body: rawBody,
+      signature,
+      requireSecret: true,
+    });
+    if (!verify.ok) {
+      console.warn('[chargeflow-webhook] signature failure:', verify.reason);
+      return new Response(JSON.stringify({ error: 'unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const payload = JSON.parse(rawBody);
     const { type, data } = payload;
 
     console.log(`Chargeflow webhook received: ${type}`, { id: data?.id });

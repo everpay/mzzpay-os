@@ -172,10 +172,18 @@ Deno.serve(async (req) => {
     // ignore — keep default
   }
 
-  // Reject obviously dangerous input (only allow plausible hostnames).
-  if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host)) {
+  // Strict allowlist — this function exists ONLY to validate our own
+  // checkout subdomain. Allowing arbitrary hostnames would turn it into an
+  // SSRF probe against internal/cloud-metadata endpoints.
+  const ALLOWED_HOSTS = new Set<string>([
+    DEFAULT_HOST,           // checkout.mzzpay.io
+    APEX_HOST,              // mzzpay.io
+    `www.${APEX_HOST}`,
+    `api.${APEX_HOST}`,
+  ]);
+  if (!ALLOWED_HOSTS.has(host.toLowerCase())) {
     return new Response(
-      JSON.stringify({ error: "invalid host" }),
+      JSON.stringify({ error: "host not allowed", allowed: [...ALLOWED_HOSTS] }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

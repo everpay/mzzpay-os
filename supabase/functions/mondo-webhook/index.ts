@@ -1,10 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { applyLedgerCredit, ingestProviderEvent } from "../_shared/psp-ingest.ts";
+import { verifyHmacSignature } from "../_shared/verify-webhook.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version, x-mondo-signature',
 };
 
 serve(async (req) => {
@@ -21,11 +22,28 @@ serve(async (req) => {
     const status = url.searchParams.get('status');
     const transactionId = url.searchParams.get('transaction_id');
 
+    const rawBody = await req.text();
+
+    // Verify HMAC for POST callbacks. Browser-driven GET return-redirects
+    // (?status=...) are expected and not signed; allow those without a body.
+    if (req.method === 'POST') {
+      const signature = req.headers.get('x-mondo-signature') || req.headers.get('x-signature');
+      const verify = await verifyHmacSignature({
+        secret: Deno.env.get('MONDO_GATEWAY_SECRET_KEY'),
+        body: rawBody,
+        signature,
+        requireSecret: true,
+      });
+      if (!verify.ok) {
+        console.warn('[mondo-webhook] signature failure:', verify.reason);
+        return new Response(JSON.stringify({ error: 'unauthorized' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     let payload: any = {};
-    try {
-      const text = await req.text();
-      if (text) payload = JSON.parse(text);
-    } catch { /* no body */ }
+    try { if (rawBody) payload = JSON.parse(rawBody); } catch { /* no body */ }
 
     console.log('Mondo webhook received:', { status, transactionId });
 
