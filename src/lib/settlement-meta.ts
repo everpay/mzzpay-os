@@ -45,12 +45,12 @@ export type BadgeKind = "missing" | "settled" | "delayed" | "scheduled";
 
 /** Derive badge state from a row's `processor_raw_response` + tx status. */
 export function deriveBadge(
-  raw: { _risonpay_meta?: Partial<RisonpayMeta> } | null | undefined,
+  raw: { _risonpay_meta?: { settlement_status?: string; expected_settlement_at?: string } } | null | undefined,
   txStatus: string | null | undefined,
   now: Date = new Date(),
 ): BadgeKind {
   const meta = raw?._risonpay_meta;
-  if (!meta) {
+  if (!meta || (!meta.settlement_status && !meta.expected_settlement_at)) {
     return txStatus === "completed" || txStatus === "processing" ? "delayed" : "missing";
   }
   if (meta.settlement_status === "settled") return "settled";
