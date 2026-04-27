@@ -1,5 +1,6 @@
 import { Currency, Provider } from './types';
 import { processorLabel } from './processor-labels';
+import { isEuOrEea, isOfac } from './regions';
 
 interface ProviderConfig {
   name: string;
