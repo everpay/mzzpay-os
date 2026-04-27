@@ -24,9 +24,9 @@ describe("settlement-meta contract", () => {
     ]);
   });
 
-  it("Risonpay card payments settle T+7, APMs T+1", () => {
-    expect(settlementDaysFor("card")).toBe(7);
-    expect(settlementDaysFor("CARD_VISA")).toBe(7);
+  it("Risonpay card payments settle T+4, APMs T+1", () => {
+    expect(settlementDaysFor("card")).toBe(4);
+    expect(settlementDaysFor("CARD_VISA")).toBe(4);
     expect(settlementDaysFor("open_banking")).toBe(1);
     expect(settlementDaysFor(null)).toBe(1);
     expect(settlementDaysFor(undefined)).toBe(1);
@@ -35,7 +35,7 @@ describe("settlement-meta contract", () => {
   it("expected_settlement_at = received_at + settlementDays", () => {
     const cardMeta = buildRisonpayMeta({ mappedStatus: "completed", paymentMethod: "card", now: NOW });
     const apmMeta = buildRisonpayMeta({ mappedStatus: "completed", paymentMethod: "sepa", now: NOW });
-    expect(new Date(cardMeta.expected_settlement_at).getTime() - NOW.getTime()).toBe(7 * 86_400_000);
+    expect(new Date(cardMeta.expected_settlement_at).getTime() - NOW.getTime()).toBe(4 * 86_400_000);
     expect(new Date(apmMeta.expected_settlement_at).getTime() - NOW.getTime()).toBe(1 * 86_400_000);
   });
 
