@@ -100,7 +100,7 @@ export default function Refunds() {
           </div>
         </CardHeader>
         <CardContent>
-          <RefundsTable refunds={filtered || []} statusBadge={statusBadge} />
+          <RefundsTableInline refunds={filtered || []} statusBadge={statusBadge} />
         </CardContent>
       </Card>
 
@@ -122,5 +122,29 @@ export default function Refunds() {
         </DialogContent>
       </Dialog>
     </AppLayout>
+  );
+}
+
+function RefundsTableInline({ refunds, statusBadge }: { refunds: any[]; statusBadge: (s: string) => JSX.Element }) {
+  const { page, setPage, pageSize, setPageSize, totalPages, pageItems } = usePagination(refunds, 25);
+  return (
+    <>
+      <Table>
+        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>Amount</TableHead><TableHead>Reason</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {pageItems.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No refunds yet</TableCell></TableRow> :
+            pageItems.map((r: any) => (
+              <TableRow key={r.id}>
+                <TableCell className="text-sm">{formatDate(r.created_at)}</TableCell>
+                <TableCell className="text-sm">{r.transaction?.customer_email || '—'}</TableCell>
+                <TableCell className="font-mono text-sm">{formatCurrency(r.amount, (r.transaction?.currency || 'USD') as any)}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{r.reason || '—'}</TableCell>
+                <TableCell>{statusBadge(r.status)}</TableCell>
+              </TableRow>
+            ))}
+        </TableBody>
+      </Table>
+      <TablePagination page={page} setPage={setPage} pageSize={pageSize} setPageSize={setPageSize} totalPages={totalPages} totalItems={refunds.length} />
+    </>
   );
 }
