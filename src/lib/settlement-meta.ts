@@ -68,8 +68,8 @@ export function settlementDaysFor(
     case "risonpay":
     default:
       // APM rails (open banking, SEPA, iDEAL...) clear next business day,
-      // card rails follow the standard T+7 PSP schedule.
-      return isCard ? 7 : 1;
+      // card rails follow the Risonpay T+4 PSP schedule.
+      return isCard ? 4 : 1;
   }
 }
 
