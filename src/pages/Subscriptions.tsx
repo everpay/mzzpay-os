@@ -258,51 +258,10 @@ export default function Subscriptions() {
 
               <Card>
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Plan ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Billing period</TableHead>
-                        <TableHead>Trial</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {plans?.map((plan: any) => (
-                        <TableRow key={plan.id}>
-                          <TableCell className="font-mono text-xs">{plan.id.slice(0, 12)}…</TableCell>
-                          <TableCell className="font-medium">{plan.name}</TableCell>
-                          <TableCell className="font-mono">{formatCurrency(plan.amount, plan.currency)}</TableCell>
-                          <TableCell>
-                            {plan.interval_count} {plan.billing_period_unit || plan.interval}
-                          </TableCell>
-                          <TableCell>
-                            {plan.trial_enabled
-                              ? <Badge variant="outline" className="text-xs">{plan.trial_duration} {plan.trial_unit}</Badge>
-                              : <span className="text-muted-foreground text-xs">—</span>
-                            }
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {new Date(plan.created_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(plan.status || 'active')}</TableCell>
-                        </TableRow>
-                      ))}
-                      {!plans?.length && (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
-                            No plans created yet. Click "Add plan" to create one.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </>
+                  <PlansTable plans={plans || []} getStatusBadge={getStatusBadge} />
+              </CardContent>
+            </Card>
+          </>
           ) : (
             <Card>
               <CardHeader className="pb-3">
