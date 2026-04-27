@@ -6,6 +6,8 @@ import { Copy, ExternalLink } from 'lucide-react';
 import { useWalletTransactions, explorerUrl } from '@/hooks/useCryptoTransactions';
 import { format } from 'date-fns';
 import { notifySuccess } from '@/lib/error-toast';
+import { usePagination } from '@/hooks/usePagination';
+import { TablePagination } from '@/components/TablePagination';
 
 interface Props {
   walletId: string;
@@ -21,6 +23,7 @@ const statusVariant = (s: string): 'default' | 'secondary' | 'destructive' | 'ou
 
 export function WalletTransactionsTable({ walletId, network }: Props) {
   const { data: txs = [], isLoading } = useWalletTransactions(walletId);
+  const pg = usePagination(txs, 25);
 
   const copy = (v: string) => {
     navigator.clipboard.writeText(v);
