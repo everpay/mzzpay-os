@@ -36,7 +36,7 @@ export type RisonpayMeta = ProviderSettlementMeta;
 /**
  * Settlement-day SLA per PSP. Single place to change if a contract changes.
  *   - Shieldhub  → T+7 (card MID, MX acquirer)
- *   - Risonpay   → T+7 (card; APMs settle T+1)
+ *   - Risonpay   → T+4 (card; APMs settle T+1)
  *   - Matrix     → T+4
  *
  * Back-compat: the original signature was `settlementDaysFor(paymentMethod)`
@@ -68,8 +68,8 @@ export function settlementDaysFor(
     case "risonpay":
     default:
       // APM rails (open banking, SEPA, iDEAL...) clear next business day,
-      // card rails follow the standard T+7 PSP schedule.
-      return isCard ? 7 : 1;
+      // card rails follow the Risonpay T+4 PSP schedule.
+      return isCard ? 4 : 1;
   }
 }
 
@@ -120,8 +120,10 @@ export type BadgeKind = "missing" | "settled" | "delayed" | "scheduled";
  *   - the legacy `_risonpay_meta` shape (for back-compat), OR
  *   - any `_<provider>_meta` block from META_KEY_FOR.
  *
- * The first one found wins; ordering is risonpay → shieldhub → matrix to
- * preserve existing behaviour for rows that only have the Risonpay key.
+ * When `preferredProvider` is supplied AND that provider's meta block is
+ * present + non-empty on the row, it wins over any other PSP's block.
+ * Otherwise the first valid block in the default order
+ * (risonpay → shieldhub → matrix) is used.
  */
 export function deriveBadge(
   raw:
@@ -134,8 +136,9 @@ export function deriveBadge(
     | undefined,
   txStatus: string | null | undefined,
   now: Date = new Date(),
+  preferredProvider?: SettlementProvider | null,
 ): BadgeKind {
-  const meta = pickMeta(raw);
+  const meta = pickMeta(raw, preferredProvider);
   if (!meta || (!meta.settlement_status && !meta.expected_settlement_at)) {
     return txStatus === "completed" || txStatus === "processing" ? "delayed" : "missing";
   }
@@ -149,8 +152,17 @@ export function deriveBadge(
 
 function pickMeta(
   raw: Record<string, unknown> | null | undefined,
+  preferredProvider?: SettlementProvider | null,
 ): Partial<ProviderSettlementMeta> | undefined {
   if (!raw) return undefined;
+  // Preferred-provider short-circuit: respect the explicit caller request
+  // when that block exists and has at least one usable field.
+  if (preferredProvider) {
+    const block = raw[META_KEY_FOR[preferredProvider]] as
+      | Partial<ProviderSettlementMeta>
+      | undefined;
+    if (block && (block.settlement_status || block.expected_settlement_at)) return block;
+  }
   for (const provider of ["risonpay", "shieldhub", "matrix"] as SettlementProvider[]) {
     const block = raw[META_KEY_FOR[provider]] as Partial<ProviderSettlementMeta> | undefined;
     if (block && (block.settlement_status || block.expected_settlement_at)) return block;
