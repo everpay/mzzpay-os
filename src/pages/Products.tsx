@@ -14,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { notifyError, notifySuccess } from '@/lib/error-toast';
+import { usePagination } from '@/hooks/usePagination';
+import { TablePagination } from '@/components/TablePagination';
 
 export default function Products() {
   const { user } = useAuth();
@@ -67,13 +69,7 @@ export default function Products() {
           <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm">Out of Stock</CardTitle><ShoppingCart className="h-4 w-4 text-destructive" /></CardHeader><CardContent><div className="text-2xl font-bold">{out}</div></CardContent></Card>
         </div>
         {isLoading ? <Card><CardContent className="py-12 text-center text-muted-foreground">Loading...</CardContent></Card> : filtered.length === 0 ? <Card><CardContent className="flex flex-col items-center justify-center py-12"><Package className="h-12 w-12 text-muted-foreground mb-4" /><p className="text-muted-foreground">{search ? 'No matches' : 'No products yet'}</p></CardContent></Card> : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map(p => <Card key={p.id} className="flex flex-col">
-              <CardHeader className="pb-3"><div className="flex justify-between items-start"><CardTitle className="text-lg">{p.name}</CardTitle><Badge variant={p.stock <= 0 ? 'destructive' : p.stock <= 5 ? 'secondary' : 'default'}>{p.stock <= 0 ? 'Out' : p.stock <= 5 ? `Low (${p.stock})` : `In Stock (${p.stock})`}</Badge></div><p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p></CardHeader>
-              <CardContent className="flex-1 space-y-3">{p.image_url && <div className="aspect-video rounded-lg overflow-hidden bg-muted"><img src={p.image_url} alt={p.name} className="object-cover w-full h-full" /></div>}<div className="flex justify-between items-center"><p className="text-xl font-bold">${Number(p.price).toFixed(2)}</p>{p.product_type && <Badge variant="outline" className="capitalize text-xs">{p.product_type}</Badge>}</div></CardContent>
-              <div className="flex justify-between p-4 pt-0"><Button variant="outline" size="sm" className="rounded-full" onClick={() => openEdit(p)}><Edit className="mr-1 h-4 w-4" />Edit</Button><Button variant="outline" size="sm" className="rounded-full text-destructive" onClick={() => del(p.id)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button></div>
-            </Card>)}
-          </div>
+          <ProductGrid products={filtered} openEdit={openEdit} del={del} />
         )}
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
