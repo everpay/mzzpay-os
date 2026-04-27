@@ -48,8 +48,33 @@ export default function Settlements() {
       </div>
       <Card className="mb-6">
         <CardHeader><CardTitle>Settlement Batches</CardTitle><CardDescription>Processor-level records with fee breakdown</CardDescription></CardHeader>
-        <CardContent>{isLoading ? <div className="flex justify-center py-12"><div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div> : <SettlementsTable rows={filtered} sb={sb} />}</CardContent>
+        <CardContent>{isLoading ? <div className="flex justify-center py-12"><div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div> : <SettlementsTableInline rows={filtered} sb={sb} />}</CardContent>
       </Card>
     </AppLayout>
+  );
+}
+
+function SettlementsTableInline({ rows, sb }: { rows: any[]; sb: (s: string | null) => JSX.Element }) {
+  const pg = usePagination(rows, 25);
+  return (
+    <>
+      <Table>
+        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Provider</TableHead><TableHead>Gross</TableHead><TableHead>Fee</TableHead><TableHead>Net</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {pg.pageItems.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No settlements</TableCell></TableRow> :
+            pg.pageItems.map((s: any) => (
+              <TableRow key={s.id}>
+                <TableCell className="text-sm">{formatDate(s.created_at)}</TableCell>
+                <TableCell className="text-sm capitalize">{s.provider || '—'}</TableCell>
+                <TableCell className="font-mono text-sm">{formatCurrency(s.gross_amount || 0, (s.currency || 'USD') as any)}</TableCell>
+                <TableCell className="font-mono text-sm text-muted-foreground">{formatCurrency(s.fee || 0, (s.currency || 'USD') as any)}</TableCell>
+                <TableCell className="font-mono text-sm font-semibold">{formatCurrency(s.net_amount || 0, (s.currency || 'USD') as any)}</TableCell>
+                <TableCell>{sb(s.status)}</TableCell>
+              </TableRow>
+            ))}
+        </TableBody>
+      </Table>
+      <TablePagination page={pg.page} pageCount={pg.pageCount} pageSize={pg.pageSize} total={pg.total} from={pg.from} to={pg.to} canPrev={pg.canPrev} canNext={pg.canNext} onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} label="settlements" />
+    </>
   );
 }
