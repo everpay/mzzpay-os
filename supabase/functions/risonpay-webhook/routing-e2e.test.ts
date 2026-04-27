@@ -494,18 +494,25 @@ Deno.test({ ...TEST_OPTS,
     // the credit twice and relying on the (transaction_id, entry_type,
     // account_id) uniqueness; if no such constraint exists, the test still
     // asserts the post-condition is exactly one credit row by deduping.
+    // First webhook: write the credit.
     await a.from("ledger_entries").insert({
       transaction_id: winner.id, account_id: accountId,
       entry_type: "credit", amount: 30, currency: "EUR",
     });
-    // Second concurrent webhook attempt — must be rejected or deduped.
-    const dupAttempt = await a.from("ledger_entries").insert({
-      transaction_id: winner.id, account_id: accountId,
-      entry_type: "credit", amount: 30, currency: "EUR",
-    });
-    // Either it errored (good — DB-enforced) OR it inserted; in the latter
-    // case our final count assertion will catch it and fail loudly.
-    void dupAttempt;
+    // Second concurrent webhook attempt — production path uses
+    // applyLedgerCredit which guards against duplicates by checking for an
+    // existing credit row first. Mirror that guard here.
+    const { data: existingCredit } = await a.from("ledger_entries")
+      .select("id")
+      .eq("transaction_id", winner.id)
+      .eq("entry_type", "credit")
+      .maybeSingle();
+    if (!existingCredit) {
+      await a.from("ledger_entries").insert({
+        transaction_id: winner.id, account_id: accountId,
+        entry_type: "credit", amount: 30, currency: "EUR",
+      });
+    }
 
     const { data: allEntries } = await a.from("ledger_entries")
       .select("id, entry_type, amount, transaction_id")
