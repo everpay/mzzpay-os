@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { TransactionTable } from '@/components/TransactionTable';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -6,7 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Globe, X, Download, FileText } from 'lucide-react';
+import { Search, Globe, X, Download, FileText, Eye, EyeOff } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { PeriodSelector, type PeriodValue, getPeriodCutoff } from '@/components/PeriodSelector';
 import { CurrencySelector } from '@/components/CurrencySelector';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -292,7 +294,7 @@ export default function Transactions() {
 
       {isSuperAdmin && (
         <div className="mt-8">
-          <CardTestResultsPanel />
+          <CardBatteryToggle />
         </div>
       )}
     </AppLayout>
