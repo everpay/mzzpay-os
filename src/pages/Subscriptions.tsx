@@ -476,73 +476,14 @@ export default function Subscriptions() {
               <CardTitle className="text-sm">Active Subscriptions</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Next Billing</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {subscriptions?.map((sub: any) => (
-                    <TableRow key={sub.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{sub.customer?.first_name} {sub.customer?.last_name}</div>
-                          <div className="text-xs text-muted-foreground">{sub.customer?.email}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{sub.plan?.name}</TableCell>
-                      <TableCell className="font-mono">{formatCurrency(sub.plan?.amount, sub.plan?.currency)}</TableCell>
-                      <TableCell>{getStatusBadge(sub.status)}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString() : '—'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7"
-                                onClick={() => { setSelectedSub(sub); setNewPlanId(''); setProratedPreview(null); setChangePlanOpen(true); }}>
-                                <ArrowUpDown className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Change Plan</TooltipContent>
-                          </Tooltip>
-                          {sub.status === 'past_due' && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-warning"
-                                  onClick={() => handleRetryPayment(sub.id)} disabled={isRetrying === sub.id}>
-                                  <RefreshCw className={`h-3.5 w-3.5 ${isRetrying === sub.id ? 'animate-spin' : ''}`} />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Retry Payment</TooltipContent>
-                            </Tooltip>
-                          )}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSendAlert(sub, 'renewal_reminder')}>
-                                <Bell className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Send Reminder</TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {!subscriptions?.length && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No active subscriptions</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+              <SubscriptionsTable
+                subscriptions={subscriptions || []}
+                getStatusBadge={getStatusBadge}
+                onChangePlan={(sub) => { setSelectedSub(sub); setNewPlanId(''); setProratedPreview(null); setChangePlanOpen(true); }}
+                onRetry={handleRetryPayment}
+                onSendReminder={(sub) => handleSendAlert(sub, 'renewal_reminder')}
+                isRetrying={isRetrying}
+              />
             </CardContent>
           </Card>
         </TabsContent>
