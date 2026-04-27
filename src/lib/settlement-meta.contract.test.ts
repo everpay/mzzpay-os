@@ -201,3 +201,77 @@ describe("META_KEY_FOR — namespacing contract", () => {
     expect(META_KEY_FOR.matrix).toBe("_matrix_meta");
   });
 });
+
+describe("deriveBadge — preferredProvider picks the matching META_KEY_FOR", () => {
+  // When a transaction row carries multiple PSP meta blocks (e.g. a fallback
+  // retry after the first PSP timed out), the UI must be able to pin badge
+  // derivation to the provider that actually settled the payment. This
+  // proves `deriveBadge(raw, status, now, preferredProvider)` reads from
+  // META_KEY_FOR[preferredProvider] and ignores the other blocks.
+
+  const received = new Date("2026-04-20T08:00:00Z");
+
+  // Build three blocks with DISTINCT settlement_status values so we can
+  // tell which one was read just by inspecting the resulting BadgeKind.
+  const settledFor = (p: SettlementProvider): ProviderSettlementMeta => ({
+    ...buildProviderMeta({ provider: p, paymentMethod: "card", mappedStatus: "completed", now: received }),
+    settlement_status: "settled",
+  });
+  const scheduledFor = (p: SettlementProvider): ProviderSettlementMeta =>
+    buildProviderMeta({ provider: p, paymentMethod: "card", mappedStatus: "completed", now: received });
+
+  it.each<SettlementProvider>(["risonpay", "shieldhub", "matrix"])(
+    "prefers %s's block when multiple PSP meta blocks coexist",
+    (preferred) => {
+      // Every OTHER provider's block reports 'settled'; only the preferred
+      // provider's block reports 'scheduled'. If the implementation honours
+      // the preferred key, the badge MUST be 'scheduled'. If it falls back
+      // to the default risonpay-first ordering, the badge would be 'settled'
+      // (for non-risonpay preferences).
+      const raw: Record<string, ProviderSettlementMeta> = {};
+      for (const p of ["risonpay", "shieldhub", "matrix"] as SettlementProvider[]) {
+        raw[META_KEY_FOR[p]] = p === preferred ? scheduledFor(p) : settledFor(p);
+      }
+      expect(deriveBadge(raw, "completed", received, preferred)).toBe("scheduled");
+    },
+  );
+
+  it.each<SettlementProvider>(["risonpay", "shieldhub", "matrix"])(
+    "reads %s's expected_settlement_at exclusively when preferred",
+    (preferred) => {
+      // Place a clearly delayed block under EVERY other provider's key. The
+      // preferred provider's block is fresh → badge must be 'scheduled'.
+      const stale: ProviderSettlementMeta = {
+        mapped_status: "completed",
+        settlement_status: "scheduled",
+        expected_settlement_at: new Date(received.getTime() - 48 * 3_600_000).toISOString(),
+        received_at: new Date(received.getTime() - 72 * 3_600_000).toISOString(),
+      };
+      const raw: Record<string, ProviderSettlementMeta> = {};
+      for (const p of ["risonpay", "shieldhub", "matrix"] as SettlementProvider[]) {
+        raw[META_KEY_FOR[p]] = p === preferred ? scheduledFor(p) : stale;
+      }
+      expect(deriveBadge(raw, "completed", received, preferred)).toBe("scheduled");
+    },
+  );
+
+  it("falls back to default ordering when preferredProvider's block is absent", () => {
+    // preferredProvider=matrix but no _matrix_meta on row → must fall back
+    // to the default risonpay → shieldhub → matrix scan and pick risonpay.
+    const raw = {
+      [META_KEY_FOR.risonpay]: { ...scheduledFor("risonpay"), settlement_status: "settled" as const },
+      [META_KEY_FOR.shieldhub]: scheduledFor("shieldhub"),
+    };
+    expect(deriveBadge(raw, "completed", received, "matrix")).toBe("settled");
+  });
+
+  it("ignores an empty preferred block and falls back to other providers", () => {
+    // preferredProvider=risonpay but its block has no usable fields → must
+    // pick the next provider's valid block instead of returning 'missing'.
+    const raw = {
+      [META_KEY_FOR.risonpay]: {},
+      [META_KEY_FOR.matrix]: { ...scheduledFor("matrix"), settlement_status: "settled" as const },
+    };
+    expect(deriveBadge(raw, "completed", received, "risonpay")).toBe("settled");
+  });
+});
