@@ -6,6 +6,8 @@ import { Copy, ExternalLink } from 'lucide-react';
 import { useWalletTransactions, explorerUrl } from '@/hooks/useCryptoTransactions';
 import { format } from 'date-fns';
 import { notifySuccess } from '@/lib/error-toast';
+import { usePagination } from '@/hooks/usePagination';
+import { TablePagination } from '@/components/TablePagination';
 
 interface Props {
   walletId: string;
@@ -21,6 +23,7 @@ const statusVariant = (s: string): 'default' | 'secondary' | 'destructive' | 'ou
 
 export function WalletTransactionsTable({ walletId, network }: Props) {
   const { data: txs = [], isLoading } = useWalletTransactions(walletId);
+  const pg = usePagination(txs, 25);
 
   const copy = (v: string) => {
     navigator.clipboard.writeText(v);
@@ -46,7 +49,7 @@ export function WalletTransactionsTable({ walletId, network }: Props) {
             <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground text-sm">Loading...</TableCell></TableRow>
           ) : txs.length === 0 ? (
             <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground text-sm">No transactions yet</TableCell></TableRow>
-          ) : txs.map((t) => {
+          ) : pg.pageItems.map((t) => {
             const url = explorerUrl(network, t.tx_hash);
             return (
               <TableRow key={t.id}>
@@ -78,6 +81,14 @@ export function WalletTransactionsTable({ walletId, network }: Props) {
           })}
         </TableBody>
       </Table>
+      <TablePagination
+        page={pg.page} pageCount={pg.pageCount} pageSize={pg.pageSize}
+        total={pg.total} from={pg.from} to={pg.to}
+        canPrev={pg.canPrev} canNext={pg.canNext}
+        onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize}
+        label="transactions"
+        className="px-3"
+      />
     </div>
   );
 }

@@ -17,6 +17,8 @@ import { Currency } from '@/lib/types';
 import { InvoiceLineItems, LineItem } from '@/components/InvoiceLineItems';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { notifyError, notifySuccess } from '@/lib/error-toast';
+import { usePagination } from '@/hooks/usePagination';
+import { TablePagination } from '@/components/TablePagination';
 
 const STATUS_FILTERS = ['all', 'draft', 'sent', 'paid', 'overdue'] as const;
 type StatusFilter = typeof STATUS_FILTERS[number];
@@ -194,15 +196,8 @@ export default function Invoices() {
     setLineItems([]);
   };
 
-  const statusColor = (status: string) => {
-    switch (status) {
-      case 'paid': return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
-      case 'sent': return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
-      case 'overdue': return 'bg-red-500/10 text-red-600 border-red-500/20';
-      case 'draft': return 'bg-muted text-muted-foreground border-border';
-      default: return 'bg-muted text-muted-foreground border-border';
-    }
-  };
+
+
 
   return (
     <AppLayout>
@@ -325,50 +320,87 @@ export default function Invoices() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {filteredInvoices.map((inv: any) => (
-            <Card key={inv.id} className="hover:border-primary/20 transition-colors">
-              <CardContent className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-foreground">{inv.invoice_number}</p>
-                      <Badge className={statusColor(inv.status)}>{inv.status}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {inv.customer_name || inv.customer_email} · {formatCurrency(inv.amount, inv.currency)}
-                      {Array.isArray(inv.items) && inv.items.length > 0 && ` · ${inv.items.length} item${inv.items.length > 1 ? 's' : ''}`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" className="gap-1" onClick={() => generateInvoicePDF(inv)}>
-                    <Download className="h-3 w-3" /> PDF
-                  </Button>
-                  {inv.status === 'draft' && (
-                    <Button variant="outline" size="sm" className="gap-1" onClick={() => handleSend(inv.id)}>
-                      <Send className="h-3 w-3" /> Send
-                    </Button>
-                  )}
-                  {['sent', 'overdue'].includes(inv.status) && (
-                    <>
-                      <Button variant="ghost" size="sm" className="gap-1" onClick={() => copyPaymentLink(inv.id)}>
-                        <Copy className="h-3 w-3" /> Copy Link
-                      </Button>
-                      <Button variant="ghost" size="sm" className="gap-1" onClick={() => window.open(getPaymentUrl(inv.id), '_blank')}>
-                        <ExternalLink className="h-3 w-3" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <InvoiceList
+          invoices={filteredInvoices}
+          onSend={handleSend}
+          onCopyLink={copyPaymentLink}
+          getPaymentUrl={getPaymentUrl}
+        />
       )}
     </AppLayout>
   );
+}
+
+function InvoiceList({ invoices, onSend, onCopyLink, getPaymentUrl }: { invoices: any[]; onSend: (id: string) => void; onCopyLink: (id: string) => void; getPaymentUrl: (id: string) => string }) {
+  const pg = usePagination(invoices, 25);
+  return (
+    <>
+      <div className="space-y-3">
+        {pg.pageItems.map((inv: any) => (
+          <Card key={inv.id} className="hover:border-primary/20 transition-colors">
+            <CardContent className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-foreground">{inv.invoice_number}</p>
+                    <Badge className={statusColor(inv.status)}>{inv.status}</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {inv.customer_name || inv.customer_email} · {formatCurrency(inv.amount, inv.currency)}
+                    {Array.isArray(inv.items) && inv.items.length > 0 && ` · ${inv.items.length} item${inv.items.length > 1 ? 's' : ''}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" className="gap-1" onClick={() => generateInvoicePDF(inv)}>
+                  <Download className="h-3 w-3" /> PDF
+                </Button>
+                {inv.status === 'draft' && (
+                  <Button variant="outline" size="sm" className="gap-1" onClick={() => onSend(inv.id)}>
+                    <Send className="h-3 w-3" /> Send
+                  </Button>
+                )}
+                {['sent', 'overdue'].includes(inv.status) && (
+                  <>
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => onCopyLink(inv.id)}>
+                      <Copy className="h-3 w-3" /> Copy Link
+                    </Button>
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => window.open(getPaymentUrl(inv.id), '_blank')}>
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <TablePagination
+        page={pg.page}
+        pageCount={pg.pageCount}
+        pageSize={pg.pageSize}
+        total={pg.total}
+        from={pg.from}
+        to={pg.to}
+        canPrev={pg.canPrev}
+        canNext={pg.canNext}
+        onPageChange={pg.setPage}
+        onPageSizeChange={pg.setPageSize}
+        label="invoices"
+      />
+    </>
+  );
+}
+
+function statusColor(status: string) {
+  switch (status) {
+    case 'paid': return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+    case 'sent': return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+    case 'overdue': return 'bg-red-500/10 text-red-600 border-red-500/20';
+    case 'draft': return 'bg-muted text-muted-foreground border-border';
+    default: return 'bg-muted text-muted-foreground border-border';
+  }
 }

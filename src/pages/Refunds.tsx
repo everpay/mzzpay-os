@@ -15,6 +15,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { formatCurrency, formatDate } from '@/lib/format';
 import { notifyError, notifySuccess } from '@/lib/error-toast';
+import { usePagination } from '@/hooks/usePagination';
+import { TablePagination } from '@/components/TablePagination';
 
 export default function Refunds() {
   const qc = useQueryClient();
@@ -98,22 +100,7 @@ export default function Refunds() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader><TableRow><TableHead>Customer</TableHead><TableHead>Amount</TableHead><TableHead>Reason</TableHead><TableHead>Provider</TableHead><TableHead>Status</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {filtered?.map((r: any) => (
-                <TableRow key={r.id}>
-                  <TableCell className="text-sm">{r.transaction?.customer_email || '—'}</TableCell>
-                  <TableCell className="font-mono">{formatCurrency(r.amount, r.currency)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{r.reason || '—'}</TableCell>
-                  <TableCell className="text-sm">{r.provider || '—'}</TableCell>
-                  <TableCell>{statusBadge(r.status)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatDate(r.created_at)}</TableCell>
-                </TableRow>
-              ))}
-              {!filtered?.length && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No refunds yet</TableCell></TableRow>}
-            </TableBody>
-          </Table>
+          <RefundsTable refunds={filtered || []} statusBadge={statusBadge} />
         </CardContent>
       </Card>
 

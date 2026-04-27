@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RotateCcw, Mail, AlertCircle } from "lucide-react";
 import { notifyError, notifySuccess } from "@/lib/error-toast";
 import { format } from "date-fns";
+import { usePagination } from "@/hooks/usePagination";
+import { TablePagination } from "@/components/TablePagination";
 
 type LogRow = {
   message_id: string | null;
@@ -117,63 +119,63 @@ export default function AdminEmailLog() {
           ) : deduped.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">No emails sent yet.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Template</TableHead>
-                  <TableHead>Recipient</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>When</TableHead>
-                  <TableHead>Error</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {deduped.map((r) => {
-                  const canRetry =
-                    isAuthEmail(r.template_name) &&
-                    ["failed", "dlq"].includes(r.status) &&
-                    !!r.message_id;
-                  return (
-                    <TableRow key={`${r.message_id}-${r.created_at}`}>
-                      <TableCell className="font-mono text-xs">{r.template_name ?? "—"}</TableCell>
-                      <TableCell className="text-sm">{r.recipient_email ?? "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant={STATUS_VARIANT[r.status] ?? "outline"}>{r.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {format(new Date(r.created_at), "MMM d, HH:mm")}
-                      </TableCell>
-                      <TableCell className="text-xs text-destructive max-w-[260px] truncate" title={r.error_message ?? ""}>
-                        {r.error_message ? (
-                          <span className="inline-flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
-                            {r.error_message}
-                          </span>
-                        ) : "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {canRetry ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={retrying === r.message_id}
-                            onClick={() => handleRetry(r)}
-                            className="gap-1"
-                          >
-                            <RotateCcw className="h-3 w-3" />
-                            {retrying === r.message_id ? "Retrying…" : "Retry"}
-                          </Button>
-                        ) : null}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <EmailLogTable rows={deduped} retrying={retrying} onRetry={handleRetry} isAuthEmail={isAuthEmail} />
           )}
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function EmailLogTable({ rows, retrying, onRetry, isAuthEmail }: { rows: LogRow[]; retrying: string | null; onRetry: (r: LogRow) => void; isAuthEmail: (n: string | null) => boolean }) {
+  const pg = usePagination(rows, 25);
+  return (
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Template</TableHead>
+            <TableHead>Recipient</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>When</TableHead>
+            <TableHead>Error</TableHead>
+            <TableHead className="text-right">Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {pg.pageItems.map((r) => {
+            const canRetry = isAuthEmail(r.template_name) && ["failed", "dlq"].includes(r.status) && !!r.message_id;
+            return (
+              <TableRow key={`${r.message_id}-${r.created_at}`}>
+                <TableCell className="font-mono text-xs">{r.template_name ?? "—"}</TableCell>
+                <TableCell className="text-sm">{r.recipient_email ?? "—"}</TableCell>
+                <TableCell><Badge variant={STATUS_VARIANT[r.status] ?? "outline"}>{r.status}</Badge></TableCell>
+                <TableCell className="text-xs text-muted-foreground">{format(new Date(r.created_at), "MMM d, HH:mm")}</TableCell>
+                <TableCell className="text-xs text-destructive max-w-[260px] truncate" title={r.error_message ?? ""}>
+                  {r.error_message ? (
+                    <span className="inline-flex items-center gap-1"><AlertCircle className="h-3 w-3" />{r.error_message}</span>
+                  ) : "—"}
+                </TableCell>
+                <TableCell className="text-right">
+                  {canRetry ? (
+                    <Button size="sm" variant="outline" disabled={retrying === r.message_id} onClick={() => onRetry(r)} className="gap-1">
+                      <RotateCcw className="h-3 w-3" />
+                      {retrying === r.message_id ? "Retrying…" : "Retry"}
+                    </Button>
+                  ) : null}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+      <TablePagination
+        page={pg.page} pageCount={pg.pageCount} pageSize={pg.pageSize}
+        total={pg.total} from={pg.from} to={pg.to}
+        canPrev={pg.canPrev} canNext={pg.canNext}
+        onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize}
+        label="emails"
+      />
+    </>
   );
 }

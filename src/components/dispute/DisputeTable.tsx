@@ -4,6 +4,8 @@ import { StatusBadge } from './StatusBadge';
 import { EvidenceScore } from './EvidenceScore';
 import { Chargeback, ChargebackDispute } from '@/lib/dispute-types';
 import { format } from 'date-fns';
+import { usePagination } from '@/hooks/usePagination';
+import { TablePagination } from '@/components/TablePagination';
 
 interface DisputeTableProps {
   chargebacks: Chargeback[];
@@ -14,6 +16,7 @@ interface DisputeTableProps {
 
 export function DisputeTable({ chargebacks, disputes, basePath, showMerchant = false }: DisputeTableProps) {
   const navigate = useNavigate();
+  const pg = usePagination(chargebacks, 25);
 
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
@@ -31,7 +34,7 @@ export function DisputeTable({ chargebacks, disputes, basePath, showMerchant = f
           </TableRow>
         </TableHeader>
         <TableBody>
-          {chargebacks.map((cb) => {
+          {pg.pageItems.map((cb) => {
             const dispute = disputes.find(d => d.chargeback_id === cb.id);
             return (
               <TableRow
@@ -59,6 +62,14 @@ export function DisputeTable({ chargebacks, disputes, basePath, showMerchant = f
           })}
         </TableBody>
       </Table>
+      <TablePagination
+        page={pg.page} pageCount={pg.pageCount} pageSize={pg.pageSize}
+        total={pg.total} from={pg.from} to={pg.to}
+        canPrev={pg.canPrev} canNext={pg.canNext}
+        onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize}
+        label="disputes"
+        className="px-4"
+      />
     </div>
   );
 }
