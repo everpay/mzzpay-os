@@ -1,8 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { verifyHmacSignature } from '../_shared/verify-webhook.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-signature',
 };
 
 interface WebhookPayload {
@@ -25,7 +26,21 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const payload: WebhookPayload = await req.json();
+    const rawBody = await req.text();
+    const verify = await verifyHmacSignature({
+      secret: Deno.env.get('SUBSCRIPTION_WEBHOOK_SECRET') ?? Deno.env.get('INTERNAL_WEBHOOK_SECRET'),
+      body: rawBody,
+      signature: req.headers.get('x-webhook-signature'),
+      requireSecret: true,
+    });
+    if (!verify.ok) {
+      console.warn('[subscription-webhook] signature failure:', verify.reason);
+      return new Response(JSON.stringify({ error: 'unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const payload: WebhookPayload = JSON.parse(rawBody);
     console.log('Webhook received:', payload);
 
     // Handle different subscription events
