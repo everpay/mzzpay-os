@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RotateCcw, Mail, AlertCircle } from "lucide-react";
 import { notifyError, notifySuccess } from "@/lib/error-toast";
 import { format } from "date-fns";
+import { usePagination } from "@/hooks/usePagination";
+import { TablePagination } from "@/components/TablePagination";
 
 type LogRow = {
   message_id: string | null;

@@ -12,6 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { FileText, Download, Search, Shield, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportPdf } from '@/lib/export-pdf';
+import { usePagination } from '@/hooks/usePagination';
+import { TablePagination } from '@/components/TablePagination';
 
 export default function AuditTrail() {
   const { user } = useAuth();
@@ -73,7 +75,54 @@ export default function AuditTrail() {
           <div className="relative flex-1 min-w-[200px]"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="pl-9 rounded-2xl" placeholder="Search..." value={q} onChange={e => setQ(e.target.value)} /></div>
           <Select value={filter} onValueChange={setFilter}><SelectTrigger className="w-[180px] rounded-2xl"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Actions</SelectItem>{actions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent></Select>
         </div>
-        <Card><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Timestamp</TableHead><TableHead>Action</TableHead><TableHead>Entity</TableHead><TableHead>Entity ID</TableHead><TableHead>Metadata</TableHead></TableRow></TableHeader><TableBody>{isLoading ? <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow> : filtered.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No audit events</TableCell></TableRow> : filtered.slice(0, 100).map(l => <TableRow key={l.id}><TableCell className="text-sm whitespace-nowrap">{format(new Date(l.created_at), 'MMM dd, HH:mm:ss')}</TableCell><TableCell><Badge variant={ac(l.action)}>{l.action}</Badge></TableCell><TableCell className="text-sm">{l.entity_type || '—'}</TableCell><TableCell className="font-mono text-xs">{l.entity_id ? `${l.entity_id.slice(0,12)}...` : '—'}</TableCell><TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{l.metadata ? JSON.stringify(l.metadata).slice(0, 60) : '—'}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>
+        <Card><CardContent className="p-0"><AuditLogsTable logs={filtered} loading={isLoading} ac={ac} /></CardContent></Card>
+      </div>
+    </AppLayout>
+  );
+}
+
+function AuditLogsTable({ logs, loading, ac }: { logs: any[]; loading: boolean; ac: (a: string) => any }) {
+  const pg = usePagination(logs, 50);
+  return (
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Timestamp</TableHead>
+            <TableHead>Action</TableHead>
+            <TableHead>Entity</TableHead>
+            <TableHead>Entity ID</TableHead>
+            <TableHead>Metadata</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {loading ? (
+            <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+          ) : logs.length === 0 ? (
+            <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No audit events</TableCell></TableRow>
+          ) : pg.pageItems.map((l: any) => (
+            <TableRow key={l.id}>
+              <TableCell className="text-sm whitespace-nowrap">{format(new Date(l.created_at), 'MMM dd, HH:mm:ss')}</TableCell>
+              <TableCell><Badge variant={ac(l.action)}>{l.action}</Badge></TableCell>
+              <TableCell className="text-sm">{l.entity_type || '—'}</TableCell>
+              <TableCell className="font-mono text-xs">{l.entity_id ? `${l.entity_id.slice(0,12)}...` : '—'}</TableCell>
+              <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{l.metadata ? JSON.stringify(l.metadata).slice(0, 60) : '—'}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <TablePagination
+        page={pg.page} pageCount={pg.pageCount} pageSize={pg.pageSize}
+        total={pg.total} from={pg.from} to={pg.to}
+        canPrev={pg.canPrev} canNext={pg.canNext}
+        onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize}
+        pageSizeOptions={[25, 50, 100, 200]}
+        label="events"
+        className="px-4"
+      />
+    </>
+  );
+}
       </div>
     </AppLayout>
   );
