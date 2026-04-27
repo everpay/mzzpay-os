@@ -25,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: "SaaS", to: "/solutions/saas", description: "Subscription billing" },
       { label: "Marketplaces", to: "/solutions/marketplaces", description: "Multi-party payouts" },
       { label: "Enterprise", to: "/solutions/enterprise", description: "Built to scale" },
+      { label: "High-Risk", to: "/solutions/high-risk", description: "Gaming, nutra, dating & more" },
     ],
   },
   {
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: "Online Payments", to: "/products/online-payments", description: "Cards, wallets & APMs" },
       { label: "Payment Methods", to: "/products/payment-methods", description: "200+ global rails" },
       { label: "Fraud Prevention", to: "/products/fraud-prevention", description: "AI-powered protection" },
+      { label: "High-Risk Processing", to: "/solutions/high-risk", description: "Multi-acquirer cascading" },
     ],
   },
   { label: "Pricing", to: "/pricing" },
