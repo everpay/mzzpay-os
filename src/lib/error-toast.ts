@@ -255,6 +255,7 @@ export function notifyError(
   const desc = opts?.description ?? COPY[norm.code].description ?? opts?.fallback ?? COPY.unknown.description;
   sonnerToast.error(norm.title, {
     description: withCode(norm.code, desc),
+    duration: TOAST_DURATIONS.error,
   });
   return norm;
 }
@@ -262,11 +263,14 @@ export function notifyError(
 export function notifySuccess(title: string, description?: string) {
   sonnerToast.success(title, {
     description: description ? `${description}\n[code: ok]` : `[code: ok]`,
+    duration: TOAST_DURATIONS.success,
   });
 }
 
 export function notifyInfo(title: string, description?: string) {
   sonnerToast(title, {
     description: description ? `${description}\n[code: info]` : `[code: info]`,
+    duration: TOAST_DURATIONS.info,
   });
 }
+
