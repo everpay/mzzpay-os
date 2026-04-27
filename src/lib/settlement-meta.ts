@@ -38,11 +38,27 @@ export type RisonpayMeta = ProviderSettlementMeta;
  *   - Shieldhub  → T+7 (card MID, MX acquirer)
  *   - Risonpay   → T+7 (card; APMs settle T+1)
  *   - Matrix     → T+4
+ *
+ * Back-compat: the original signature was `settlementDaysFor(paymentMethod)`
+ * which assumed Risonpay. That single-arg form is still supported.
  */
+export function settlementDaysFor(paymentMethod?: string | null): number;
 export function settlementDaysFor(
   provider: SettlementProvider,
   paymentMethod?: string | null,
+): number;
+export function settlementDaysFor(
+  arg1?: SettlementProvider | string | null,
+  arg2?: string | null,
 ): number {
+  let provider: SettlementProvider = "risonpay";
+  let paymentMethod: string | null | undefined;
+  if (arg1 === "risonpay" || arg1 === "shieldhub" || arg1 === "matrix") {
+    provider = arg1;
+    paymentMethod = arg2;
+  } else {
+    paymentMethod = arg1 as string | null | undefined;
+  }
   const isCard = (paymentMethod || "").toLowerCase().includes("card");
   switch (provider) {
     case "shieldhub":
@@ -123,9 +139,9 @@ export function deriveBadge(
   if (!meta || (!meta.settlement_status && !meta.expected_settlement_at)) {
     return txStatus === "completed" || txStatus === "processing" ? "delayed" : "missing";
   }
-  if (meta.settlement_status === "settled") return "settled";
+  if ((meta.settlement_status as string) === "settled") return "settled";
   const when = meta.expected_settlement_at ? new Date(meta.expected_settlement_at) : null;
-  if (when && differenceInHours(now, when) > 6 && meta.settlement_status !== "settled") {
+  if (when && differenceInHours(now, when) > 6 && (meta.settlement_status as string) !== "settled") {
     return "delayed";
   }
   return "scheduled";
