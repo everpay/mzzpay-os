@@ -29,6 +29,7 @@ const LABELS: Record<string, string> = {
   moneto: "Moneto Wallet",
   moneto_mpg: "Moneto Payment Gateway",
   stripe: "Stripe",
+  risonpay: "RisonPay (CDN)",
 };
 
 const DESCRIPTIONS: Record<string, string> = {

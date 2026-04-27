@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { TransactionTable } from '@/components/TransactionTable';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -6,7 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Globe, X, Download, FileText } from 'lucide-react';
+import { Search, Globe, X, Download, FileText, Eye, EyeOff } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { PeriodSelector, type PeriodValue, getPeriodCutoff } from '@/components/PeriodSelector';
 import { CurrencySelector } from '@/components/CurrencySelector';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -292,7 +294,7 @@ export default function Transactions() {
 
       {isSuperAdmin && (
         <div className="mt-8">
-          <CardTestResultsPanel />
+          <CardBatteryToggle />
         </div>
       )}
     </AppLayout>
@@ -318,5 +320,43 @@ function TransactionsList({ transactions, totalCount }: { transactions: any[]; t
         label={`of ${totalCount.toLocaleString()} total transactions`}
       />
     </>
+  );
+}
+
+/**
+ * Super-admin only. Lets the super_admin show/hide the Card Battery
+ * panel locally. Underlying API calls (`card-test-runner` invocation +
+ * realtime subscription) are gated by mounting — when hidden, this
+ * component does NOT render `CardTestResultsPanel`, which means no
+ * runner is invoked and no card_test_runs subscription opens.
+ */
+function CardBatteryToggle() {
+  const [show, setShow] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('mzz.cardBattery.visible') === '1';
+  });
+  useEffect(() => {
+    window.localStorage.setItem('mzz.cardBattery.visible', show ? '1' : '0');
+  }, [show]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
+        <div className="flex items-start gap-3">
+          {show ? <Eye className="h-4 w-4 mt-0.5 text-primary" /> : <EyeOff className="h-4 w-4 mt-0.5 text-muted-foreground" />}
+          <div>
+            <Label htmlFor="cb-toggle" className="text-sm font-semibold">
+              Card battery test panel
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Super-admin only. When off, no probes are triggered and no realtime
+              subscription is opened against <span className="font-mono">card_test_runs</span>.
+            </p>
+          </div>
+        </div>
+        <Switch id="cb-toggle" checked={show} onCheckedChange={setShow} />
+      </div>
+      {show && <CardTestResultsPanel />}
+    </div>
   );
 }

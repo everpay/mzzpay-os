@@ -62,6 +62,13 @@ export const providerConfigs: Record<Provider, ProviderConfig> = {
     regions: ['US', 'GLOBAL'],
     methods: ['Card', '2D'],
   },
+  risonpay: {
+    name: 'risonpay',
+    displayName: processorLabel('risonpay'),
+    supportedCurrencies: ['EUR', 'GBP', 'USD'],
+    regions: ['EU', 'UK', 'GLOBAL'],
+    methods: ['Card', 'APM', 'Bank Transfer', 'Bizum', 'BLIK', 'iDEAL', 'MBWay'],
+  },
 };
 
 /**

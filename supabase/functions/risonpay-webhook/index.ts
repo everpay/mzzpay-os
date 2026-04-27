@@ -229,6 +229,11 @@ serve(async (req) => {
     );
   }
 
+  // Compute expected settlement (RisonPay default: T+2 business days for cards,
+  // T+1 for APMs). Stored in processor_raw_response for downstream UI display.
+  const settlementDays = (payload.payment_method || "").toLowerCase().includes("card") ? 2 : 1;
+  const expectedSettlement = new Date(Date.now() + settlementDays * 24 * 3600 * 1000).toISOString();
+
   // Apply transaction status update (only forward — never overwrite a terminal state).
   const terminal = ["completed", "failed", "refunded"];
   if (!terminal.includes(txRow.status) || mappedStatus === "refunded") {
@@ -239,7 +244,15 @@ serve(async (req) => {
         provider_ref: providerRef ?? undefined,
         processor_error_code: payload.error_code ?? null,
         processor_error_message: payload.error_message ?? null,
-        processor_raw_response: payload,
+        processor_raw_response: {
+          ...payload,
+          _risonpay_meta: {
+            mapped_status: mappedStatus,
+            expected_settlement_at: expectedSettlement,
+            settlement_status: mappedStatus === "completed" ? "scheduled" : "pending",
+            received_at: new Date().toISOString(),
+          },
+        },
         updated_at: new Date().toISOString(),
       })
       .eq("id", txRow.id);
