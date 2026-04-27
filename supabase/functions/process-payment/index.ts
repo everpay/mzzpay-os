@@ -356,18 +356,37 @@ serve(async (req) => {
       vgsVaultPromise = vaultToVGS(cardDetails);
     }
 
-    // ROUTING POLICY:
-    // - CARD payments: ALWAYS routed to MzzPay USD (Mondo card path is disabled).
-    // - OPEN_BANKING payments in EUR/GBP: routed to Mondo (OpenBanking endpoint stays enabled).
-    // - Everything else: MzzPay USD.
+    // ROUTING POLICY (2026-04 update — RisonPay onboarded):
+    //  - OFAC jurisdictions are HARD BLOCKED before routing.
+    //  - OPEN_BANKING (EUR/GBP) → Mondo.
+    //  - EU/EEA + EU-adjacent customers OR EUR/GBP currency → RisonPay (primary).
+    //  - All other regions → Shieldhub (USD MX MID), with RisonPay as fallback.
+    const EU_EEA = new Set([
+      'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE',
+      'IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE',
+      'IS','LI','NO','GB','CH','MC','SM','VA','AD',
+    ]);
+    const OFAC = new Set(['CU','IR','KP','SY','RU','BY','VE','MM']);
+    const billingCountry = (paymentData.billing?.country || '').toUpperCase();
+
+    if (OFAC.has(billingCountry)) {
+      return new Response(JSON.stringify({
+        error: `Payments from ${billingCountry} are blocked due to sanctions compliance`,
+        error_code: 'ofac_blocked',
+        code: 'ofac_blocked',
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     if (paymentMethod === 'open_banking' && ['EUR', 'GBP'].includes(currency)) {
       provider = 'mondo';
+    } else if (EU_EEA.has(billingCountry) || ['EUR', 'GBP'].includes(currency)) {
+      provider = 'risonpay';
     } else if (paymentMethod === 'card') {
-      provider = 'mzzpay';
+      provider = 'shieldhub';
     } else {
-      provider = 'mzzpay';
+      provider = 'shieldhub';
     }
-    // Allow explicit override (e.g. matrix/shieldhub/moneto) from the caller.
+    // Allow explicit override (e.g. matrix/shieldhub/moneto/risonpay) from the caller.
     if ((paymentData as any).provider) provider = (paymentData as any).provider;
 
     // Per-processor field validation — runs BEFORE network call so the UI
