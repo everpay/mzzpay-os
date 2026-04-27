@@ -1,7 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AlertTriangle, Clock, CheckCircle2, Calendar } from 'lucide-react';
-import { differenceInHours, format } from 'date-fns';
+import { AlertTriangle, CheckCircle2, Calendar } from 'lucide-react';
+import { format } from 'date-fns';
+import { deriveBadge } from '@/lib/settlement-meta';
 
 interface Props {
   /** raw `processor_raw_response` from the transaction row */
@@ -14,15 +15,17 @@ interface Props {
  * RisonpaySettlementBadge
  *
  * Reads the `_risonpay_meta` block written by `risonpay-webhook` and displays
- * the expected settlement date with an icon. Falls back to a "delayed"
- * warning when the merchant should already have received funds but the
- * webhook never confirmed the settlement transition.
+ * the expected settlement date with an icon. The derivation logic is shared
+ * with the webhook contract via `src/lib/settlement-meta.ts` and locked by
+ * `settlement-meta.test.ts`.
  */
 export function RisonpaySettlementBadge({ raw, status, className }: Props) {
   const meta = raw?._risonpay_meta;
+  const kind = deriveBadge(raw, status);
 
-  // No webhook received yet for a completed-looking tx → flag as delayed.
-  if (!meta && (status === 'completed' || status === 'processing')) {
+  if (kind === 'missing') return null;
+
+  if (kind === 'delayed' && !meta) {
     return (
       <Tip text="No settlement webhook received yet from RisonPay.">
         <Badge variant="outline" className={`gap-1 text-[10px] border-warning/40 text-warning ${className ?? ''}`}>
@@ -32,14 +35,12 @@ export function RisonpaySettlementBadge({ raw, status, className }: Props) {
       </Tip>
     );
   }
-  if (!meta) return null;
 
-  const when = meta.expected_settlement_at ? new Date(meta.expected_settlement_at) : null;
-  const delayed = when && differenceInHours(new Date(), when) > 6 && meta.settlement_status !== 'settled';
+  const when = meta?.expected_settlement_at ? new Date(meta.expected_settlement_at) : null;
 
-  if (delayed) {
+  if (kind === 'delayed') {
     return (
-      <Tip text={`Expected by ${format(when!, 'MMM dd, HH:mm')} — provider has not confirmed settlement.`}>
+      <Tip text={`Expected by ${when ? format(when, 'MMM dd, HH:mm') : 'now'} — provider has not confirmed settlement.`}>
         <Badge variant="destructive" className={`gap-1 text-[10px] ${className ?? ''}`}>
           <AlertTriangle className="h-3 w-3" />
           settlement delayed
@@ -48,7 +49,7 @@ export function RisonpaySettlementBadge({ raw, status, className }: Props) {
     );
   }
 
-  if (meta.settlement_status === 'settled') {
+  if (kind === 'settled') {
     return (
       <Badge className={`gap-1 text-[10px] bg-success/10 text-success border-success/30 ${className ?? ''}`} variant="outline">
         <CheckCircle2 className="h-3 w-3" /> settled
