@@ -70,6 +70,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.warn('auto-provision skipped:', err);
           }
         }, 0);
+
+        // Send the welcome email AFTER email confirmation, exactly once per user.
+        // Triggering here (instead of at signup) guarantees the address has
+        // passed Supabase's confirmation step, so the message is deliverable
+        // and won't be suppressed by an unconfirmed/bouncing state.
+        setTimeout(async () => {
+          try {
+            const user = session.user;
+            const confirmed = !!(user.email_confirmed_at || (user as any).confirmed_at);
+            if (!confirmed || !user.email) return;
+
+            const WELCOME_KEY = `mzz.welcomeEmailSent:${user.id}`;
+            try {
+              if (localStorage.getItem(WELCOME_KEY)) return;
+            } catch {}
+
+            const recipient = user.email.trim().toLowerCase();
+            const displayName =
+              (user.user_metadata as any)?.display_name ||
+              recipient.split('@')[0];
+            const merchantName =
+              (user.user_metadata as any)?.business_name ||
+              `${displayName}'s Business`;
+
+            const { error: welcomeError } = await supabase.functions.invoke('send-transactional-email', {
+              body: {
+                templateName: 'customer-welcome',
+                recipientEmail: recipient,
+                // Idempotency key by user id ensures the welcome is sent only once,
+                // even across multiple sign-ins or devices.
+                idempotencyKey: `customer-welcome-${user.id}`,
+                templateData: {
+                  name: displayName,
+                  merchantName,
+                  dashboardUrl: `${window.location.origin}/dashboard`,
+                },
+              },
+            });
+            if (welcomeError) {
+              console.warn('Welcome email could not be queued', welcomeError);
+              return;
+            }
+            try { localStorage.setItem(WELCOME_KEY, String(Date.now())); } catch {}
+          } catch (err) {
+            console.warn('welcome email skipped:', err);
+          }
+        }, 0);
       }
     });
 
