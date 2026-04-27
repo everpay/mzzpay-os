@@ -37,13 +37,14 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-card group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-2xl group-[.toaster]:rounded-xl group-[.toaster]:max-w-md",
-          description: "group-[.toast]:text-muted-foreground whitespace-pre-line font-mono text-xs",
+            "group toast group-[.toaster]:bg-card group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-2xl group-[.toaster]:rounded-md group-[.toaster]:max-w-md text-center [&>div]:w-full [&>div]:text-center",
+          title: "w-full text-center",
+          description: "group-[.toast]:text-muted-foreground whitespace-pre-line font-mono text-xs w-full text-center",
           actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
-          success: "group-[.toaster]:!bg-success/10 group-[.toaster]:!border-success/30 group-[.toaster]:!text-success",
-          error: "group-[.toaster]:!bg-destructive/10 group-[.toaster]:!border-destructive/30 group-[.toaster]:!text-destructive",
-          info: "group-[.toaster]:!bg-primary/10 group-[.toaster]:!border-primary/30 group-[.toaster]:!text-primary",
+          success: "group-[.toaster]:!bg-success group-[.toaster]:!border-success group-[.toaster]:!text-success-foreground [&_[data-description]]:!text-success-foreground/90",
+          error: "group-[.toaster]:!bg-destructive group-[.toaster]:!border-destructive group-[.toaster]:!text-destructive-foreground [&_[data-description]]:!text-destructive-foreground/90",
+          info: "group-[.toaster]:!bg-primary group-[.toaster]:!border-primary group-[.toaster]:!text-primary-foreground [&_[data-description]]:!text-primary-foreground/90",
         },
       }}
       {...props}
