@@ -80,7 +80,7 @@ async function cleanupTx(txId: string) {
 // ============================================================
 // 1. Multi-PSP webhook simulation → settlement metadata correctness
 // ============================================================
-Deno.test({
+Deno.test({ ...TEST_OPTS,
   name: "e2e/webhooks: each PSP webhook lands correct settlement_status + expected_settlement_at",
   ignore: SHOULD_SKIP,
   fn: async () => {
@@ -166,7 +166,7 @@ Deno.test({
 // applyLedgerCredit only writes a single credit, so we assert exactly one
 // credit row plus zero duplicate credits even after a "second" webhook
 // arrival from the failed primary.
-Deno.test({
+Deno.test({ ...TEST_OPTS,
   name: "e2e/idempotency: same idempotency_key across fallbacks → single ledger credit",
   ignore: SHOULD_SKIP,
   fn: async () => {
@@ -254,7 +254,7 @@ Deno.test({
 //     and NOT visible to Merchant B's anon client (RLS).
 //   - resolveProvider, when fed each merchant's own rule set, returns the
 //     merchant-specific provider override.
-Deno.test({
+Deno.test({ ...TEST_OPTS,
   name: "e2e/rls: routing_rules are merchant-scoped + resolveProvider honours per-merchant rules",
   ignore: SHOULD_SKIP,
   fn: async () => {
