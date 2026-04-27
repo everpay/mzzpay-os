@@ -13,6 +13,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { exportPdf } from '@/lib/export-pdf';
 import { motion } from 'framer-motion';
 import { CardTestResultsPanel } from '@/components/CardTestResultsPanel';
+import { usePagination } from '@/hooks/usePagination';
+import { TablePagination } from '@/components/TablePagination';
 
 export default function Transactions() {
   const { data: transactions = [], isLoading } = useTransactions();
@@ -282,12 +284,7 @@ export default function Transactions() {
           <p className="text-muted-foreground">Loading transactions...</p>
         </div>
       ) : (
-        <>
-          <TransactionTable transactions={filtered} />
-          <p className="mt-3 text-xs text-muted-foreground">
-            {filtered.length} transaction{filtered.length !== 1 ? 's' : ''} of {transactions.length}
-          </p>
-        </>
+        <TransactionsList transactions={filtered} totalCount={transactions.length} />
       )}
 
       <div className="mt-8">
