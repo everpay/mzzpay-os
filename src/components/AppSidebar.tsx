@@ -103,20 +103,14 @@ const navSections: NavSection[] = [
     title: "Insights",
     items: [
       { to: "/analytics", icon: BarChart3, label: "Analytics" },
+      { to: "/processor-analytics", icon: Activity, label: "Processor Analytics" },
       { to: "/reports", icon: FileText, label: "Reports" },
-    ],
-  },
-  {
-    title: "Company",
-    items: [
-      { to: "/developers", icon: BookOpen, label: "Developers" },
     ],
   },
   {
     title: "Configuration",
     items: [
       { to: "/processor-routing", icon: GitBranch, label: "Processor Routing" },
-      { to: "/processor-analytics", icon: Activity, label: "Processor Analytics" },
       { to: "/multi-acquirer", icon: Globe2, label: "Multi-Acquirer" },
       { to: "/smart-retry", icon: Repeat, label: "Smart Retry" },
     ],
