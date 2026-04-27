@@ -44,8 +44,9 @@ const PSP_CASES: PspCase[] = [
   { provider: "matrix",    currency: "EUR", settlementDays: 2, eventType: "matrix.completed",    metaKey: "_matrix_meta" },
 ];
 
-let _admin: ReturnType<typeof createClient> | null = null;
-function admin() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _admin: any = null;
+function admin(): any {
   if (!_admin) _admin = createClient(SUPABASE_URL, SERVICE_ROLE);
   return _admin;
 }
