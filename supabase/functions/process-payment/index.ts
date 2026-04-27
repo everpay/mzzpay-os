@@ -417,6 +417,53 @@ serve(async (req) => {
 
     if (provider === 'mondo') {
       providerResponse = await processMondoPayment(paymentData);
+    } else if (provider === 'risonpay') {
+      // Delegate to the dedicated risonpay-process edge function so signing,
+      // sandbox/prod toggling, and shadow-row insert stay in one place.
+      try {
+        const rpRes = await fetch(
+          `${Deno.env.get('SUPABASE_URL')}/functions/v1/risonpay-process`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: req.headers.get('authorization') || '',
+              apikey: Deno.env.get('SUPABASE_ANON_KEY') || '',
+            },
+            body: JSON.stringify({
+              mode: paymentMethod === 'card' ? 'card' : 'apm',
+              amount,
+              currency,
+              external_id: paymentData.idempotencyKey || paymentData.orderId || crypto.randomUUID(),
+              payment_method: (paymentData as any).apm_method,
+              card: cardDetails ? {
+                number: cardDetails.number,
+                cvv: cardDetails.cvv,
+                expire: cardDetails.expiry || cardDetails.expire,
+                holder: cardDetails.holderName || cardDetails.holder,
+              } : undefined,
+              customer: {
+                email: paymentData.customerEmail,
+                first_name: paymentData.customer?.first,
+                last_name: paymentData.customer?.last,
+                country: paymentData.billing?.country,
+              },
+              return_url: paymentData.return_url,
+              callback_url: paymentData.callback_url,
+            }),
+          },
+        );
+        const rpJson = await rpRes.json();
+        providerResponse = {
+          status: rpJson.status || (rpJson.ok ? 'PENDING' : 'FAILED'),
+          transaction_id: rpJson.transaction_id,
+          payment_url: rpJson.payment_url,
+          raw: rpJson,
+          provider: 'risonpay',
+        };
+      } catch (e) {
+        providerResponse = { status: 'FAILED', error: String(e), provider: 'risonpay' };
+      }
     } else {
       providerResponse = await processMzzPayPayment(paymentData);
     }
