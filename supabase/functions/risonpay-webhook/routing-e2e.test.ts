@@ -570,10 +570,14 @@ Deno.test({ ...TEST_OPTS,
       transaction_id: txA!.id, merchant_id: mA.id,
       payload: { secret: "merchant-A-only" },
     }).select("id").single();
-    const { data: poA } = await a.from("settlements").insert({
-      merchant_id: mA.id, amount: 100, currency: "EUR",
-      status: "pending", method: "bank_transfer",
+    const { data: poA, error: poErr } = await a.from("settlements").insert({
+      merchant_id: mA.id,
+      currency: "EUR",
+      gross_amount: 100,
+      net_amount: 100,
+      status: "pending",
     }).select("id").single();
+    assert(!poErr, `settlement seed failed: ${poErr?.message}`);
 
     assert(txA && evA && poA, "seed rows must insert");
 
