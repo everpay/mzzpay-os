@@ -3,11 +3,14 @@
 // For every supported PSP we assert:
 //   1. The webhook-side `buildProviderMeta` writes the four contract keys.
 //   2. The expected_settlement_at honours the documented SLA
-//      (Shieldhub T+7, Risonpay card T+7 / APM T+1, Matrix T+4).
+//      (Shieldhub T+7, Risonpay card T+4 / APM T+1, Matrix T+4).
 //   3. The UI-side `deriveBadge` produces the SAME BadgeKind for the SAME
 //      logical state regardless of which provider produced the meta block.
 //   4. Reading happens via the provider-namespaced key declared in
 //      META_KEY_FOR (no hidden coupling to `_risonpay_meta`).
+//   5. When multiple PSP meta blocks coexist on a single transaction (e.g.
+//      a fallback retry left both behind), `deriveBadge` honours the
+//      `preferredProvider` argument and reads the corresponding META_KEY_FOR.
 
 import { describe, it, expect } from "vitest";
 import {
@@ -30,7 +33,7 @@ interface PspCase {
 
 const PSPS: PspCase[] = [
   { provider: "shieldhub", paymentMethod: "card", expectedDays: 7 },
-  { provider: "risonpay", paymentMethod: "card", expectedDays: 7 },
+  { provider: "risonpay", paymentMethod: "card", expectedDays: 4 },
   { provider: "risonpay", paymentMethod: "open_banking", expectedDays: 1 },
   { provider: "matrix", paymentMethod: "card", expectedDays: 4 },
 ];
