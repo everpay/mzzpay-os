@@ -236,25 +236,20 @@ export function normalizeError(input: unknown): NormalizedError {
   return { code: "unknown", ...COPY.unknown };
 }
 
-/** Format the toast description so the error code is always visible. */
-function withCode(code: NormalizedErrorCode, description: string) {
-  return `${description}\n[code: ${code}]`;
-}
-
 export function notifyError(
   input: unknown,
   opts?: { fallback?: string; description?: string },
 ) {
   const norm = normalizeError(input);
-  // Always pull the canonical description from COPY — never trust raw input
-  // text in the toast body, but keep the raw error in console for debug.
+  // Keep the raw error in the console for debug, but never surface the
+  // machine code in the user-facing toast.
   if (input) {
     // eslint-disable-next-line no-console
     console.warn(`[notifyError] ${norm.code}`, input);
   }
   const desc = opts?.description ?? COPY[norm.code].description ?? opts?.fallback ?? COPY.unknown.description;
   sonnerToast.error(norm.title, {
-    description: withCode(norm.code, desc),
+    description: desc,
     duration: TOAST_DURATIONS.error,
   });
   return norm;
@@ -262,14 +257,14 @@ export function notifyError(
 
 export function notifySuccess(title: string, description?: string) {
   sonnerToast.success(title, {
-    description: description ? `${description}\n[code: ok]` : `[code: ok]`,
+    description,
     duration: TOAST_DURATIONS.success,
   });
 }
 
 export function notifyInfo(title: string, description?: string) {
   sonnerToast(title, {
-    description: description ? `${description}\n[code: info]` : `[code: info]`,
+    description,
     duration: TOAST_DURATIONS.info,
   });
 }
