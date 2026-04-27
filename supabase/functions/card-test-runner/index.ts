@@ -378,6 +378,192 @@ async function runMatrix(
   return results;
 }
 
+/* ─────────────────────────── RisonPay ─────────────────────────── */
+
+interface RisonpayScenario {
+  scenario: string;
+  pan: string;
+  cvv: string;
+  brand: string;
+  expectedStatuses: string[];
+}
+
+const RISONPAY_CARDS: RisonpayScenario[] = [
+  { scenario: "RisonPay 3DS Required (Visa 4000…3220)", pan: "4000000000003220", cvv: "123", brand: "Visa", expectedStatuses: ["pending", "processing", "completed", "redirect"] },
+  { scenario: "RisonPay Insufficient funds (Visa 4000…9995)", pan: "4000000000009995", cvv: "123", brand: "Visa", expectedStatuses: ["failed", "declined"] },
+  { scenario: "RisonPay No 3DS success (MC 5555…4444)", pan: "5555555555554444", cvv: "123", brand: "Mastercard", expectedStatuses: ["completed", "success", "pending"] },
+];
+
+async function runRisonpay(supabase: any, merchantId: string, batchId: string) {
+  const merchantApi = Deno.env.get("RISONPAY_MERCHANT_ID");
+  const privateKey = Deno.env.get("RISONPAY_PRIVATE_KEY");
+  if (!merchantApi || !privateKey) {
+    return [{
+      provider: "risonpay",
+      scenario: "missing credentials",
+      passed: false,
+      error_message: "RISONPAY_MERCHANT_ID / RISONPAY_PRIVATE_KEY not configured",
+    }];
+  }
+
+  const env = (Deno.env.get("RISONPAY_ENVIRONMENT") || "sandbox").toLowerCase();
+  const base = env === "production"
+    ? "https://api.cdnsoftwaretech.com"
+    : "https://api-dev.cdnsoftwaretech.com";
+
+  // Sign helper (mirrors risonpay-process)
+  const sign = async (bodyStr: string) => {
+    const b64 = privateKey
+      .replace(/-----BEGIN [^-]+-----/g, "")
+      .replace(/-----END [^-]+-----/g, "")
+      .replace(/\s+/g, "");
+    const bin = atob(b64);
+    const der = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) der[i] = bin.charCodeAt(i);
+    const key = await crypto.subtle.importKey(
+      "pkcs8", der,
+      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+      false, ["sign"],
+    );
+    const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(bodyStr));
+    let s = ""; for (const b of new Uint8Array(sig)) s += String.fromCharCode(b);
+    return btoa(s);
+  };
+
+  const results: any[] = [];
+
+  // Card mode (sending_card_details=true)
+  for (const sc of RISONPAY_CARDS) {
+    const externalId = `e2e_rison_${Date.now().toString(36)}_${sc.pan.slice(-4)}`;
+    const requestBody = {
+      merchant_id: merchantApi,
+      external_id: externalId,
+      amount: 10,
+      currency: "EUR",
+      sending_card_details: true,
+      return_url: "https://example.com/return",
+      callback_url: "https://example.com/callback",
+      card: {
+        number: sc.pan,
+        cvv: sc.cvv,
+        expire: "12/30",
+        holder: "Card Test",
+      },
+      customer: {
+        email: "card-test@everpay.io",
+        first_name: "Card", last_name: "Test", country: "GB",
+      },
+    };
+    const bodyStr = JSON.stringify(requestBody);
+    let signature = ""; try { signature = await sign(bodyStr); } catch { /* */ }
+
+    let httpStatus = 0;
+    let parsed: any = null;
+    let errMsg: string | null = null;
+    try {
+      const res = await fetch(`${base}/p/payment/card_details`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-signature": signature,
+          "x-short-signature": signature.slice(0, 64),
+        },
+        body: bodyStr,
+      });
+      httpStatus = res.status;
+      const text = await res.text();
+      try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
+    } catch (e) {
+      errMsg = `network: ${String(e)}`;
+    }
+
+    const status = (parsed?.status ?? "").toString().toLowerCase();
+    const passed = sc.expectedStatuses.some((s) => status.includes(s));
+    const code = parsed?.error_code ?? parsed?.code ?? null;
+
+    const row = {
+      merchant_id: merchantId,
+      batch_id: batchId,
+      provider: "risonpay",
+      environment: env === "production" ? "production" : "sandbox",
+      scenario: sc.scenario,
+      card_last4: sc.pan.slice(-4),
+      card_brand: sc.brand,
+      currency: "EUR",
+      amount: 10,
+      upstream_http_status: httpStatus || null,
+      result_status: parsed?.status ?? (passed ? "passed" : "failed"),
+      result_code: code != null ? String(code) : null,
+      error_message: passed ? null : (errMsg ?? parsed?.error_message ?? parsed?.message ?? null),
+      raw_response: parsed,
+      raw_request: {
+        endpoint: `${base}/p/payment/card_details`,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-signature": "<redacted>",
+          "x-short-signature": "<redacted>",
+        },
+        body: { ...requestBody, card: { ...requestBody.card, number: `**** **** **** ${sc.pan.slice(-4)}`, cvv: "***" } },
+      },
+    };
+    await supabase.from("card_test_runs").insert(row);
+    results.push({ ...row, passed });
+  }
+
+  // APM mode probe (Bank transfer GB sandbox)
+  const apmExternalId = `e2e_rison_apm_${Date.now().toString(36)}`;
+  const apmBody = {
+    merchant_id: merchantApi,
+    external_id: apmExternalId,
+    amount: 10,
+    currency: "EUR",
+    sending_card_details: false,
+    payment_method: "bank_transfer",
+    return_url: "https://example.com/return",
+    callback_url: "https://example.com/callback",
+    customer: { email: "apm-test@everpay.io", first_name: "APM", last_name: "Test", country: "GB" },
+  };
+  const apmStr = JSON.stringify(apmBody);
+  let apmSig = ""; try { apmSig = await sign(apmStr); } catch { /* */ }
+  let apmStatus = 0; let apmParsed: any = null; let apmErr: string | null = null;
+  try {
+    const res = await fetch(`${base}/p/payment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-signature": apmSig },
+      body: apmStr,
+    });
+    apmStatus = res.status;
+    const text = await res.text();
+    try { apmParsed = JSON.parse(text); } catch { apmParsed = { raw: text }; }
+  } catch (e) { apmErr = `network: ${String(e)}`; }
+  const apmPassed = !!apmParsed?.payment_url || apmStatus === 200;
+  const apmRow = {
+    merchant_id: merchantId,
+    batch_id: batchId,
+    provider: "risonpay",
+    environment: env === "production" ? "production" : "sandbox",
+    scenario: "RisonPay APM bank_transfer (GB modelo sandbox)",
+    card_last4: null, card_brand: null,
+    currency: "EUR", amount: 10,
+    upstream_http_status: apmStatus || null,
+    result_status: apmParsed?.status ?? (apmPassed ? "redirect" : "failed"),
+    result_code: apmParsed?.code != null ? String(apmParsed.code) : null,
+    error_message: apmPassed ? null : (apmErr ?? apmParsed?.message ?? null),
+    raw_response: apmParsed,
+    raw_request: {
+      endpoint: `${base}/p/payment`,
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-signature": "<redacted>" },
+      body: apmBody,
+    },
+  };
+  await supabase.from("card_test_runs").insert(apmRow);
+  results.push({ ...apmRow, passed: apmPassed });
+
+  return results;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
