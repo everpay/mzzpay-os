@@ -93,6 +93,7 @@ import ProductOnlinePayments from "./pages/front/products/OnlinePayments";
 import ProductPaymentGateway from "./pages/front/products/PaymentGateway";
 import ProductPaymentMethods from "./pages/front/products/PaymentMethods";
 import ProductFraudPrevention from "./pages/front/products/FraudPrevention";
+import SolutionHighRisk from "./pages/front/solutions/HighRisk";
 import { CookieNotice } from "@/components/front/CookieNotice";
 
 const queryClient = new QueryClient();
@@ -144,6 +145,7 @@ const AppRoutes = () => (
     <Route path="/solutions/saas" element={<SolutionSaas />} />
     <Route path="/solutions/marketplaces" element={<SolutionMarketplaces />} />
     <Route path="/solutions/enterprise" element={<SolutionEnterprise />} />
+    <Route path="/solutions/high-risk" element={<SolutionHighRisk />} />
     <Route path="/products/online-payments" element={<ProductOnlinePayments />} />
     <Route path="/products/payment-gateway" element={<ProductPaymentGateway />} />
     <Route path="/products/payment-methods" element={<ProductPaymentMethods />} />

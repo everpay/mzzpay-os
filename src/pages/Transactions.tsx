@@ -15,9 +15,12 @@ import { motion } from 'framer-motion';
 import { CardTestResultsPanel } from '@/components/CardTestResultsPanel';
 import { usePagination } from '@/hooks/usePagination';
 import { TablePagination } from '@/components/TablePagination';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function Transactions() {
   const { data: transactions = [], isLoading } = useTransactions();
+  const { data: userRole } = useUserRole();
+  const isSuperAdmin = !!(userRole as any)?.isSuperAdmin;
   const [providerFilter, setProviderFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currencyFilter, setCurrencyFilter] = useState<string>('all');
@@ -287,9 +290,11 @@ export default function Transactions() {
         <TransactionsList transactions={filtered} totalCount={transactions.length} />
       )}
 
-      <div className="mt-8">
-        <CardTestResultsPanel />
-      </div>
+      {isSuperAdmin && (
+        <div className="mt-8">
+          <CardTestResultsPanel />
+        </div>
+      )}
     </AppLayout>
   );
 }
