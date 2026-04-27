@@ -26,6 +26,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Track which user IDs we've already attempted a welcome send for in this
+    // tab — avoids hammering the edge function on every TOKEN_REFRESHED tick.
+    // The real source of truth for "send only once ever" is the server-side
+    // idempotency check inside send-transactional-email.
+    const welcomeAttemptedThisSession = new Set<string>();
+
+    const maybeSendWelcomeEmail = async (
+      session: Session | null,
+      reason: string,
+    ) => {
+      try {
+        const user = session?.user;
+        if (!user || !user.email) return;
+
+        // Only send once the user's email is actually confirmed by Supabase.
+        // SIGNED_IN can fire for unconfirmed users in some flows, so we gate
+        // strictly on email_confirmed_at.
+        const confirmedAt =
+          (user.email_confirmed_at as string | null | undefined) ||
+          ((user as any).confirmed_at as string | null | undefined);
+        if (!confirmedAt) return;
+
+        if (welcomeAttemptedThisSession.has(user.id)) return;
+        welcomeAttemptedThisSession.add(user.id);
+
+        const recipient = user.email.trim().toLowerCase();
+        const displayName =
+          (user.user_metadata as any)?.display_name ||
+          recipient.split('@')[0];
+        const merchantName =
+          (user.user_metadata as any)?.business_name ||
+          `${displayName}'s Business`;
+
+        const { error: welcomeError } = await supabase.functions.invoke(
+          'send-transactional-email',
+          {
+            body: {
+              templateName: 'customer-welcome',
+              recipientEmail: recipient,
+              // Stable per-user key. The edge function persists this in
+              // email_idempotency_keys, so even if localStorage is cleared
+              // or the user signs in on another device, only one welcome
+              // email will ever be enqueued.
+              idempotencyKey: `customer-welcome-${user.id}`,
+              templateData: {
+                name: displayName,
+                merchantName,
+                dashboardUrl: `${window.location.origin}/dashboard`,
+              },
+            },
+          },
+        );
+        if (welcomeError) {
+          console.warn('Welcome email could not be queued', { reason, welcomeError });
+          // Allow a retry next event since this attempt failed before the
+          // server-side idempotency reservation.
+          welcomeAttemptedThisSession.delete(user.id);
+        }
+      } catch (err) {
+        console.warn('welcome email skipped:', err);
+      }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setLoading(false);
@@ -70,53 +133,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.warn('auto-provision skipped:', err);
           }
         }, 0);
+      }
 
-        // Send the welcome email AFTER email confirmation, exactly once per user.
-        // Triggering here (instead of at signup) guarantees the address has
-        // passed Supabase's confirmation step, so the message is deliverable
-        // and won't be suppressed by an unconfirmed/bouncing state.
-        setTimeout(async () => {
-          try {
-            const user = session.user;
-            const confirmed = !!(user.email_confirmed_at || (user as any).confirmed_at);
-            if (!confirmed || !user.email) return;
-
-            const WELCOME_KEY = `mzz.welcomeEmailSent:${user.id}`;
-            try {
-              if (localStorage.getItem(WELCOME_KEY)) return;
-            } catch {}
-
-            const recipient = user.email.trim().toLowerCase();
-            const displayName =
-              (user.user_metadata as any)?.display_name ||
-              recipient.split('@')[0];
-            const merchantName =
-              (user.user_metadata as any)?.business_name ||
-              `${displayName}'s Business`;
-
-            const { error: welcomeError } = await supabase.functions.invoke('send-transactional-email', {
-              body: {
-                templateName: 'customer-welcome',
-                recipientEmail: recipient,
-                // Idempotency key by user id ensures the welcome is sent only once,
-                // even across multiple sign-ins or devices.
-                idempotencyKey: `customer-welcome-${user.id}`,
-                templateData: {
-                  name: displayName,
-                  merchantName,
-                  dashboardUrl: `${window.location.origin}/dashboard`,
-                },
-              },
-            });
-            if (welcomeError) {
-              console.warn('Welcome email could not be queued', welcomeError);
-              return;
-            }
-            try { localStorage.setItem(WELCOME_KEY, String(Date.now())); } catch {}
-          } catch (err) {
-            console.warn('welcome email skipped:', err);
-          }
-        }, 0);
+      // Welcome email: fire on any event whose session may carry a freshly
+      // confirmed user. USER_UPDATED is the canonical event Supabase emits
+      // when the confirmation link is clicked and the auth user record
+      // changes. SIGNED_IN covers the case where the user lands back in the
+      // app already confirmed. INITIAL_SESSION covers a reload right after
+      // confirmation. Server-side idempotency guarantees only one send.
+      if (
+        event === 'SIGNED_IN' ||
+        event === 'USER_UPDATED' ||
+        event === 'INITIAL_SESSION'
+      ) {
+        setTimeout(() => maybeSendWelcomeEmail(session, event), 0);
       }
     });
 
