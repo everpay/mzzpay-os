@@ -2,7 +2,7 @@ export type Currency = "USD" | "EUR" | "GBP" | "BRL" | "MXN" | "COP" | "CAD";
 
 export type TransactionStatus = "pending" | "processing" | "completed" | "failed" | "refunded";
 export type PayoutStatus = "pending" | "processing" | "completed" | "failed";
-export type Provider = "mondo" | "stripe" | "mzzpay" | "moneto" | "moneto_mpg" | "matrix" | "shieldhub";
+export type Provider = "mondo" | "stripe" | "mzzpay" | "moneto" | "moneto_mpg" | "matrix" | "shieldhub" | "risonpay";
 
 export interface Merchant {
   id: string;
