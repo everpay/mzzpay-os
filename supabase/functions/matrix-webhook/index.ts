@@ -20,9 +20,20 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization') || '';
 
     const MATRIX_SECRET_KEY = Deno.env.get('MATRIX_SECRET_KEY');
-    if (MATRIX_SECRET_KEY && authHeader.startsWith('TH-HMAC ')) {
+    if (!MATRIX_SECRET_KEY) {
+      console.error('[Matrix Webhook] MATRIX_SECRET_KEY not configured — rejecting');
+      return new Response(JSON.stringify({ error: 'webhook not configured' }), {
+        status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (!authHeader.startsWith('TH-HMAC ')) {
+      return new Response(JSON.stringify({ error: 'missing signature' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    {
       const [, sigPart] = authHeader.split(' ');
-      const [, signature] = sigPart.split(':');
+      const [, signature] = (sigPart || '').split(':');
       const enc = new TextEncoder();
       const key = await crypto.subtle.importKey(
         'raw', enc.encode(MATRIX_SECRET_KEY),
@@ -30,7 +41,12 @@ serve(async (req) => {
       );
       const sig = await crypto.subtle.sign('HMAC', key, enc.encode(body));
       const expectedSig = btoa(String.fromCharCode(...new Uint8Array(sig)));
-      if (signature !== expectedSig) {
+      // constant-time compare
+      const a = signature || '';
+      const b = expectedSig;
+      let mismatch = a.length ^ b.length;
+      for (let i = 0; i < Math.min(a.length, b.length); i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+      if (mismatch !== 0) {
         console.warn('[Matrix Webhook] HMAC mismatch');
         return new Response(JSON.stringify({ error: 'invalid signature' }), {
           status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
