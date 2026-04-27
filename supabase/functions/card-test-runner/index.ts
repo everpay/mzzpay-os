@@ -588,7 +588,7 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const includeApproved = body?.include_approved === true;
-    const providers = (body?.providers as string[] | undefined) ?? ["matrix", "shieldhub"];
+    const providers = (body?.providers as string[] | undefined) ?? ["matrix", "shieldhub", "risonpay"];
 
     // Decode role from JWT (no signature verification — only for branching)
     let tokenRole: string | null = null;
@@ -698,6 +698,10 @@ serve(async (req) => {
     if (providers.includes("shieldhub")) {
       const s = await runShieldhub(supabase, merchant.id, batchId, includeApproved);
       all.push(...s);
+    }
+    if (providers.includes("risonpay")) {
+      const r = await runRisonpay(supabase, merchant.id, batchId);
+      all.push(...r);
     }
 
     return new Response(JSON.stringify({
