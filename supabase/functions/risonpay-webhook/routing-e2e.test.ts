@@ -44,7 +44,13 @@ const PSP_CASES: PspCase[] = [
   { provider: "matrix",    currency: "EUR", settlementDays: 2, eventType: "matrix.completed",    metaKey: "_matrix_meta" },
 ];
 
-function admin() { return createClient(SUPABASE_URL, SERVICE_ROLE); }
+let _admin: ReturnType<typeof createClient> | null = null;
+function admin() {
+  if (!_admin) _admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+  return _admin;
+}
+
+const TEST_OPTS = { sanitizeOps: false, sanitizeResources: false } as const;
 
 async function pickMerchant() {
   const { data } = await admin()
