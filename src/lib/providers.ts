@@ -1,5 +1,6 @@
 import { Currency, Provider } from './types';
 import { processorLabel } from './processor-labels';
+import { isEuOrEea, isOfac } from './regions';
 
 interface ProviderConfig {
   name: string;
@@ -112,6 +113,8 @@ export function resolveProvider(
     gamblingEnabled?: boolean;
     amount?: number;
     rules?: RoutingRuleLite[];
+    /** ISO-2 billing country — used for region-aware routing. */
+    country?: string;
   },
 ): Provider {
   // 1. Explicit per-merchant override rules win first. We sort ascending by
@@ -136,8 +139,36 @@ export function resolveProvider(
   // 3. Gambling-class merchants route to Matrix when admin-enabled.
   if (opts?.gamblingEnabled) return 'matrix';
 
-  // 4. Default — Shieldhub for everyone else.
+  const country = (opts?.country || region || '').toUpperCase();
+
+  // 4. Hard block: OFAC jurisdictions never route — caller must reject.
+  // We still return a provider here (shieldhub) but the server-side guard
+  // in process-payment is the actual enforcement point.
+  if (isOfac(country)) return 'shieldhub';
+
+  // 5. EU / EEA / EU-adjacent → RisonPay (primary EU acquirer).
+  if (isEuOrEea(country) || ['EUR', 'GBP'].includes(currency)) {
+    return 'risonpay';
+  }
+
+  // 6. Default — Shieldhub for US/global card volume; RisonPay is the
+  // declared fallback for any non-OFAC region without a better fit.
   return 'shieldhub';
+}
+
+/**
+ * Ordered fallback chain used by retry / cascade logic. Skips OFAC.
+ */
+export function fallbackChain(
+  primary: Provider,
+  country?: string,
+): Provider[] {
+  if (isOfac(country)) return [];
+  const chain: Provider[] = [primary];
+  // RisonPay is the universal fallback (covers EU + global non-OFAC).
+  if (primary !== 'risonpay') chain.push('risonpay');
+  if (primary !== 'shieldhub') chain.push('shieldhub');
+  return chain;
 }
 
 export function getProviderColor(provider: Provider): string {
@@ -149,6 +180,7 @@ export function getProviderColor(provider: Provider): string {
     case 'moneto_mpg': return 'hsl(var(--chart-5))';
     case 'matrix': return 'hsl(var(--chart-4))';
     case 'shieldhub': return 'hsl(var(--chart-2))';
+    case 'risonpay': return 'hsl(var(--primary))';
     default: return 'hsl(var(--chart-1))';
   }
 }

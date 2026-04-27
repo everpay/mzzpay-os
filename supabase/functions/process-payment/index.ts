@@ -153,6 +153,27 @@ function validateForProcessor(
       }
       break;
     }
+    case 'risonpay': {
+      // RisonPay (CDN) — EU/EEA primary + non-OFAC global fallback
+      if (!paymentData.customerEmail) {
+        errs.push({ field: 'customerEmail', message: 'RisonPay requires `customerEmail`' });
+      }
+      if (Number(paymentData.amount) < 10) {
+        errs.push({ field: 'amount', message: 'RisonPay minimum amount is 10.00 (EUR/GBP/USD)' });
+      }
+      if (!['EUR', 'GBP', 'USD'].includes(paymentData.currency)) {
+        errs.push({ field: 'currency', message: 'RisonPay supports EUR, GBP, USD only' });
+      }
+      if (paymentData.paymentMethod === 'card' && !paymentData.cardDetails) {
+        errs.push({ field: 'cardDetails', message: 'RisonPay server-side card capture requires cardDetails (number, cvv, expire, holder)' });
+      }
+      // Block OFAC at validation time as well as routing time.
+      const c = (paymentData.billing?.country || '').toUpperCase();
+      if (['CU','IR','KP','SY','RU','BY','VE','MM'].includes(c)) {
+        errs.push({ field: 'billing.country', message: `RisonPay cannot process payments from sanctioned jurisdiction ${c}` });
+      }
+      break;
+    }
     default:
       break;
   }
@@ -335,18 +356,37 @@ serve(async (req) => {
       vgsVaultPromise = vaultToVGS(cardDetails);
     }
 
-    // ROUTING POLICY:
-    // - CARD payments: ALWAYS routed to MzzPay USD (Mondo card path is disabled).
-    // - OPEN_BANKING payments in EUR/GBP: routed to Mondo (OpenBanking endpoint stays enabled).
-    // - Everything else: MzzPay USD.
+    // ROUTING POLICY (2026-04 update — RisonPay onboarded):
+    //  - OFAC jurisdictions are HARD BLOCKED before routing.
+    //  - OPEN_BANKING (EUR/GBP) → Mondo.
+    //  - EU/EEA + EU-adjacent customers OR EUR/GBP currency → RisonPay (primary).
+    //  - All other regions → Shieldhub (USD MX MID), with RisonPay as fallback.
+    const EU_EEA = new Set([
+      'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE',
+      'IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE',
+      'IS','LI','NO','GB','CH','MC','SM','VA','AD',
+    ]);
+    const OFAC = new Set(['CU','IR','KP','SY','RU','BY','VE','MM']);
+    const billingCountry = (paymentData.billing?.country || '').toUpperCase();
+
+    if (OFAC.has(billingCountry)) {
+      return new Response(JSON.stringify({
+        error: `Payments from ${billingCountry} are blocked due to sanctions compliance`,
+        error_code: 'ofac_blocked',
+        code: 'ofac_blocked',
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     if (paymentMethod === 'open_banking' && ['EUR', 'GBP'].includes(currency)) {
       provider = 'mondo';
+    } else if (EU_EEA.has(billingCountry) || ['EUR', 'GBP'].includes(currency)) {
+      provider = 'risonpay';
     } else if (paymentMethod === 'card') {
-      provider = 'mzzpay';
+      provider = 'shieldhub';
     } else {
-      provider = 'mzzpay';
+      provider = 'shieldhub';
     }
-    // Allow explicit override (e.g. matrix/shieldhub/moneto) from the caller.
+    // Allow explicit override (e.g. matrix/shieldhub/moneto/risonpay) from the caller.
     if ((paymentData as any).provider) provider = (paymentData as any).provider;
 
     // Per-processor field validation — runs BEFORE network call so the UI
@@ -377,6 +417,53 @@ serve(async (req) => {
 
     if (provider === 'mondo') {
       providerResponse = await processMondoPayment(paymentData);
+    } else if (provider === 'risonpay') {
+      // Delegate to the dedicated risonpay-process edge function so signing,
+      // sandbox/prod toggling, and shadow-row insert stay in one place.
+      try {
+        const rpRes = await fetch(
+          `${Deno.env.get('SUPABASE_URL')}/functions/v1/risonpay-process`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: req.headers.get('authorization') || '',
+              apikey: Deno.env.get('SUPABASE_ANON_KEY') || '',
+            },
+            body: JSON.stringify({
+              mode: paymentMethod === 'card' ? 'card' : 'apm',
+              amount,
+              currency,
+              external_id: paymentData.idempotencyKey || paymentData.orderId || crypto.randomUUID(),
+              payment_method: (paymentData as any).apm_method,
+              card: cardDetails ? {
+                number: cardDetails.number,
+                cvv: cardDetails.cvv,
+                expire: cardDetails.expiry || cardDetails.expire,
+                holder: cardDetails.holderName || cardDetails.holder,
+              } : undefined,
+              customer: {
+                email: paymentData.customerEmail,
+                first_name: paymentData.customer?.first,
+                last_name: paymentData.customer?.last,
+                country: paymentData.billing?.country,
+              },
+              return_url: paymentData.return_url,
+              callback_url: paymentData.callback_url,
+            }),
+          },
+        );
+        const rpJson = await rpRes.json();
+        providerResponse = {
+          status: rpJson.status || (rpJson.ok ? 'PENDING' : 'FAILED'),
+          transaction_id: rpJson.transaction_id,
+          payment_url: rpJson.payment_url,
+          raw: rpJson,
+          provider: 'risonpay',
+        };
+      } catch (e) {
+        providerResponse = { status: 'FAILED', error: String(e), provider: 'risonpay' };
+      }
     } else {
       providerResponse = await processMzzPayPayment(paymentData);
     }
