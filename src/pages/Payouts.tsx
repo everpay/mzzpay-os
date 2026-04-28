@@ -533,6 +533,36 @@ export default function Payouts() {
         </Dialog>
       </div>
 
+      {/* Capability notice — surfaces the gap between currencies and shipped backends */}
+      {capabilities.unsupported.length > 0 && (
+        <div className="mb-4 rounded-xl border border-warning/30 bg-warning/5 p-4">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+            <div className="flex-1 text-sm">
+              <p className="font-medium text-foreground mb-1">Limited payout availability</p>
+              <p className="text-muted-foreground mb-2">
+                Payouts are currently supported only for{' '}
+                <span className="font-mono">{capabilities.supported.map(s => s.currency).join(', ') || 'no currencies'}</span>.
+                The following are pending backend implementation:
+              </p>
+              <ul className="space-y-1 text-xs text-muted-foreground">
+                {capabilities.unsupported.map((c) => (
+                  <li key={c.currency} className="flex gap-2">
+                    <span className="font-mono font-semibold w-12">{c.currency}</span>
+                    <span>{c.reason}</span>
+                  </li>
+                ))}
+              </ul>
+              {!capabilities.payoutsPersistenceReady && (
+                <p className="mt-2 text-xs text-warning">
+                  ⚠ Payout history is not persisted yet — records disappear on refresh until a payouts table ships.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Recent Payouts */}
       {payouts.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 rounded-xl border border-border bg-card">
