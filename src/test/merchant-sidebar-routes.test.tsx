@@ -63,7 +63,7 @@ function ProtectedPath({ path }: { path: string }) {
         <Route path="/dashboard" element={<div>Dashboard redirect target</div>} />
         <Route path="/login" element={<div>Login redirect target</div>} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 
