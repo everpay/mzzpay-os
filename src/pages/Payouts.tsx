@@ -5,8 +5,9 @@ import { formatCurrency, formatDate } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Banknote, Building2, ArrowRight, ArrowLeft, CheckCircle2, Clock, AlertCircle, CreditCard, RefreshCcw, TrendingDown } from 'lucide-react';
+import { Plus, Banknote, Building2, ArrowRight, ArrowLeft, CheckCircle2, Clock, AlertCircle, CreditCard, RefreshCcw, TrendingDown, Info } from 'lucide-react';
 import { useAccounts } from '@/hooks/useAccounts';
+import { usePayoutCapabilities } from '@/hooks/usePayoutCapabilities';
 import { useCreateMonetoPayout } from '@/hooks/useMoneto';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -230,6 +231,10 @@ export default function Payouts() {
     }
   };
 
+  const capabilities = usePayoutCapabilities();
+  const sourceCurrencySupported = capabilities.isSupported(sourceCurrency);
+  const destinationCurrencySupported = capabilities.isSupported(destinationCurrency);
+
   return (
     <AppLayout>
       <div className="mb-6 flex items-center justify-between">
@@ -239,7 +244,17 @@ export default function Payouts() {
         </div>
         <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="h-4 w-4" /> New Payout</Button>
+            <Button
+              className="gap-2"
+              disabled={!capabilities.payoutsBackendReady}
+              title={
+                capabilities.payoutsBackendReady
+                  ? undefined
+                  : 'No payout backend is currently available'
+              }
+            >
+              <Plus className="h-4 w-4" /> New Payout
+            </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
@@ -262,10 +277,12 @@ export default function Payouts() {
                   <Select value={sourceCurrency} onValueChange={setSourceCurrency}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="CAD">🇨🇦 CAD</SelectItem>
-                      <SelectItem value="USD">🇺🇸 USD</SelectItem>
-                      <SelectItem value="EUR">🇪🇺 EUR</SelectItem>
-                      <SelectItem value="GBP">🇬🇧 GBP</SelectItem>
+                      {capabilities.matrix.map((c) => (
+                        <SelectItem key={`src-${c.currency}`} value={c.currency} disabled={!c.enabled}>
+                          {c.currency === 'CAD' ? '🇨🇦' : c.currency === 'USD' ? '🇺🇸' : c.currency === 'EUR' ? '🇪🇺' : '🇬🇧'} {c.currency}
+                          {!c.enabled && <span className="ml-2 text-xs text-muted-foreground">(coming soon)</span>}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">Available: {formatCurrency(availableBalance, sourceCurrency as any)}</p>
@@ -285,10 +302,12 @@ export default function Payouts() {
                   <Select value={destinationCurrency} onValueChange={setDestinationCurrency}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="CAD">🇨🇦 CAD</SelectItem>
-                      <SelectItem value="USD">🇺🇸 USD</SelectItem>
-                      <SelectItem value="EUR">🇪🇺 EUR</SelectItem>
-                      <SelectItem value="GBP">🇬🇧 GBP</SelectItem>
+                      {capabilities.matrix.map((c) => (
+                        <SelectItem key={`dst-${c.currency}`} value={c.currency} disabled={!c.enabled}>
+                          {c.currency === 'CAD' ? '🇨🇦' : c.currency === 'USD' ? '🇺🇸' : c.currency === 'EUR' ? '🇪🇺' : '🇬🇧'} {c.currency}
+                          {!c.enabled && <span className="ml-2 text-xs text-muted-foreground">(coming soon)</span>}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -494,7 +513,16 @@ export default function Payouts() {
                   </span>
                 </div>
 
-                <Button className="w-full gap-2" onClick={handleCreatePayout} disabled={createPayout.isPending}>
+                <Button
+                  className="w-full gap-2"
+                  onClick={handleCreatePayout}
+                  disabled={createPayout.isPending || !sourceCurrencySupported || !destinationCurrencySupported}
+                  title={
+                    !sourceCurrencySupported || !destinationCurrencySupported
+                      ? `Payouts in ${!sourceCurrencySupported ? sourceCurrency : destinationCurrency} are not yet supported`
+                      : undefined
+                  }
+                >
                   {createPayout.isPending ? 'Processing...' : (
                     <><Banknote className="h-4 w-4" /> Confirm & Send</>
                   )}
@@ -504,6 +532,36 @@ export default function Payouts() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Capability notice — surfaces the gap between currencies and shipped backends */}
+      {capabilities.unsupported.length > 0 && (
+        <div className="mb-4 rounded-xl border border-warning/30 bg-warning/5 p-4">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+            <div className="flex-1 text-sm">
+              <p className="font-medium text-foreground mb-1">Limited payout availability</p>
+              <p className="text-muted-foreground mb-2">
+                Payouts are currently supported only for{' '}
+                <span className="font-mono">{capabilities.supported.map(s => s.currency).join(', ') || 'no currencies'}</span>.
+                The following are pending backend implementation:
+              </p>
+              <ul className="space-y-1 text-xs text-muted-foreground">
+                {capabilities.unsupported.map((c) => (
+                  <li key={c.currency} className="flex gap-2">
+                    <span className="font-mono font-semibold w-12">{c.currency}</span>
+                    <span>{c.reason}</span>
+                  </li>
+                ))}
+              </ul>
+              {!capabilities.payoutsPersistenceReady && (
+                <p className="mt-2 text-xs text-warning">
+                  ⚠ Payout history is not persisted yet — records disappear on refresh until a payouts table ships.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recent Payouts */}
       {payouts.length === 0 ? (

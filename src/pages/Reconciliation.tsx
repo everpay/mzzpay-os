@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/format';
 import { CheckCircle2, AlertTriangle, XCircle, Download, RefreshCw, Scale, TrendingUp, TrendingDown, FileText } from 'lucide-react';
 import { exportPdf } from '@/lib/export-pdf';
+import { BalanceDriftPanel } from '@/components/BalanceDriftPanel';
 
 export default function Reconciliation() {
   const { data: rows, isLoading, refetch } = useQuery({
@@ -68,6 +69,7 @@ export default function Reconciliation() {
         <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-warning/10"><AlertTriangle className="h-5 w-5 text-warning" /></div><div><p className="text-sm text-muted-foreground">Pending</p><p className="text-2xl font-bold">{stats.pending}</p></div></div></CardContent></Card>
         <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-muted"><Scale className="h-5 w-5 text-muted-foreground" /></div><div><p className="text-sm text-muted-foreground">Total Variance</p><p className="text-2xl font-bold">{formatCurrency(stats.totalVariance, 'USD')}</p></div></div></CardContent></Card>
       </div>
+      <div className="mb-6"><BalanceDriftPanel /></div>
       <Card><CardHeader><CardTitle>Daily Reconciliation</CardTitle><CardDescription>Settlement vs ledger with variance highlighting</CardDescription></CardHeader>
         <CardContent>{isLoading ? <div className="flex justify-center py-12"><div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div> : <Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Provider</TableHead><TableHead className="text-right">Gross</TableHead><TableHead className="text-right">Settled</TableHead><TableHead className="text-right">Variance</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Txns</TableHead></TableRow></TableHeader><TableBody>{rows?.map(r => <TableRow key={r.id} className={r.status === 'mismatch' ? 'bg-destructive/5' : ''}><TableCell className="text-sm font-medium">{r.date}</TableCell><TableCell className="text-sm capitalize">{r.provider}</TableCell><TableCell className="text-right font-mono text-sm">{formatCurrency(r.gross, r.currency as any)}</TableCell><TableCell className="text-right font-mono text-sm">{formatCurrency(r.settled, r.currency as any)}</TableCell><TableCell className="text-right"><span className={`font-mono text-sm flex items-center justify-end gap-1 ${r.variance > 0 ? 'text-success' : r.variance < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>{r.variance > 0 ? <TrendingUp className="h-3 w-3" /> : r.variance < 0 ? <TrendingDown className="h-3 w-3" /> : null}{formatCurrency(Math.abs(r.variance), r.currency as any)}</span></TableCell><TableCell>{sb(r.status)}</TableCell><TableCell className="text-right text-sm text-muted-foreground">{r.count}</TableCell></TableRow>)}{!rows?.length && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No data</TableCell></TableRow>}</TableBody></Table>}</CardContent>
       </Card>
