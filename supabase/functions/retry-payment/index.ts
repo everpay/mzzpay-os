@@ -240,7 +240,14 @@ serve(async (req) => {
 
         results.push({ id: sub.id, action: 'retry_succeeded', attempt: retryCount + 1 });
       } else {
-        const failureReason = settings.retry_decline_codes[0] || 'do_not_honor';
+        const failureReason: string =
+          chargeRaw?.error_code ||
+          chargeRaw?.code ||
+          chargeRaw?.error?.code ||
+          chargeRaw?.error?.message ||
+          chargeRaw?.error ||
+          settings.retry_decline_codes[0] ||
+          'do_not_honor';
         if (merchantId) {
           await supabase.from('provider_events').insert({
             merchant_id: merchantId,
