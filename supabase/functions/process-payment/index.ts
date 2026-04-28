@@ -569,7 +569,7 @@ serve(async (req) => {
         merchant_id: merchant.id,
         amount,
         surcharge_amount: surchargeAmount,
-        total_amount: totalAmount,
+        // total_amount is a generated column (amount + surcharge_amount) — do not insert.
         currency,
         provider,
         status: txStatus,
