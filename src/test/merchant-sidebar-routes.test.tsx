@@ -47,8 +47,8 @@ function LocationProbe() {
   return <div data-testid="location">{location.pathname}</div>;
 }
 
-function renderProtectedPath(path: string) {
-  return render(
+function ProtectedPath({ path }: { path: string }) {
+  return (
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route
@@ -142,7 +142,11 @@ describe('merchant sidebar route access', () => {
       throw new Error(`Unexpected table: ${table}`);
     });
 
-    render(<QueryClientProvider client={createQueryClient()}>{renderProtectedPath(path)}</QueryClientProvider>);
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <ProtectedPath path={path} />
+      </QueryClientProvider>,
+    );
 
     await waitFor(() => expect(screen.getByText('Merchant route content')).toBeInTheDocument());
     expect(screen.getByTestId('location')).toHaveTextContent(path);
