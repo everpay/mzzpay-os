@@ -5,8 +5,9 @@ import { formatCurrency, formatDate } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Banknote, Building2, ArrowRight, ArrowLeft, CheckCircle2, Clock, AlertCircle, CreditCard, RefreshCcw, TrendingDown } from 'lucide-react';
+import { Plus, Banknote, Building2, ArrowRight, ArrowLeft, CheckCircle2, Clock, AlertCircle, CreditCard, RefreshCcw, TrendingDown, Info } from 'lucide-react';
 import { useAccounts } from '@/hooks/useAccounts';
+import { usePayoutCapabilities } from '@/hooks/usePayoutCapabilities';
 import { useCreateMonetoPayout } from '@/hooks/useMoneto';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -230,6 +231,10 @@ export default function Payouts() {
     }
   };
 
+  const capabilities = usePayoutCapabilities();
+  const sourceCurrencySupported = capabilities.isSupported(sourceCurrency);
+  const destinationCurrencySupported = capabilities.isSupported(destinationCurrency);
+
   return (
     <AppLayout>
       <div className="mb-6 flex items-center justify-between">
@@ -239,7 +244,17 @@ export default function Payouts() {
         </div>
         <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="h-4 w-4" /> New Payout</Button>
+            <Button
+              className="gap-2"
+              disabled={!capabilities.payoutsBackendReady}
+              title={
+                capabilities.payoutsBackendReady
+                  ? undefined
+                  : 'No payout backend is currently available'
+              }
+            >
+              <Plus className="h-4 w-4" /> New Payout
+            </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
