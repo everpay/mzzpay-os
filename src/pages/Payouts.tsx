@@ -277,10 +277,12 @@ export default function Payouts() {
                   <Select value={sourceCurrency} onValueChange={setSourceCurrency}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="CAD">🇨🇦 CAD</SelectItem>
-                      <SelectItem value="USD">🇺🇸 USD</SelectItem>
-                      <SelectItem value="EUR">🇪🇺 EUR</SelectItem>
-                      <SelectItem value="GBP">🇬🇧 GBP</SelectItem>
+                      {capabilities.matrix.map((c) => (
+                        <SelectItem key={`src-${c.currency}`} value={c.currency} disabled={!c.enabled}>
+                          {c.currency === 'CAD' ? '🇨🇦' : c.currency === 'USD' ? '🇺🇸' : c.currency === 'EUR' ? '🇪🇺' : '🇬🇧'} {c.currency}
+                          {!c.enabled && <span className="ml-2 text-xs text-muted-foreground">(coming soon)</span>}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">Available: {formatCurrency(availableBalance, sourceCurrency as any)}</p>
@@ -300,10 +302,12 @@ export default function Payouts() {
                   <Select value={destinationCurrency} onValueChange={setDestinationCurrency}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="CAD">🇨🇦 CAD</SelectItem>
-                      <SelectItem value="USD">🇺🇸 USD</SelectItem>
-                      <SelectItem value="EUR">🇪🇺 EUR</SelectItem>
-                      <SelectItem value="GBP">🇬🇧 GBP</SelectItem>
+                      {capabilities.matrix.map((c) => (
+                        <SelectItem key={`dst-${c.currency}`} value={c.currency} disabled={!c.enabled}>
+                          {c.currency === 'CAD' ? '🇨🇦' : c.currency === 'USD' ? '🇺🇸' : c.currency === 'EUR' ? '🇪🇺' : '🇬🇧'} {c.currency}
+                          {!c.enabled && <span className="ml-2 text-xs text-muted-foreground">(coming soon)</span>}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -509,7 +513,16 @@ export default function Payouts() {
                   </span>
                 </div>
 
-                <Button className="w-full gap-2" onClick={handleCreatePayout} disabled={createPayout.isPending}>
+                <Button
+                  className="w-full gap-2"
+                  onClick={handleCreatePayout}
+                  disabled={createPayout.isPending || !sourceCurrencySupported || !destinationCurrencySupported}
+                  title={
+                    !sourceCurrencySupported || !destinationCurrencySupported
+                      ? `Payouts in ${!sourceCurrencySupported ? sourceCurrency : destinationCurrency} are not yet supported`
+                      : undefined
+                  }
+                >
                   {createPayout.isPending ? 'Processing...' : (
                     <><Banknote className="h-4 w-4" /> Confirm & Send</>
                   )}
