@@ -10,14 +10,25 @@ export function useUserRole() {
     enabled: !!user,
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id);
+      const [rolesResult, merchantResult] = await Promise.all([
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id),
+        supabase
+          .from('merchants')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+      ]);
 
-      const roles = data?.map(r => r.role) ?? [];
+      const roles = rolesResult.data?.map(r => r.role) ?? [];
+      if (merchantResult.data?.id && !roles.includes('merchant' as any)) {
+        roles.push('merchant' as any);
+      }
       return {
         roles,
+        isMerchant: roles.includes('merchant' as any),
         isAdmin: roles.includes('super_admin') || roles.includes('admin'),
         isSuperAdmin: roles.includes('super_admin'),
         isReseller: roles.includes('reseller'),
