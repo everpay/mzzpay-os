@@ -165,8 +165,58 @@ serve(async (req) => {
         }
       }
 
-      // Simulated retry (production should call provider)
-      const paymentSuccess = Math.random() > 0.3;
+      // Real retry — invoke `process-payment` with the vaulted card so the
+      // dunning attempt actually hits Shieldhub / Risonpay (not a coin flip).
+      // Subscriptions without a vaulted method are short-circuited as a
+      // permanent failure; the customer must re-add a card via the portal.
+      let paymentSuccess = false;
+      let chargeRaw: any = null;
+      const pm = (sub as any).payment_method;
+      if (!pm?.vgs_alias) {
+        chargeRaw = { error_code: 'missing_payment_method' };
+      } else {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/process-payment`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: Deno.env.get('SUPABASE_ANON_KEY') || '',
+              authorization: `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({
+              amount: Number(sub.plan?.amount || 0),
+              currency: sub.plan?.currency || 'USD',
+              paymentMethod: 'card',
+              customerEmail: sub.customer?.email,
+              description: `Subscription retry: ${sub.plan?.name || sub.id}`,
+              idempotencyKey: `retry-${sub.id}-${retryCount + 1}`,
+              merchantId: merchantId,
+              cardDetails: {
+                number: pm.vgs_alias,
+                expMonth: String((pm as any).card_exp_month || '12'),
+                expYear: String((pm as any).card_exp_year || '2030'),
+                cvc: '000',
+                holderName: `${sub.customer?.first_name || ''} ${sub.customer?.last_name || ''}`.trim() || 'Cardholder',
+              },
+              customer: {
+                first: sub.customer?.first_name,
+                last: sub.customer?.last_name,
+              },
+              billing: { country: (sub.customer as any)?.country || 'US' },
+              metadata: { subscription_id: sub.id, recurring: true, retry_attempt: retryCount + 1 },
+            }),
+          });
+          chargeRaw = await res.json().catch(() => ({}));
+          paymentSuccess = res.ok && (
+            chargeRaw?.status === 'completed' ||
+            chargeRaw?.status === 'processing' ||
+            chargeRaw?.transaction?.status === 'completed' ||
+            chargeRaw?.transaction?.status === 'processing'
+          );
+        } catch (e) {
+          chargeRaw = { error: String(e) };
+        }
+      }
 
       if (paymentSuccess) {
         const nextPeriodEnd = new Date();
