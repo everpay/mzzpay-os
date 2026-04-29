@@ -74,6 +74,11 @@ import MultiAcquirer from "./pages/MultiAcquirer";
 import AdminProcessors from "./pages/admin/AdminProcessors";
 import AdminEmailLog from "./pages/admin/AdminEmailLog";
 import ProcessorAnalyticsPage from "./pages/ProcessorAnalyticsPage";
+import PaymentWidget from "./pages/PaymentWidget";
+import SavedCards from "./pages/SavedCards";
+import PaymentMethodsPage from "./pages/PaymentMethodsPage";
+import LiveAnalytics from "./pages/LiveAnalytics";
+import Balances from "./pages/Balances";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 import FrontPricing from "./pages/front/Pricing";
 import FrontDemo from "./pages/front/Demo";
@@ -230,6 +235,11 @@ const AppRoutes = () => (
     <Route path="/admin/processors" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><AdminProcessors /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/admin/email-log" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><AdminEmailLog /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/integrations" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><Integrations /></RoleProtectedRoute></ProtectedRoute>} />
+    <Route path="/payment-widget" element={<ProtectedRoute><PaymentWidget /></ProtectedRoute>} />
+    <Route path="/saved-cards" element={<ProtectedRoute><SavedCards /></ProtectedRoute>} />
+    <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsPage /></ProtectedRoute>} />
+    <Route path="/live-analytics" element={<ProtectedRoute><LiveAnalytics /></ProtectedRoute>} />
+    <Route path="/balances" element={<ProtectedRoute><Balances /></ProtectedRoute>} />
     {/* Redirect old routes */}
     <Route path="/new-payment" element={<Navigate to="/payments/new" replace />} />
     <Route path="/merchant" element={<Navigate to="/chargebacks" replace />} />
