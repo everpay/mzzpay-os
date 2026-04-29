@@ -2073,37 +2073,58 @@ export type Database = {
         Row: {
           card_brand: string | null
           card_last4: string | null
+          card_updater_enabled: boolean
           created_at: string
           customer_id: string
           exp_month: string | null
           exp_year: string | null
           id: string
           is_default: boolean
+          last_used_at: string | null
+          network_token_status: string | null
+          revoked_at: string | null
+          revoked_reason: string | null
+          status: string
           updated_at: string
+          usage_count: number
           vgs_alias: string
         }
         Insert: {
           card_brand?: string | null
           card_last4?: string | null
+          card_updater_enabled?: boolean
           created_at?: string
           customer_id: string
           exp_month?: string | null
           exp_year?: string | null
           id?: string
           is_default?: boolean
+          last_used_at?: string | null
+          network_token_status?: string | null
+          revoked_at?: string | null
+          revoked_reason?: string | null
+          status?: string
           updated_at?: string
+          usage_count?: number
           vgs_alias: string
         }
         Update: {
           card_brand?: string | null
           card_last4?: string | null
+          card_updater_enabled?: boolean
           created_at?: string
           customer_id?: string
           exp_month?: string | null
           exp_year?: string | null
           id?: string
           is_default?: boolean
+          last_used_at?: string | null
+          network_token_status?: string | null
+          revoked_at?: string | null
+          revoked_reason?: string | null
+          status?: string
           updated_at?: string
+          usage_count?: number
           vgs_alias?: string
         }
         Relationships: [
@@ -3689,6 +3710,41 @@ export type Database = {
           },
         ]
       }
+      token_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          token_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          token_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          token_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_events_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -3948,6 +4004,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      merchant_account_balance: {
+        Args: { _account_id: string }
+        Returns: number
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
