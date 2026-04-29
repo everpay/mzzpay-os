@@ -24,6 +24,24 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
     open ? transaction?.id ?? null : null,
   );
 
+  const txIds = open && transaction ? [transaction.id] : [];
+  const { data: tapixCache = {} } = useTapixCache(txIds);
+  const tapixEnrich = useTapixEnrich();
+  const inlineEnrichment = (transaction?.metadata as any)?.tapixEnrichment || null;
+  const enrichment = transaction
+    ? (getEnrichmentSummary(tapixCache[transaction.id]) || getEnrichmentSummary(inlineEnrichment))
+    : null;
+
+  useEffect(() => {
+    if (open && transaction && !enrichment && !tapixEnrich.isPending) {
+      tapixEnrich.mutate({
+        transactionId: transaction.id,
+        merchantId: (transaction as any).merchant_id,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, transaction?.id]);
+
   if (!transaction) return null;
 
   // Extract VGS alias and card brand from enrichment events
