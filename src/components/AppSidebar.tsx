@@ -133,7 +133,6 @@ export const navSections: NavSection[] = [
       { to: "/risk", icon: ShieldCheck, label: "Risk Profile", visibleTo: ["super_admin"] },
       { to: "/3ds-settings", icon: Lock, label: "3D Secure", visibleTo: ["super_admin"] },
       { to: "/reconciliation", icon: FileBarChart, label: "Reconciliation", visibleTo: ["super_admin"] },
-      { to: "/treasury", icon: Landmark, label: "Multi-currency", visibleTo: ["super_admin"] },
       { to: "/audit-trail", icon: ScrollText, label: "Audit Trail", visibleTo: ["super_admin"] },
     ],
   },
