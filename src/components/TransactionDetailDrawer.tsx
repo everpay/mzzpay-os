@@ -1,11 +1,13 @@
+import { useEffect } from 'react';
 import type { Transaction } from '@/lib/types';
 import { useTransactionProviderEvents } from '@/hooks/useTransactionProviderEvents';
+import { useTapixCache, useTapixEnrich, getEnrichmentSummary } from '@/hooks/useTapixEnrichment';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import {
   ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield,
-  Wifi, Globe, Monitor, AlertTriangle, MapPin, Phone, ShieldOff, ShieldCheck, Activity,
+  Wifi, Globe, Monitor, AlertTriangle, MapPin, Phone, ShieldOff, ShieldCheck, Activity, Loader2, Tag,
 } from 'lucide-react';
 import { CardBrandBadge } from '@/components/CardBrandBadge';
 import { PaymentMethodIcon } from '@/components/PaymentMethodIcon';
