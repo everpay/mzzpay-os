@@ -27,7 +27,7 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
   const txIds = open && transaction ? [transaction.id] : [];
   const { data: tapixCache = {} } = useTapixCache(txIds);
   const tapixEnrich = useTapixEnrich();
-  const inlineEnrichment = (transaction?.metadata as any)?.tapixEnrichment || null;
+  const inlineEnrichment = ((transaction as any)?.metadata as any)?.tapixEnrichment || null;
   const enrichment = transaction
     ? (getEnrichmentSummary(tapixCache[transaction.id]) || getEnrichmentSummary(inlineEnrichment))
     : null;
