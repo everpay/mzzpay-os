@@ -112,3 +112,20 @@ export async function getCachedEnrichments(
   }
   return map;
 }
+
+/**
+ * Backward-compat shim for legacy callers (e.g. Customers page) that only have
+ * a card last4. Maps to the new BFF `enrich_card` action.
+ */
+export async function enrichWithTapix(
+  cardLast4: string,
+  amount?: number,
+  _transactionId?: string,
+): Promise<{ success: boolean; enrichment?: any; error?: string }> {
+  try {
+    const data = await enrichCardPayment({ description: cardLast4 });
+    return { success: true, enrichment: data };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Unknown error' };
+  }
+}
