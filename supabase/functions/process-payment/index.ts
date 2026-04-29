@@ -932,17 +932,51 @@ async function processMzzPayPayment(data: PaymentRequest) {
     else three_ds_status = 'requested_enrolled';
   }
 
-  if (!response.ok || parsed.status === 'Declined' || parsed.status === 'Failed') {
-    const msg = parsed.error?.message || parsed.message || `HTTP ${response.status}`;
+  const shStatus = String(parsed?.status || '').toLowerCase();
+
+  // Decline normalization (ported from Everpay) — surface the raw issuer code
+  // and a human-readable message regardless of which envelope the gateway uses.
+  if (!response.ok || shStatus === 'declined' || shStatus === 'failed' || shStatus === 'error' || shStatus === 'blocked') {
+    const rawMsg = parsed?.error?.message || parsed?.error?.messsage || parsed?.message || parsed?.respmsg || '';
+    const shieldHubMessages: Record<string, string> = {
+      '500': 'Your card was declined. Please try a different card or contact your bank.',
+      '-': rawMsg || 'Transaction was blocked by the processor.',
+      'unknown': 'Transaction could not be processed. Please try again.',
+    };
+    const rawCode = String(parsed?.error?.code || parsed?.statusCode || parsed?.respcode || parsed?.response_code || `HTTP_${response.status}`);
+    const declineMsg = rawMsg && rawMsg !== 'Transaction failed'
+      ? rawMsg
+      : (shieldHubMessages[rawCode] || rawMsg || 'Transaction declined by processor');
+    console.error(`[Shieldhub] DECLINE code=${rawCode} msg=${declineMsg}`);
     return {
-      status: 'FAILED',
-      error: { message: `Shieldhub: ${msg}` },
-      __three_ds_status: three_ds_status,
       ...parsed,
+      transaction_reference: transactionReference,
+      status: 'Declined',
+      error: { code: rawCode, message: `Shieldhub: ${declineMsg}` },
+      __three_ds_status: three_ds_status,
     };
   }
 
-  return { ...parsed, __three_ds_status: three_ds_status };
+  // 3DS Redirect handling: a real ACS URL means step-up. Missing URL on a
+  // Redirect status is a 3DS infrastructure failure (NOT a card decline) so
+  // the cascade can advance to the next provider.
+  if (shStatus === 'redirect') {
+    const realRedirectUrl = parsed?.redirect_url || parsed?.redirectback_url || parsed?.url || parsed?.payment_url || acsUrl || parsed?.threeds_url;
+    if (realRedirectUrl && /^https?:\/\//i.test(String(realRedirectUrl))) {
+      return { ...parsed, transaction_reference: transactionReference, status: 'Redirect', redirect_url: realRedirectUrl, __three_ds_status: 'step_up_required' };
+    }
+    const rawCode = String(parsed?.error?.code || parsed?.statusCode || '3DS_REDIRECT_MISSING_URL');
+    return {
+      ...parsed,
+      transaction_reference: transactionReference,
+      status: 'Failed3DS',
+      redirect_url: undefined,
+      error: { code: rawCode, message: '3DS authentication failed: issuer requested step-up but Shieldhub returned no redirect URL' },
+      __three_ds_status: 'fallback_2d',
+    };
+  }
+
+  return { ...parsed, transaction_reference: transactionReference, __three_ds_status: three_ds_status };
 }
 
 async function processMondoPayment(data: PaymentRequest) {
