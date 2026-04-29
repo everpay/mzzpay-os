@@ -973,8 +973,15 @@ async function processMzzPayPayment(data: PaymentRequest) {
   // Redirect status is a 3DS infrastructure failure (NOT a card decline) so
   // the cascade can advance to the next provider.
   if (shStatus === 'redirect') {
-    const realRedirectUrl = parsed?.redirect_url || parsed?.redirectback_url || parsed?.url || parsed?.payment_url || acsUrl || parsed?.threeds_url;
-    if (realRedirectUrl && /^https?:\/\//i.test(String(realRedirectUrl))) {
+    // Same alias list as Everpay Platform OS — gateway has shipped at least
+    // 9 different field names for the ACS URL across MIDs over the years.
+    const REDIRECT_KEYS = ['redirect_url', 'redirectback_url', 'url', 'payment_url', 'acs_url', 'threeds_url', '3d_secure_redirect_url', 'gateway_url', 'checkout_url', 'three_ds_redirect_url'];
+    let realRedirectUrl: string | null = null;
+    for (const k of REDIRECT_KEYS) {
+      const v = (parsed as any)?.[k];
+      if (typeof v === 'string' && /^https?:\/\//i.test(v)) { realRedirectUrl = v; break; }
+    }
+    if (realRedirectUrl) {
       return { ...parsed, transaction_reference: transactionReference, status: 'Redirect', redirect_url: realRedirectUrl, __three_ds_status: 'step_up_required' };
     }
     const rawCode = String(parsed?.error?.code || parsed?.statusCode || '3DS_REDIRECT_MISSING_URL');
@@ -983,8 +990,9 @@ async function processMzzPayPayment(data: PaymentRequest) {
       transaction_reference: transactionReference,
       status: 'Failed3DS',
       redirect_url: undefined,
-      error: { code: rawCode, message: '3DS authentication failed: issuer requested step-up but Shieldhub returned no redirect URL' },
+      error: { code: '3DS_REDIRECT_MISSING_URL', message: parsed?.error?.message || parsed?.message || '3DS authentication failed: issuer requested step-up but Shieldhub returned no challenge URL' },
       __three_ds_status: 'fallback_2d',
+      __raw_code: rawCode,
     };
   }
 
