@@ -937,17 +937,29 @@ async function processMzzPayPayment(data: PaymentRequest) {
   // Decline normalization (ported from Everpay) — surface the raw issuer code
   // and a human-readable message regardless of which envelope the gateway uses.
   if (!response.ok || shStatus === 'declined' || shStatus === 'failed' || shStatus === 'error' || shStatus === 'blocked') {
-    const rawMsg = parsed?.error?.message || parsed?.error?.messsage || parsed?.message || parsed?.respmsg || '';
+    // Read EVERY error envelope alias Shieldhub has been observed to use so a
+    // genuine issuer message ("Insufficient funds") never gets swallowed by a
+    // generic "Transaction declined". Mirrors Everpay Platform OS exactly.
+    const rawMsg = parsed?.error?.message || parsed?.error?.messsage || parsed?.errorMessage || parsed?.message || parsed?.respmsg || '';
+    // Decline-code → human-readable copy. Codes match Shieldhub's published
+    // response codes and the issuer ISO-8583 set we see most often. Anything
+    // not in this map falls through to the gateway's own message.
     const shieldHubMessages: Record<string, string> = {
+      '004': 'Shieldhub could not find an enabled processor for this merchant configuration. Please retry after processor configuration is corrected.',
+      '100': 'Transaction declined by the issuer. Please try another card.',
+      '101': 'Card expired. Please use a different card.',
+      '116': 'Insufficient funds. Please try another card.',
+      '201': 'Card invalid or restricted. Please try another card.',
+      '304': 'Declined by the issuer.',
       '500': 'Your card was declined. Please try a different card or contact your bank.',
       '-': rawMsg || 'Transaction was blocked by the processor.',
       'unknown': 'Transaction could not be processed. Please try again.',
     };
-    const rawCode = String(parsed?.error?.code || parsed?.statusCode || parsed?.respcode || parsed?.response_code || `HTTP_${response.status}`);
+    const rawCode = String(parsed?.error?.code || parsed?.errorCode || parsed?.statusCode || parsed?.respcode || parsed?.response_code || `HTTP_${response.status}`);
     const declineMsg = rawMsg && rawMsg !== 'Transaction failed'
       ? rawMsg
       : (shieldHubMessages[rawCode] || rawMsg || 'Transaction declined by processor');
-    console.error(`[Shieldhub] DECLINE code=${rawCode} msg=${declineMsg}`);
+    console.error(`[Shieldhub] DECLINE code=${rawCode} msg=${declineMsg} raw=${rawMsg}`);
     return {
       ...parsed,
       transaction_reference: transactionReference,
@@ -961,8 +973,15 @@ async function processMzzPayPayment(data: PaymentRequest) {
   // Redirect status is a 3DS infrastructure failure (NOT a card decline) so
   // the cascade can advance to the next provider.
   if (shStatus === 'redirect') {
-    const realRedirectUrl = parsed?.redirect_url || parsed?.redirectback_url || parsed?.url || parsed?.payment_url || acsUrl || parsed?.threeds_url;
-    if (realRedirectUrl && /^https?:\/\//i.test(String(realRedirectUrl))) {
+    // Same alias list as Everpay Platform OS — gateway has shipped at least
+    // 9 different field names for the ACS URL across MIDs over the years.
+    const REDIRECT_KEYS = ['redirect_url', 'redirectback_url', 'url', 'payment_url', 'acs_url', 'threeds_url', '3d_secure_redirect_url', 'gateway_url', 'checkout_url', 'three_ds_redirect_url'];
+    let realRedirectUrl: string | null = null;
+    for (const k of REDIRECT_KEYS) {
+      const v = (parsed as any)?.[k];
+      if (typeof v === 'string' && /^https?:\/\//i.test(v)) { realRedirectUrl = v; break; }
+    }
+    if (realRedirectUrl) {
       return { ...parsed, transaction_reference: transactionReference, status: 'Redirect', redirect_url: realRedirectUrl, __three_ds_status: 'step_up_required' };
     }
     const rawCode = String(parsed?.error?.code || parsed?.statusCode || '3DS_REDIRECT_MISSING_URL');
@@ -971,8 +990,9 @@ async function processMzzPayPayment(data: PaymentRequest) {
       transaction_reference: transactionReference,
       status: 'Failed3DS',
       redirect_url: undefined,
-      error: { code: rawCode, message: '3DS authentication failed: issuer requested step-up but Shieldhub returned no redirect URL' },
+      error: { code: '3DS_REDIRECT_MISSING_URL', message: parsed?.error?.message || parsed?.message || '3DS authentication failed: issuer requested step-up but Shieldhub returned no challenge URL' },
       __three_ds_status: 'fallback_2d',
+      __raw_code: rawCode,
     };
   }
 
