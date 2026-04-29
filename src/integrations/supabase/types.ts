@@ -3622,6 +3622,59 @@ export type Database = {
           },
         ]
       }
+      tapix_enrichment_cache: {
+        Row: {
+          created_at: string
+          enrichment_type: string
+          id: string
+          merchant_data: Json | null
+          merchant_id: string
+          merchant_uid: string | null
+          raw_find_response: Json | null
+          shop_data: Json | null
+          shop_uid: string | null
+          tapix_handle: string | null
+          transaction_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enrichment_type?: string
+          id?: string
+          merchant_data?: Json | null
+          merchant_id: string
+          merchant_uid?: string | null
+          raw_find_response?: Json | null
+          shop_data?: Json | null
+          shop_uid?: string | null
+          tapix_handle?: string | null
+          transaction_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enrichment_type?: string
+          id?: string
+          merchant_data?: Json | null
+          merchant_id?: string
+          merchant_uid?: string | null
+          raw_find_response?: Json | null
+          shop_data?: Json | null
+          shop_uid?: string | null
+          tapix_handle?: string | null
+          transaction_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tapix_enrichment_cache_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_invitations: {
         Row: {
           accepted_at: string | null

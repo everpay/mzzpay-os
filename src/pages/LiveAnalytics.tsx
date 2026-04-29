@@ -81,6 +81,26 @@ export default function LiveAnalytics() {
       )
       .subscribe();
 
+    // Subscribe to provider events (webhooks, 3DS, gateway responses)
+    const providerChannel = supabase
+      .channel('live-provider-events')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'provider_events' },
+        (payload) => {
+          const record = payload.new as any;
+          if (!record) return;
+          setEvents(prev => [{
+            id: record.id,
+            type: `provider:${record.event_type}`,
+            provider: record.provider,
+            status: record.event_type,
+            timestamp: new Date().toISOString(),
+          }, ...prev].slice(0, 50));
+        }
+      )
+      .subscribe();
+
     // TPS counter
     const tpsInterval = setInterval(() => {
       const oneSecAgo = Date.now() - 1000;
@@ -94,6 +114,7 @@ export default function LiveAnalytics() {
     return () => {
       supabase.removeChannel(channel);
       supabase.removeChannel(disputeChannel);
+      supabase.removeChannel(providerChannel);
       clearInterval(tpsInterval);
     };
   }, []);

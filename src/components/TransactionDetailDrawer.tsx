@@ -1,11 +1,13 @@
+import { useEffect } from 'react';
 import type { Transaction } from '@/lib/types';
 import { useTransactionProviderEvents } from '@/hooks/useTransactionProviderEvents';
+import { useTapixCache, useTapixEnrich, getEnrichmentSummary } from '@/hooks/useTapixEnrichment';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate, getStatusVariant } from '@/lib/format';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import {
   ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield,
-  Wifi, Globe, Monitor, AlertTriangle, MapPin, Phone, ShieldOff, ShieldCheck, Activity,
+  Wifi, Globe, Monitor, AlertTriangle, MapPin, Phone, ShieldOff, ShieldCheck, Activity, Loader2, Tag,
 } from 'lucide-react';
 import { CardBrandBadge } from '@/components/CardBrandBadge';
 import { PaymentMethodIcon } from '@/components/PaymentMethodIcon';
@@ -21,6 +23,24 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
   const { events: relatedEvents, isLoading: eventsLoading } = useTransactionProviderEvents(
     open ? transaction?.id ?? null : null,
   );
+
+  const txIds = open && transaction ? [transaction.id] : [];
+  const { data: tapixCache = {} } = useTapixCache(txIds);
+  const tapixEnrich = useTapixEnrich();
+  const inlineEnrichment = ((transaction as any)?.metadata as any)?.tapixEnrichment || null;
+  const enrichment = transaction
+    ? (getEnrichmentSummary(tapixCache[transaction.id]) || getEnrichmentSummary(inlineEnrichment))
+    : null;
+
+  useEffect(() => {
+    if (open && transaction && !enrichment && !tapixEnrich.isPending) {
+      tapixEnrich.mutate({
+        transactionId: transaction.id,
+        merchantId: (transaction as any).merchant_id,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, transaction?.id]);
 
   if (!transaction) return null;
 
@@ -337,6 +357,67 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+          {/* Payment Enrichment (Tapix) */}
+          <div className="space-y-3">
+            <h4 className="font-heading text-sm font-semibold text-foreground flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              Payment Enrichment
+              {tapixEnrich.isPending && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+            </h4>
+            {enrichment && enrichment.found ? (
+              <div className="rounded-lg border border-border bg-background p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  {enrichment.merchantLogo ? (
+                    <img src={enrichment.merchantLogo} alt={enrichment.merchantName || 'merchant'} className="h-10 w-10 rounded-lg object-contain bg-muted/30 border border-border" />
+                  ) : (
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{enrichment.merchantName || 'Unknown merchant'}</p>
+                    {enrichment.category && (
+                      <p className="text-xs text-muted-foreground">{enrichment.category}</p>
+                    )}
+                  </div>
+                </div>
+                {enrichment.address && (
+                  <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <span>{enrichment.address}</span>
+                  </div>
+                )}
+                {enrichment.shopUrl && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                    <a href={enrichment.shopUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
+                      {enrichment.shopUrl}
+                    </a>
+                  </div>
+                )}
+                {enrichment.tags && enrichment.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {enrichment.tags.slice(0, 6).map((t: string) => (
+                      <Badge key={t} variant="outline" className="text-[10px] gap-1">
+                        <Tag className="h-2.5 w-2.5" /> {t}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <div className="pt-2 border-t border-border flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">Enriched via Tapix</span>
+                  <Badge variant="outline" className="text-[10px] capitalize">{enrichment.enrichmentType}</Badge>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-center">
+                <p className="text-xs text-muted-foreground">
+                  {tapixEnrich.isPending ? 'Enriching transaction data…' : 'No enrichment data available'}
+                </p>
               </div>
             )}
           </div>
