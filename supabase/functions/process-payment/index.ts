@@ -889,9 +889,9 @@ async function processMzzPayPayment(data: PaymentRequest) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error('Shieldhub network error:', msg);
     return {
-      status: 'FAILED',
-      code: 'network',
-      error: { code: 'network', message: `Shieldhub network error: ${msg}` },
+      id: 0, transaction_reference: transactionReference, status: 'Failed',
+      currency: data.currency, amount: amountStr, code: 'network',
+      error: { code: 'NETWORK_ERROR', message: `Shieldhub unreachable: ${msg}` },
     };
   }
 
