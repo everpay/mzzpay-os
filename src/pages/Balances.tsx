@@ -12,6 +12,7 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { formatCurrency } from '@/lib/format';
 import type { Currency } from '@/lib/types';
 import { DollarSign, ArrowUpRight, Clock, TrendingUp } from 'lucide-react';
+import { BalanceDriftPanel } from '@/components/BalanceDriftPanel';
 
 export default function Balances() {
   const { data: accounts = [], isLoading: loadingAccounts } = useAccounts();
@@ -220,7 +221,8 @@ export default function Balances() {
           </TabsContent>
         </Tabs>
 
-
+        {/* Ledger vs stored balance drift (RLS-scoped) */}
+        <BalanceDriftPanel />
       </div>
     </AppLayout>
   );
