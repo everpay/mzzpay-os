@@ -9,7 +9,22 @@ import { CreditCard, Trash2, Search, Loader2, Shield, RefreshCw, Ban, History, C
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { revokeToken } from '@/services/tokenization';
+// Local token revocation: marks the saved payment_method as revoked. The
+// platform-level VGS detokenize/revoke endpoint is not yet wired in this
+// project, so we update status in-place and write an audit row instead.
+async function revokeToken(id: string, _merchantId: string, reason: string) {
+  const { error } = await supabase
+    .from('payment_methods')
+    .update({ status: 'revoked', updated_at: new Date().toISOString() } as any)
+    .eq('id', id);
+  if (error) throw error;
+  await supabase.from('audit_logs').insert({
+    action: 'token_revoked',
+    entity_type: 'payment_methods',
+    entity_id: id,
+    metadata: { reason },
+  } as any);
+}
 import { formatDistanceToNow } from 'date-fns';
 
 const STATUS_BADGE: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ElementType }> = {

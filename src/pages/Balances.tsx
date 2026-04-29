@@ -12,12 +12,11 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { formatCurrency } from '@/lib/format';
 import type { Currency } from '@/lib/types';
 import { DollarSign, ArrowUpRight, Clock, TrendingUp } from 'lucide-react';
-import { BalanceAlertsManager } from '@/components/BalanceAlertsManager';
 
 export default function Balances() {
   const { data: accounts = [], isLoading: loadingAccounts } = useAccounts();
   const { data: transactions = [], isLoading: loadingTx } = useTransactions();
-  const [period, setPeriod] = useState<PeriodValue>('this_month');
+  const [period, setPeriod] = useState<PeriodValue>('30d');
   const [currency, setCurrency] = useState('all');
 
   const filteredAccounts = useMemo(() => {
@@ -221,7 +220,7 @@ export default function Balances() {
           </TabsContent>
         </Tabs>
 
-        <BalanceAlertsManager />
+
       </div>
     </AppLayout>
   );
