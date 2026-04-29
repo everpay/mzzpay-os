@@ -35,6 +35,10 @@ import {
   GitBranch,
   Globe2,
   Server,
+  LayoutGrid,
+  Layers,
+  Radio,
+  Coins,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -70,6 +74,7 @@ export const navSections: NavSection[] = [
       { to: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
       { to: "/payments/new", icon: CreditCard, label: "New Payment" },
       { to: "/payment-links", icon: Link2, label: "Payment Links" },
+      { to: "/payment-widget", icon: LayoutGrid, label: "Payment Widget" },
       { to: "/refunds", icon: RotateCcw, label: "Refunds" },
     ],
   },
@@ -79,15 +84,18 @@ export const navSections: NavSection[] = [
       { to: "/invoices", icon: FileText, label: "Invoices" },
       { to: "/products", icon: Package, label: "Products" },
       { to: "/subscriptions", icon: RefreshCw, label: "Subscriptions" },
+      { to: "/saved-cards", icon: CreditCard, label: "Saved Cards" },
     ],
   },
   {
     title: "Treasury",
     items: [
-      { to: "/settlements", icon: Landmark, label: "Settlements" },
-      { to: "/bank-accounts", icon: Building2, label: "Bank Accounts" },
-      { to: "/payouts", icon: ArrowUpRight, label: "Payouts" },
       { to: "/wallets", icon: Wallet, label: "Wallets" },
+      { to: "/balances", icon: Coins, label: "Balances" },
+      { to: "/settlements", icon: Landmark, label: "Settlements" },
+      { to: "/payouts", icon: ArrowUpRight, label: "Payouts" },
+      { to: "/treasury", icon: Landmark, label: "Treasury & FX", visibleTo: ["super_admin"] },
+      { to: "/bank-accounts", icon: Building2, label: "Bank Accounts" },
       { to: "/recipients", icon: Send, label: "Recipients" },
     ],
   },
@@ -100,10 +108,12 @@ export const navSections: NavSection[] = [
     ],
   },
   {
-    title: "Insights",
+    title: "Analytics",
     items: [
-      { to: "/analytics", icon: BarChart3, label: "Analytics" },
+      { to: "/analytics", icon: BarChart3, label: "Overview" },
       { to: "/processor-analytics", icon: Activity, label: "Processor Analytics" },
+      { to: "/payment-methods", icon: Layers, label: "Payment Methods" },
+      { to: "/live-analytics", icon: Radio, label: "Live Analytics" },
       { to: "/reports", icon: FileText, label: "Reports" },
     ],
   },
