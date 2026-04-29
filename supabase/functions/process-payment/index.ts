@@ -937,17 +937,29 @@ async function processMzzPayPayment(data: PaymentRequest) {
   // Decline normalization (ported from Everpay) — surface the raw issuer code
   // and a human-readable message regardless of which envelope the gateway uses.
   if (!response.ok || shStatus === 'declined' || shStatus === 'failed' || shStatus === 'error' || shStatus === 'blocked') {
-    const rawMsg = parsed?.error?.message || parsed?.error?.messsage || parsed?.message || parsed?.respmsg || '';
+    // Read EVERY error envelope alias Shieldhub has been observed to use so a
+    // genuine issuer message ("Insufficient funds") never gets swallowed by a
+    // generic "Transaction declined". Mirrors Everpay Platform OS exactly.
+    const rawMsg = parsed?.error?.message || parsed?.error?.messsage || parsed?.errorMessage || parsed?.message || parsed?.respmsg || '';
+    // Decline-code → human-readable copy. Codes match Shieldhub's published
+    // response codes and the issuer ISO-8583 set we see most often. Anything
+    // not in this map falls through to the gateway's own message.
     const shieldHubMessages: Record<string, string> = {
+      '004': 'Shieldhub could not find an enabled processor for this merchant configuration. Please retry after processor configuration is corrected.',
+      '100': 'Transaction declined by the issuer. Please try another card.',
+      '101': 'Card expired. Please use a different card.',
+      '116': 'Insufficient funds. Please try another card.',
+      '201': 'Card invalid or restricted. Please try another card.',
+      '304': 'Declined by the issuer.',
       '500': 'Your card was declined. Please try a different card or contact your bank.',
       '-': rawMsg || 'Transaction was blocked by the processor.',
       'unknown': 'Transaction could not be processed. Please try again.',
     };
-    const rawCode = String(parsed?.error?.code || parsed?.statusCode || parsed?.respcode || parsed?.response_code || `HTTP_${response.status}`);
+    const rawCode = String(parsed?.error?.code || parsed?.errorCode || parsed?.statusCode || parsed?.respcode || parsed?.response_code || `HTTP_${response.status}`);
     const declineMsg = rawMsg && rawMsg !== 'Transaction failed'
       ? rawMsg
       : (shieldHubMessages[rawCode] || rawMsg || 'Transaction declined by processor');
-    console.error(`[Shieldhub] DECLINE code=${rawCode} msg=${declineMsg}`);
+    console.error(`[Shieldhub] DECLINE code=${rawCode} msg=${declineMsg} raw=${rawMsg}`);
     return {
       ...parsed,
       transaction_reference: transactionReference,
