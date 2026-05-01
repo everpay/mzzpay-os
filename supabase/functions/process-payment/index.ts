@@ -714,14 +714,24 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error processing payment:', error);
-    const message = error instanceof Error ? error.message 
-      : (typeof error === 'object' && error !== null) ? JSON.stringify(error)
-      : String(error);
-    const status = message === 'Unauthorized' ? 401 : 500;
-    return new Response(
-      JSON.stringify({ error: message }),
-      { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    const errMsg = error instanceof Error ? error.message : String(error);
+
+    // CRITICAL: Always return HTTP 200 so the Supabase SDK delivers the full
+    // JSON body to the client. Non-200 causes supabase-js to discard the body
+    // and surface a generic "FunctionsHttpError" with no decline details.
+    return new Response(JSON.stringify({ 
+      success: false, 
+      ok: false,
+      error: errMsg,
+      error_type: errMsg.includes('Invalid amount') || errMsg.includes('Currency is required') || errMsg.includes('Amount exceeds') || errMsg.includes('Amount mismatch')
+        ? 'validation_error'
+        : errMsg === 'Unauthorized' ? 'authentication_error'
+        : errMsg.includes('Merchant not found') ? 'not_found'
+        : errMsg.includes('blocked by fraud') ? 'fraud_block'
+        : 'payment_error',
+      details: errMsg,
+      timestamp: new Date().toISOString(),
+    }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
 
