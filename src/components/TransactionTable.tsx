@@ -55,9 +55,10 @@ function getPaymentMethodInfo(tx: Transaction): { logoSrc?: string; label: strin
     return { label: 'Card' };
   }
 
-  if (tx.provider === 'makapay') return { logoSrc: getMethodLogo('bkash'), label: 'Mobile Wallet' };
-  if (tx.provider === 'lipad') return { logoSrc: getMethodLogo('mpesa'), label: 'Mobile Money' };
-  if (tx.provider === 'paygate10') {
+  const prov = tx.provider as string;
+  if (prov === 'makapay') return { logoSrc: getMethodLogo('bkash'), label: 'Mobile Wallet' };
+  if (prov === 'lipad') return { logoSrc: getMethodLogo('mpesa'), label: 'Mobile Money' };
+  if (prov === 'paygate10') {
     const providerMethod = meta.provider_method || '';
     if (providerMethod.toLowerCase().includes('jazz')) return { logoSrc: getMethodLogo('jazzcash'), label: 'JazzCash' };
     if (providerMethod.toLowerCase().includes('easy')) return { logoSrc: getMethodLogo('easypaisa'), label: 'EasyPaisa' };
