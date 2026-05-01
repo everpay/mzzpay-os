@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { TransactionTable } from '@/components/TransactionTable';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -6,51 +6,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Globe, X, Download, FileText, Eye, EyeOff } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { Search, Globe, X, Download, FileText } from 'lucide-react';
 import { PeriodSelector, type PeriodValue, getPeriodCutoff } from '@/components/PeriodSelector';
 import { CurrencySelector } from '@/components/CurrencySelector';
+import { TableSkeleton, TableEmpty, TableError } from '@/components/TableStates';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportPdf } from '@/lib/export-pdf';
 import { motion } from 'framer-motion';
-import { CardTestResultsPanel } from '@/components/CardTestResultsPanel';
-import { usePagination } from '@/hooks/usePagination';
-import { TablePagination } from '@/components/TablePagination';
-import { useUserRole } from '@/hooks/useUserRole';
 
 export default function Transactions() {
-  const { data: transactions = [], isLoading } = useTransactions();
-  const { data: userRole } = useUserRole();
-  const isSuperAdmin = !!(userRole as any)?.isSuperAdmin;
+  const { data: transactions = [], isLoading, isError, error, refetch } = useTransactions();
   const [providerFilter, setProviderFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currencyFilter, setCurrencyFilter] = useState<string>('all');
-  const [countryFilter, setCountryFilter] = useState<string>('all');
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<PeriodValue>('30d');
   const [search, setSearch] = useState('');
-
-  const allProviders = useMemo(() => [...new Set(transactions.map((tx) => tx.provider))], [transactions]);
-  const allCountries = useMemo(
-    () => [...new Set(transactions.map((tx) => tx.customer_country).filter(Boolean) as string[])].sort(),
-    [transactions]
-  );
-  const allPaymentMethods = useMemo(
-    () => [...new Set(transactions.map((tx) => tx.card_brand || tx.payment_method_type).filter(Boolean) as string[])].sort(),
-    [transactions]
-  );
 
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
       if (providerFilter !== 'all' && tx.provider !== providerFilter) return false;
       if (statusFilter !== 'all' && tx.status !== statusFilter) return false;
       if (currencyFilter !== 'all' && tx.currency !== currencyFilter) return false;
-      if (countryFilter !== 'all' && tx.customer_country !== countryFilter) return false;
-      if (paymentMethodFilter !== 'all') {
-        const pm = tx.card_brand || tx.payment_method_type;
-        if (pm !== paymentMethodFilter) return false;
-      }
       const cutoff = getPeriodCutoff(dateRange);
       if (cutoff && new Date(tx.created_at) < cutoff) return false;
       if (
@@ -64,7 +40,7 @@ export default function Transactions() {
         return false;
       return true;
     });
-  }, [transactions, providerFilter, statusFilter, currencyFilter, countryFilter, paymentMethodFilter, dateRange, search]);
+  }, [transactions, providerFilter, statusFilter, currencyFilter, dateRange, search]);
 
   const providerCounts = useMemo(
     () =>
@@ -75,49 +51,27 @@ export default function Transactions() {
     [transactions]
   );
 
-  // Stats
   const completed = filtered.filter((tx) => tx.status === 'completed');
   const totalVolume = completed.reduce((sum, tx) => sum + tx.amount, 0);
   const successRate = filtered.length > 0 ? (completed.length / filtered.length) * 100 : 0;
 
   const hasActiveFilters =
-    providerFilter !== 'all' ||
-    statusFilter !== 'all' ||
-    currencyFilter !== 'all' ||
-    countryFilter !== 'all' ||
-    paymentMethodFilter !== 'all' ||
-    dateRange !== '30d' ||
-    !!search;
+    providerFilter !== 'all' || statusFilter !== 'all' || currencyFilter !== 'all' || dateRange !== '30d' || !!search;
   const clearFilters = () => {
     setProviderFilter('all');
     setStatusFilter('all');
     setCurrencyFilter('all');
-    setCountryFilter('all');
-    setPaymentMethodFilter('all');
     setDateRange('30d');
     setSearch('');
   };
 
   const exportCsv = () => {
     const escape = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const header = 'id,created_at,customer,amount,currency,status,provider,payment_method,country,customer_ip,processor_error_code,processor_error_message,description\n';
+    const header = 'id,created_at,customer,amount,currency,status,provider,country,customer_ip,processor_error_code,processor_error_message\n';
     const rows = filtered
       .map((tx) =>
-        [
-          tx.id,
-          tx.created_at,
-          tx.customer_email || '',
-          tx.amount,
-          tx.currency,
-          tx.status,
-          tx.provider,
-          tx.card_brand || tx.payment_method_type || '',
-          tx.customer_country || '',
-          tx.customer_ip || '',
-          tx.processor_error_code || '',
-          tx.processor_error_message || '',
-          tx.description || '',
-        ].map(escape).join(',')
+        [tx.id, tx.created_at, tx.customer_email || '', tx.amount, tx.currency, tx.status, tx.provider, tx.customer_country || '', tx.customer_ip || '', tx.processor_error_code || '', tx.processor_error_message || '']
+          .map(escape).join(',')
       )
       .join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv' });
@@ -134,7 +88,7 @@ export default function Transactions() {
       title: 'Transactions Report',
       filename: 'transactions',
       subtitle: `${filtered.length} transactions`,
-      headers: ['Date', 'ID', 'Customer', 'Amount', 'Currency', 'Status', 'Provider', 'Method', 'Country', 'IP', 'Error'],
+      headers: ['Date', 'ID', 'Customer', 'Amount', 'Currency', 'Status', 'Provider', 'Error'],
       rows: filtered.map((tx) => [
         new Date(tx.created_at).toLocaleString(),
         tx.id.slice(0, 12),
@@ -143,9 +97,6 @@ export default function Transactions() {
         tx.currency,
         tx.status,
         tx.provider,
-        tx.card_brand || tx.payment_method_type || '',
-        tx.customer_country || '',
-        tx.customer_ip || '',
         tx.processor_error_message ? `${tx.processor_error_code || ''} ${tx.processor_error_message}`.trim() : '',
       ]),
     });
@@ -154,14 +105,14 @@ export default function Transactions() {
   return (
     <AppLayout>
       <motion.div
-        className="mb-6 flex items-end justify-between flex-wrap gap-4"
+        className="mb-6 flex items-start justify-between gap-4"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <div>
-          <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground">Transactions</h1>
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Transactions</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            All payment transactions across providers, currencies, and statuses.
+            {transactions.length.toLocaleString()} total · {filtered.length.toLocaleString()} matching · click any row for full details
           </p>
         </div>
         <DropdownMenu>
@@ -228,22 +179,19 @@ export default function Transactions() {
           />
         </div>
         <Select value={providerFilter} onValueChange={setProviderFilter}>
-          <SelectTrigger className="w-[150px] bg-card border-border">
-            <SelectValue placeholder="Provider" />
-          </SelectTrigger>
+          <SelectTrigger className="w-[150px] bg-card border-border"><SelectValue placeholder="Provider" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Providers</SelectItem>
-            {allProviders.map((p) => (
-              <SelectItem key={p} value={p} className="capitalize">
-                {p}
-              </SelectItem>
-            ))}
+            <SelectItem value="shieldhub">ShieldHub 🇺🇸</SelectItem>
+            <SelectItem value="mondo">MzzPay EUR 🇬🇧</SelectItem>
+            <SelectItem value="matrix">Matrix 🇬🇧</SelectItem>
+            <SelectItem value="risonpay">RisonPay</SelectItem>
+            <SelectItem value="moneto">Moneto 🇨🇦</SelectItem>
+            <SelectItem value="elektropay">Elektropay</SelectItem>
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[150px] bg-card border-border">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
+          <SelectTrigger className="w-[150px] bg-card border-border"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
@@ -254,28 +202,6 @@ export default function Transactions() {
           </SelectContent>
         </Select>
         <CurrencySelector value={currencyFilter} onValueChange={setCurrencyFilter} />
-        <Select value={countryFilter} onValueChange={setCountryFilter}>
-          <SelectTrigger className="w-[140px] bg-card border-border">
-            <SelectValue placeholder="Country" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Countries</SelectItem>
-            {allCountries.map((c) => (
-              <SelectItem key={c} value={c} className="font-mono uppercase">{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
-          <SelectTrigger className="w-[150px] bg-card border-border">
-            <SelectValue placeholder="Method" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Methods</SelectItem>
-            {allPaymentMethods.map((m) => (
-              <SelectItem key={m} value={m} className="capitalize">{m.replace(/_/g, ' ')}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <PeriodSelector value={dateRange} onValueChange={setDateRange} />
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs gap-1">
@@ -285,78 +211,19 @@ export default function Transactions() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center p-12 rounded-2xl border border-border bg-card shadow-card">
-          <p className="text-muted-foreground">Loading transactions...</p>
-        </div>
+        <TableSkeleton rows={10} cols={8} />
+      ) : isError ? (
+        <TableError message={(error as Error)?.message || 'Could not load transactions'} onRetry={() => refetch()} />
+      ) : filtered.length === 0 ? (
+        <TableEmpty
+          title={hasActiveFilters ? 'No transactions match your filters' : 'No transactions yet'}
+          description={hasActiveFilters
+            ? 'Try clearing filters, widening the date range, or removing the search query.'
+            : 'Once you start accepting payments, they will appear here in real time.'}
+        />
       ) : (
-        <TransactionsList transactions={filtered} totalCount={transactions.length} />
-      )}
-
-      {isSuperAdmin && (
-        <div className="mt-8">
-          <CardBatteryToggle />
-        </div>
+        <TransactionTable transactions={filtered} />
       )}
     </AppLayout>
-  );
-}
-
-function TransactionsList({ transactions, totalCount }: { transactions: any[]; totalCount: number }) {
-  const pg = usePagination(transactions, 25);
-  return (
-    <>
-      <TransactionTable transactions={pg.pageItems} />
-      <TablePagination
-        page={pg.page}
-        pageCount={pg.pageCount}
-        pageSize={pg.pageSize}
-        total={pg.total}
-        from={pg.from}
-        to={pg.to}
-        canPrev={pg.canPrev}
-        canNext={pg.canNext}
-        onPageChange={pg.setPage}
-        onPageSizeChange={pg.setPageSize}
-        label={`of ${totalCount.toLocaleString()} total transactions`}
-      />
-    </>
-  );
-}
-
-/**
- * Super-admin only. Lets the super_admin show/hide the Card Battery
- * panel locally. Underlying API calls (`card-test-runner` invocation +
- * realtime subscription) are gated by mounting — when hidden, this
- * component does NOT render `CardTestResultsPanel`, which means no
- * runner is invoked and no card_test_runs subscription opens.
- */
-function CardBatteryToggle() {
-  const [show, setShow] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('mzz.cardBattery.visible') === '1';
-  });
-  useEffect(() => {
-    window.localStorage.setItem('mzz.cardBattery.visible', show ? '1' : '0');
-  }, [show]);
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-start gap-3">
-          {show ? <Eye className="h-4 w-4 mt-0.5 text-primary" /> : <EyeOff className="h-4 w-4 mt-0.5 text-muted-foreground" />}
-          <div>
-            <Label htmlFor="cb-toggle" className="text-sm font-semibold">
-              Card battery test panel
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Super-admin only. When off, no probes are triggered and no realtime
-              subscription is opened against <span className="font-mono">card_test_runs</span>.
-            </p>
-          </div>
-        </div>
-        <Switch id="cb-toggle" checked={show} onCheckedChange={setShow} />
-      </div>
-      {show && <CardTestResultsPanel />}
-    </div>
   );
 }
