@@ -252,7 +252,7 @@ const Index = () => {
             <p className="text-muted-foreground">Loading transactions...</p>
           </div>
         ) : (
-          <TransactionTable transactions={filteredTransactions.slice(0, 5)} compact />
+          <TransactionTable transactions={filteredTransactions.slice(0, 5)} compact disableDrawer />
         )}
       </motion.div>
 
