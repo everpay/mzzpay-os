@@ -50,8 +50,9 @@ export default function Checkout() {
   const [cvc, setCvc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
+  const [checkoutFieldErrors, setCheckoutFieldErrors] = useState<Record<string, string[]> | null>(null);
+  const [checkoutFormErrors, setCheckoutFormErrors] = useState<string[]>([]);
 
-  // 3DS state
   const [show3DS, setShow3DS] = useState(false);
   const [threeDSUrl, setThreeDSUrl] = useState('');
   const [threeDSTxId, setThreeDSTxId] = useState('');
