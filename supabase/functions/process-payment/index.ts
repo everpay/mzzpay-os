@@ -181,13 +181,20 @@ function validateForProcessor(
 }
 
 function processorValidationResponse(provider: string, errs: ProcessorErr[]) {
+  // Normalize array of {field, message} into Record<string, string[]> so the
+  // frontend ValidationErrorBanner can render field-level detail without crashing.
+  const fieldErrors: Record<string, string[]> = {};
+  for (const e of errs) {
+    if (!fieldErrors[e.field]) fieldErrors[e.field] = [];
+    fieldErrors[e.field].push(e.message);
+  }
   return new Response(
     JSON.stringify({
       error: `${provider}: ${errs.map((e) => `${e.field} — ${e.message}`).join('; ')}`,
       error_code: 'processor_validation_error',
       code: 'processor_validation_error',
       provider,
-      validation: { fieldErrors: errs },
+      validation: { fieldErrors, formErrors: [] },
     }),
     { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
   );

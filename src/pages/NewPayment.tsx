@@ -272,8 +272,20 @@ export default function NewPayment() {
       // Strict server-side validation rejected the payload before any
       // processor call. Surface field-level reasons so the merchant fixes them.
       if (data?.error_code === 'processor_validation_error' || data?.code === 'processor_validation_error') {
-        const fErrors = data?.validation?.fieldErrors ?? {};
-        const fmErrors = data?.validation?.formErrors ?? [];
+        // Normalize fieldErrors: backend may send Record<string,string[]> (Zod)
+        // or Array<{field,message}> (processor). Always coerce to Record.
+        let fErrors: Record<string, string[]> = {};
+        const raw = data?.validation?.fieldErrors;
+        if (Array.isArray(raw)) {
+          for (const e of raw) {
+            const k = e?.field ?? 'unknown';
+            if (!fErrors[k]) fErrors[k] = [];
+            fErrors[k].push(e?.message ?? String(e));
+          }
+        } else if (raw && typeof raw === 'object') {
+          fErrors = raw;
+        }
+        const fmErrors = Array.isArray(data?.validation?.formErrors) ? data.validation.formErrors : [];
         setFieldLevelErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
         setFormLevelErrors(fmErrors);
         notifyError(
