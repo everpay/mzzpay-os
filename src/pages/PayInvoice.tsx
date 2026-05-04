@@ -78,12 +78,16 @@ export default function PayInvoice() {
     return groups ? groups.join(' ') : cleaned;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent, opts?: { isRetry?: boolean }) => {
+    e?.preventDefault();
     if (!invoice) return;
     setIsSubmitting(true);
     setInvoiceFieldErrors(null);
     setInvoiceFormErrors([]);
+
+    if (opts?.isRetry) {
+      toast.info('Retrying payment…', { description: `Attempt ${retryCount + 1} with the same idempotency key` });
+    }
 
     try {
       const payload: any = {
@@ -92,7 +96,8 @@ export default function PayInvoice() {
         paymentMethod: paymentMethod === 'openbanking' ? 'open_banking' : paymentMethod,
         customerEmail: invoice.customer_email,
         description: `Invoice ${invoice.invoice_number}`,
-        idempotencyKey: `inv_${invoice.id}_${Date.now()}`,
+        idempotencyKey,
+        retry: !!opts?.isRetry,
         customer: {
           first: holderName.split(' ')[0] || '',
           last: holderName.split(' ').slice(1).join(' ') || '',
@@ -163,7 +168,15 @@ export default function PayInvoice() {
         (data?.success === false && !data?.transaction);
       if (isFailed) {
         const msg = provResp?.error?.message || provResp?.gateway_message || provResp?.message || data?.error || 'Payment declined';
-        notifyError(msg);
+        setRetryCount((c) => c + 1);
+        setLastProcessorError(msg);
+
+        if (retryCount < 2) {
+          notifyError(msg, { description: 'Try again or use a different payment method.' });
+          setShowRetryPanel(true);
+        } else {
+          notifyError('Payment declined after multiple attempts');
+        }
         return;
       }
 
