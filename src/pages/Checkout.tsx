@@ -154,8 +154,18 @@ export default function Checkout() {
       // processor call. Surface the field-level details so the merchant knows
       // exactly what to fix.
       if (data?.error_code === 'processor_validation_error' || data?.code === 'processor_validation_error') {
-        const fErrors = data?.validation?.fieldErrors ?? {};
-        const fmErrors = data?.validation?.formErrors ?? [];
+        let fErrors: Record<string, string[]> = {};
+        const raw = data?.validation?.fieldErrors;
+        if (Array.isArray(raw)) {
+          for (const e of raw) {
+            const k = e?.field ?? 'unknown';
+            if (!fErrors[k]) fErrors[k] = [];
+            fErrors[k].push(e?.message ?? String(e));
+          }
+        } else if (raw && typeof raw === 'object') {
+          fErrors = raw;
+        }
+        const fmErrors = Array.isArray(data?.validation?.formErrors) ? data.validation.formErrors : [];
         setCheckoutFieldErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
         setCheckoutFormErrors(fmErrors);
         notifyError({ code: 'processor_validation_error', message: data.error });
