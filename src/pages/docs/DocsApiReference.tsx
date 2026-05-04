@@ -213,48 +213,184 @@ export default function DocsApiReference() {
             </CardHeader>
             <CardContent className="space-y-4">
               <CodeBlock
-                code={`// 1. Download the SDK (click "Download TypeScript SDK" above)
-// 2. Copy mzzpay-sdk.ts into your project
-// 3. Import and use:
+                code={`import { MzzPayClient } from './mzzpay-api-client';
 
-import { MzzPay } from './mzzpay-sdk';
-
-const mzz = new MzzPay('sk_test_YOUR_KEY');
-
-// Create a payment
-const payment = await mzz.payments.create({
-  amount: 5000,        // $50.00 in cents
-  currency: 'usd',
-  payment_method: 'pm_card_visa',
-  description: 'Order #1234',
-});
-console.log(payment.status); // 'succeeded' | 'requires_action' | 'failed'
-
-// List customers
-const customers = await mzz.customers.list({ limit: 25 });
-customers.data.forEach(c => console.log(c.email));
-
-// Create a subscription
-const sub = await mzz.subscriptions.create({
-  customer_id: 'cus_abc123',
-  plan_name: 'Pro Monthly',
-  amount: 4900,
-  currency: 'usd',
-  interval: 'month',
-});
-
-// Check wallet balance
-const wallets = await mzz.wallets.list('usd');
-console.log(wallets[0].available_balance);
-
-// FX conversion
-const fx = await mzz.fx.convert({ amount: 100, from: 'USD', to: 'EUR' });
-console.log(fx.converted, fx.rate);`}
+const client = new MzzPayClient({ apiKey: 'sk_live_YOUR_KEY' });`}
                 language="curl"
               />
             </CardContent>
           </Card>
 
+          {/* Payments */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Payments</CardTitle>
+              <CardDescription className="text-xs">Create charges, list transactions, capture or cancel</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <CodeBlock
+                code={`// Create a $50 payment
+const payment = await client.payments.create({
+  amount: 5000,          // amount in cents
+  currency: 'usd',
+  payment_method: 'pm_card_visa',
+  description: 'Order #1234',
+});
+console.log(payment.id, payment.status);
+// → "pay_abc123" "succeeded"
+
+// List payments with filters
+const list = await client.payments.list({
+  status: 'succeeded',
+  'created[gte]': '2026-01-01T00:00:00Z',
+  limit: 50,
+});
+console.log(\`\${list.data.length} payments, has_more: \${list.has_more}\`);
+
+// Retrieve a single payment
+const existing = await client.payments.retrieve('pay_abc123');
+
+// Capture an authorized payment (partial capture supported)
+const captured = await client.payments.capture('pay_abc123', 3000);
+
+// Cancel a pending payment
+const canceled = await client.payments.cancel('pay_abc123');`}
+                language="curl"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Payouts */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Payouts</CardTitle>
+              <CardDescription className="text-xs">Withdraw funds to bank accounts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock
+                code={`// Create a payout
+const payout = await client.payouts.create({
+  amount: 100000,       // $1,000.00
+  currency: 'usd',
+  destination: 'ba_bank_account_id',
+  description: 'Weekly settlement',
+});
+console.log(payout.status); // 'pending' | 'processing' | 'completed'
+
+// List recent payouts
+const payouts = await client.payouts.list({ limit: 10 });
+for (const p of payouts.data) {
+  console.log(\`\${p.id}: \${p.amount / 100} \${p.currency} — \${p.status}\`);
+}
+
+// Cancel a pending payout
+await client.payouts.cancel('po_xyz789');`}
+                language="curl"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Balance */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Balance</CardTitle>
+              <CardDescription className="text-xs">Check available, pending, and reserved funds</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock
+                code={`// Get current balance
+const balance = await client.balance.retrieve();
+for (const b of balance.available) {
+  console.log(\`Available: \${b.amount / 100} \${b.currency}\`);
+}
+for (const r of balance.reserved) {
+  console.log(\`Reserved (rolling): \${r.amount / 100} \${r.currency}\`);
+}
+
+// List balance transactions
+const txns = await client.balance.listTransactions({
+  type: 'charge',
+  'created[gte]': '2026-04-01T00:00:00Z',
+  limit: 25,
+});
+txns.data.forEach(t =>
+  console.log(\`\${t.type}: \${t.amount / 100} \${t.currency} — \${t.description}\`)
+);`}
+                language="curl"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Error Handling */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Error Handling with MzzPayApiError</CardTitle>
+              <CardDescription className="text-xs">Typed error handling for every API call</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock
+                code={`import { MzzPayClient, MzzPayApiError } from './mzzpay-api-client';
+
+const client = new MzzPayClient({ apiKey: 'sk_live_YOUR_KEY' });
+
+try {
+  const payment = await client.payments.create({
+    amount: 5000,
+    currency: 'usd',
+    payment_method: 'pm_card_declined',
+  });
+} catch (err) {
+  if (err instanceof MzzPayApiError) {
+    // Typed error properties
+    console.error('Code:', err.code);             // 'card_declined'
+    console.error('Decline:', err.declineCode);   // 'insufficient_funds'
+    console.error('Message:', err.message);       // 'Your card has insufficient funds.'
+    console.error('Param:', err.param);           // 'payment_method'
+    console.error('Request ID:', err.requestId);  // 'req_2QHv7K…'
+    console.error('HTTP Status:', err.status);    // 402
+
+    // Handle specific decline codes
+    switch (err.code) {
+      case 'card_declined':
+        showError('Card was declined. Try another card.');
+        break;
+      case 'expired_card':
+        showError('Card is expired. Update your payment method.');
+        break;
+      case 'rate_limit_error':
+        await sleep(2000);
+        // retry…
+        break;
+      default:
+        showError(err.message);
+    }
+  } else {
+    // Network error, timeout, etc.
+    console.error('Unexpected error:', err);
+  }
+}
+
+// Idempotent retries — safe to retry with same key
+async function createPaymentSafe(params: any, idempotencyKey: string) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await client.payments.create({ ...params, idempotency_key: idempotencyKey });
+    } catch (err) {
+      if (err instanceof MzzPayApiError && err.status >= 500) {
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+        continue; // safe to retry
+      }
+      throw err; // 4xx errors are not retryable
+    }
+  }
+  throw new Error('Max retries exceeded');
+}`}
+                language="curl"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Resources grid */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Available Resources</CardTitle>
@@ -262,54 +398,16 @@ console.log(fx.converted, fx.rate);`}
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                 {[
-                  { name: "payments", methods: "create, list, retrieve, capture, refund, cancel" },
-                  { name: "customers", methods: "create, list, retrieve, update, del, attachPaymentMethod" },
-                  { name: "invoices", methods: "create, list, retrieve, send, void" },
-                  { name: "products", methods: "create, list, retrieve, update, del" },
-                  { name: "refunds", methods: "list, retrieve" },
-                  { name: "payouts", methods: "create, list, retrieve" },
-                  { name: "subscriptions", methods: "create, list, retrieve, update, cancel" },
-                  { name: "disputes", methods: "list, retrieve, submitEvidence" },
-                  { name: "wallets", methods: "list, balanceTransactions" },
-                  { name: "paymentLinks", methods: "create, list" },
-                  { name: "fx", methods: "rates, convert" },
-                  { name: "webhooks", methods: "create, list, del" },
+                  { name: "payments", methods: "create, list, retrieve, capture, cancel" },
+                  { name: "payouts", methods: "create, list, retrieve, cancel" },
+                  { name: "balance", methods: "retrieve, listTransactions" },
                 ].map(r => (
                   <div key={r.name} className="bg-muted/40 rounded-lg p-3">
-                    <code className="font-mono text-xs font-semibold text-primary">mzz.{r.name}</code>
+                    <code className="font-mono text-xs font-semibold text-primary">client.{r.name}</code>
                     <p className="text-[11px] text-muted-foreground mt-1">{r.methods}</p>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Error Handling</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CodeBlock
-                code={`import { MzzPay, MzzPayApiError } from './mzzpay-sdk';
-
-const mzz = new MzzPay('sk_test_YOUR_KEY');
-
-try {
-  const payment = await mzz.payments.create({
-    amount: 5000,
-    currency: 'usd',
-    payment_method: 'pm_card_declined',
-  });
-} catch (err) {
-  if (err instanceof MzzPayApiError) {
-    console.error(err.error.code);         // 'card_declined'
-    console.error(err.error.decline_code); // 'insufficient_funds'
-    console.error(err.error.message);      // 'Your card has insufficient funds.'
-    console.error(err.error.request_id);   // 'req_2QHv7K...'
-  }
-}`}
-                language="curl"
-              />
             </CardContent>
           </Card>
         </TabsContent>
