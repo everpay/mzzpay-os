@@ -388,6 +388,14 @@ export default function Checkout() {
           </div>
         )}
 
+        {checkoutFieldErrors && (
+          <ValidationErrorBanner
+            title="Payment Validation Failed"
+            fieldErrors={checkoutFieldErrors}
+            formErrors={checkoutFormErrors}
+          />
+        )}
+
         {!checkoutBlocked && warningIssues.length > 0 && (
           <div
             data-testid="checkout-warning-banner"
