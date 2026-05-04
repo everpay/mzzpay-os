@@ -34,6 +34,8 @@ export default function PayInvoice() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
+  const [invoiceFieldErrors, setInvoiceFieldErrors] = useState<Record<string, string[]> | null>(null);
+  const [invoiceFormErrors, setInvoiceFormErrors] = useState<string[]>([]);
 
   // 3DS state
   const [show3DS, setShow3DS] = useState(false);
