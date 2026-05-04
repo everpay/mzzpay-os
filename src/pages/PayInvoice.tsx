@@ -473,7 +473,8 @@ export default function PayInvoice() {
             </p>
           </div>
         </div>
-      )
+      )}
+
       <ThreeDSecureModal
         open={show3DS}
         onClose={() => setShow3DS(false)}
