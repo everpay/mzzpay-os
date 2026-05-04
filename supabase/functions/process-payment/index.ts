@@ -835,23 +835,26 @@ async function processMzzPayPayment(data: PaymentRequest) {
   const acquirerCountry = processor!.acquirer_country || 'MX';
   const wants3ds = String(processor!.flow_type ?? '3DS').toUpperCase().includes('3DS');
 
+  // Build the 3DS return URL from the request origin so the cardholder
+  // returns to the same checkout page after completing authentication.
+  const origin = req.headers.get('origin') || req.headers.get('referer')?.replace(/\/[^/]*$/, '') || 'https://checkout.mzzpay.io';
+  const threeDSReturnUrl = `${origin}/3ds-result`;
+
   const body: any = {
     amount: amountStr,
     currency: data.currency,
     transaction_reference: transactionReference,
-    redirectback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
-    notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
-    // Acquirer / descriptor metadata. EVERPAY 3D PTY · MX · AXP*FER*AXP*FERES.
-    // Send under every alias the gateway accepts so the soft descriptor is
-    // honoured on the cardholder statement regardless of which field the
-    // upstream acquirer reads.
-    descriptor,
+    // CRITICAL: Only send `descriptor_text`. Sending `descriptor` causes
+    // ShieldHub to interpret it as a processor selector which triggers
+    // "004 Processor not found". See Everpay Platform OS fix.
     descriptor_text: descriptor,
-    soft_descriptor: descriptor,
-    statement_descriptor: descriptor,
-    acquirer_country: acquirerCountry,
-    // Request 3DS when issuer is enrolled, fall back to 2D otherwise. The
-    // gateway interprets `three_ds: 'enrolled'` as "step up if enrolled".
+    redirect_mode: 'modal',
+    redirectback_url: threeDSReturnUrl,
+    return_url: threeDSReturnUrl,
+    success_url: threeDSReturnUrl,
+    cancel_url: `${threeDSReturnUrl}?status=Declined&transaction_reference=${encodeURIComponent(transactionReference)}&error_code=3DS_CANCELLED&error_message=${encodeURIComponent('Authentication was cancelled')}`,
+    notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-webhook`,
+    // Request 3DS when issuer is enrolled, fall back to 2D otherwise.
     three_ds: wants3ds ? 'enrolled' : 'off',
     customer: {
       first: data.customer?.first || data.customerEmail?.split('@')[0] || 'Customer',
