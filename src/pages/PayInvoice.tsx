@@ -13,6 +13,7 @@ import { formatCurrency } from '@/lib/format';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { notifyError } from '@/lib/error-toast';
+import { CountrySelect } from '@/components/CountrySelect';
 
 export default function PayInvoice() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
@@ -24,6 +25,12 @@ export default function PayInvoice() {
   const [expYear, setExpYear] = useState('');
   const [cvc, setCvc] = useState('');
   const [holderName, setHolderName] = useState('');
+  const [billingAddress, setBillingAddress] = useState('');
+  const [billingCity, setBillingCity] = useState('');
+  const [billingState, setBillingState] = useState('');
+  const [billingZip, setBillingZip] = useState('');
+  const [billingCountry, setBillingCountry] = useState('US');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
 
@@ -74,6 +81,18 @@ export default function PayInvoice() {
         customerEmail: invoice.customer_email,
         description: `Invoice ${invoice.invoice_number}`,
         idempotencyKey: `inv_${invoice.id}_${Date.now()}`,
+        customer: {
+          first: holderName.split(' ')[0] || '',
+          last: holderName.split(' ').slice(1).join(' ') || '',
+          phone: customerPhone,
+        },
+        billing: {
+          address: billingAddress,
+          city: billingCity,
+          state: billingState,
+          postal_code: billingZip,
+          country: billingCountry,
+        },
       };
 
       if (paymentMethod === 'card' && cardNumber) {
@@ -92,17 +111,42 @@ export default function PayInvoice() {
 
       if (error) throw error;
 
-      // Check for 3DS redirect
-      if (data?.providerResponse?.transaction_status === 'INITIATED' && data?.providerResponse?.['3d_secure_redirect_url']) {
-        setThreeDSUrl(data.providerResponse['3d_secure_redirect_url']);
-        setThreeDSTxId(data.transaction.id);
+      // Processor misconfigured
+      if (data?.processorMisconfigured || data?.error_code === 'processor_misconfigured') {
+        notifyError(data.error || 'Payment processor not available');
+        return;
+      }
+
+      // Validation error
+      if (data?.error_code === 'processor_validation_error') {
+        notifyError(data.error || 'Invalid payment details');
+        return;
+      }
+
+      // Velocity/limit errors
+      if (data?.velocityLimit || data?.limitError) {
+        notifyError(data.error);
+        return;
+      }
+
+      // Check for 3DS redirect — handle both Shieldhub and Mondo response shapes
+      const provResp = data?.providerResponse || {};
+      const threeDsRedirect = provResp['3d_secure_redirect_url'] || provResp.redirect_url;
+      if ((provResp.transaction_status === 'INITIATED' || provResp.status === 'Redirect') && threeDsRedirect) {
+        setThreeDSUrl(threeDsRedirect);
+        setThreeDSTxId(data.transaction?.id || '');
         setShow3DS(true);
         return;
       }
 
-      // Check for failure
-      if (data?.providerResponse?.status === 'Failed' || data?.providerResponse?.transaction_status === 'FAILED') {
-        const msg = data.providerResponse?.error?.message || data.providerResponse?.gateway_message || 'Payment declined';
+      // Check for failure — handle all decline shapes
+      const isFailed =
+        provResp.status === 'Failed' || provResp.status === 'Declined' ||
+        provResp.transaction_status === 'FAILED' ||
+        data?.transaction?.status === 'failed' ||
+        (data?.success === false && !data?.transaction);
+      if (isFailed) {
+        const msg = provResp?.error?.message || provResp?.gateway_message || provResp?.message || data?.error || 'Payment declined';
         notifyError(msg);
         return;
       }
@@ -228,6 +272,34 @@ export default function PayInvoice() {
               <div className="space-y-2">
                 <Label className="text-xs">Cardholder Name</Label>
                 <Input value={holderName} onChange={(e) => setHolderName(e.target.value)} placeholder="John Doe" className="bg-background border-border" required />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Phone Number</Label>
+                <Input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="3125235294" className="bg-background border-border" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Billing Address</Label>
+                <Input value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} placeholder="123 Main St" className="bg-background border-border" required />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">City</Label>
+                  <Input value={billingCity} onChange={(e) => setBillingCity(e.target.value)} placeholder="New York" className="bg-background border-border" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">State</Label>
+                  <Input value={billingState} onChange={(e) => setBillingState(e.target.value)} placeholder="NY" className="bg-background border-border" maxLength={2} required />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Zip / Postal code</Label>
+                  <Input value={billingZip} onChange={(e) => setBillingZip(e.target.value)} placeholder="10001" className="bg-background border-border" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Country</Label>
+                  <CountrySelect value={billingCountry} onValueChange={setBillingCountry} />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">Card Number</Label>
