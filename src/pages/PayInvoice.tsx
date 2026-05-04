@@ -298,7 +298,7 @@ export default function PayInvoice() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Country</Label>
-                  <CountrySelect value={billingCountry} onChange={setBillingCountry} />
+                  <CountrySelect value={billingCountry} onValueChange={setBillingCountry} />
                 </div>
               </div>
               <div className="space-y-2">
