@@ -13,6 +13,7 @@ import { formatCurrency } from '@/lib/format';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { notifyError } from '@/lib/error-toast';
+import { CountrySelect } from '@/components/CountrySelect';
 
 export default function PayInvoice() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
