@@ -14,6 +14,7 @@ import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { notifyError } from '@/lib/error-toast';
 import { CountrySelect } from '@/components/CountrySelect';
+import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
 
 export default function PayInvoice() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
@@ -33,6 +34,8 @@ export default function PayInvoice() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
+  const [invoiceFieldErrors, setInvoiceFieldErrors] = useState<Record<string, string[]> | null>(null);
+  const [invoiceFormErrors, setInvoiceFormErrors] = useState<string[]>([]);
 
   // 3DS state
   const [show3DS, setShow3DS] = useState(false);
@@ -117,8 +120,12 @@ export default function PayInvoice() {
         return;
       }
 
-      // Validation error
+      // Validation error — surface field-level details
       if (data?.error_code === 'processor_validation_error') {
+        const fErrors = data?.validation?.fieldErrors ?? {};
+        const fmErrors = data?.validation?.formErrors ?? [];
+        setInvoiceFieldErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
+        setInvoiceFormErrors(fmErrors);
         notifyError(data.error || 'Invalid payment details');
         return;
       }
@@ -249,6 +256,14 @@ export default function PayInvoice() {
             </p>
           )}
         </div>
+
+        {invoiceFieldErrors && (
+          <ValidationErrorBanner
+            title="Payment Validation Failed"
+            fieldErrors={invoiceFieldErrors}
+            formErrors={invoiceFormErrors}
+          />
+        )}
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">

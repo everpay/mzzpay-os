@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Info } from 'lucide-react';
 import { notifyError } from '@/lib/error-toast';
 import { ProcessorValidationRulesDrawer } from '@/components/ProcessorValidationRulesDrawer';
+import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
 
 // Detect region from browser locale / timezone
 function detectRegion(): { region: string; label: string; flag: string } {
@@ -73,6 +74,8 @@ export default function NewPayment() {
   const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [responseMessage, setResponseMessage] = useState<{ type: 'success' | 'error' | 'warning'; title: string; detail: string } | null>(null);
+  const [fieldLevelErrors, setFieldLevelErrors] = useState<Record<string, string[]> | null>(null);
+  const [formLevelErrors, setFormLevelErrors] = useState<string[]>([]);
 
   // 3DS state
   const [show3DS, setShow3DS] = useState(false);
@@ -211,6 +214,8 @@ export default function NewPayment() {
     }
 
     setIsSubmitting(true);
+    setFieldLevelErrors(null);
+    setFormLevelErrors([]);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -267,18 +272,17 @@ export default function NewPayment() {
       // Strict server-side validation rejected the payload before any
       // processor call. Surface field-level reasons so the merchant fixes them.
       if (data?.error_code === 'processor_validation_error' || data?.code === 'processor_validation_error') {
-        const fieldErrors = data?.validation?.fieldErrors ?? {};
-        const detail = Object.entries(fieldErrors)
-          .map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
-          .join('\n') || data.error;
+        const fErrors = data?.validation?.fieldErrors ?? {};
+        const fmErrors = data?.validation?.formErrors ?? [];
+        setFieldLevelErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
+        setFormLevelErrors(fmErrors);
         notifyError(
           { code: 'processor_validation_error', message: data.error },
-          { description: detail },
         );
         setResponseMessage({
           type: 'error',
           title: 'Invalid payment details',
-          detail: `${detail} [code: processor_validation_error]`,
+          detail: data.error || 'Validation failed',
         });
         return;
       }
@@ -444,6 +448,14 @@ export default function NewPayment() {
                 <p className="text-xs mt-0.5 opacity-90">{responseMessage.detail}</p>
               </div>
             </div>
+          )}
+
+          {fieldLevelErrors && (
+            <ValidationErrorBanner
+              title="Field Validation Errors"
+              fieldErrors={fieldLevelErrors}
+              formErrors={formLevelErrors}
+            />
           )}
 
           <div className="grid grid-cols-2 gap-4">
