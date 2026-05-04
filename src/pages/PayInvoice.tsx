@@ -273,6 +273,34 @@ export default function PayInvoice() {
                 <Input value={holderName} onChange={(e) => setHolderName(e.target.value)} placeholder="John Doe" className="bg-background border-border" required />
               </div>
               <div className="space-y-2">
+                <Label className="text-xs">Phone Number</Label>
+                <Input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="3125235294" className="bg-background border-border" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Billing Address</Label>
+                <Input value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} placeholder="123 Main St" className="bg-background border-border" required />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">City</Label>
+                  <Input value={billingCity} onChange={(e) => setBillingCity(e.target.value)} placeholder="New York" className="bg-background border-border" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">State</Label>
+                  <Input value={billingState} onChange={(e) => setBillingState(e.target.value)} placeholder="NY" className="bg-background border-border" maxLength={2} required />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Zip / Postal code</Label>
+                  <Input value={billingZip} onChange={(e) => setBillingZip(e.target.value)} placeholder="10001" className="bg-background border-border" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Country</Label>
+                  <CountrySelect value={billingCountry} onChange={setBillingCountry} />
+                </div>
+              </div>
+              <div className="space-y-2">
                 <Label className="text-xs">Card Number</Label>
                 <Input
                   value={formatCardNumber(cardNumber)}
