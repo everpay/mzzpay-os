@@ -214,6 +214,8 @@ export default function NewPayment() {
     }
 
     setIsSubmitting(true);
+    setFieldLevelErrors(null);
+    setFormLevelErrors([]);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
