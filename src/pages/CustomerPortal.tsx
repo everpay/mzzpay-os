@@ -114,6 +114,16 @@ export default function CustomerPortal() {
               <CardDescription>Your active subscription details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {subscription.status === 'past_due' && (
+                <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-warning">Payment past due</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">We were unable to process your renewal. Please update your payment method.</p>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <p className="text-2xl font-bold">{subscription.plan?.name}</p>
                 {subscription.plan?.description && (
