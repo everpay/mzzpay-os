@@ -6,7 +6,7 @@ import {
   CreditCard, UserCircle, Zap, ChevronLeft, Menu,
   ArrowLeft, Search, FileText, Package, Undo2, Send,
   Repeat, ShieldAlert, Landmark, Wallet, ArrowLeftRight,
-  Bitcoin, Link2, ShieldCheck, Radio, ClipboardCheck,
+  Bitcoin, Link2, ShieldCheck, Radio, ClipboardCheck, FileJson,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,7 @@ const navSections = [
       { label: "API Keys", icon: Key, to: "/developers/api-keys" },
       { label: "SDKs", icon: Download, to: "/developers/sdks" },
       { label: "Verification", icon: ClipboardCheck, to: "/developers/verification" },
+      { label: "API Reference (Swagger)", icon: FileJson, to: "/developers/api-reference" },
     ],
   },
 ];
