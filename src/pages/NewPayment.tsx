@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Info } from 'lucide-react';
 import { notifyError } from '@/lib/error-toast';
 import { ProcessorValidationRulesDrawer } from '@/components/ProcessorValidationRulesDrawer';
+import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
 
 // Detect region from browser locale / timezone
 function detectRegion(): { region: string; label: string; flag: string } {
