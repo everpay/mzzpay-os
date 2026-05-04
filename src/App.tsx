@@ -43,6 +43,7 @@ import DocsPaymentLinks from "./pages/docs/DocsPaymentLinks";
 import Docs3DSecure from "./pages/docs/Docs3DSecure";
 import DocsWebhookEvents from "./pages/docs/DocsWebhookEvents";
 import DocsVerification from "./pages/docs/DocsVerification";
+import DocsApiReference from "./pages/docs/DocsApiReference";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
 import ResellerPortal from "./pages/ResellerPortal";
@@ -183,6 +184,7 @@ const AppRoutes = () => (
       <Route path="api-keys" element={<DocsApiKeys />} />
       <Route path="sdks" element={<DocsSdks />} />
       <Route path="verification" element={<DocsVerification />} />
+      <Route path="api-reference" element={<DocsApiReference />} />
     </Route>
     {/* LLM-friendly developer docs (paste into ChatGPT / Claude / Cursor) */}
     <Route path="/llms.txt" element={<LlmsTxt />} />
