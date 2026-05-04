@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText, Download, Bitcoin } from 'lucide-react';
+import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText, Download, Bitcoin, RefreshCw, AlertTriangle } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
@@ -15,6 +15,7 @@ import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { notifyError } from '@/lib/error-toast';
 import { CountrySelect } from '@/components/CountrySelect';
 import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
+import { toast } from 'sonner';
 
 export default function PayInvoice() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
@@ -36,6 +37,12 @@ export default function PayInvoice() {
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [invoiceFieldErrors, setInvoiceFieldErrors] = useState<Record<string, string[]> | null>(null);
   const [invoiceFormErrors, setInvoiceFormErrors] = useState<string[]>([]);
+  const [retryCount, setRetryCount] = useState(0);
+  const [showRetryPanel, setShowRetryPanel] = useState(false);
+  const [lastProcessorError, setLastProcessorError] = useState('');
+
+  // Stable idempotency key for the invoice payment session
+  const [idempotencyKey] = useState(() => `inv_${invoiceId}_${crypto.randomUUID()}`);
 
   // 3DS state
   const [show3DS, setShow3DS] = useState(false);
@@ -71,12 +78,16 @@ export default function PayInvoice() {
     return groups ? groups.join(' ') : cleaned;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent, opts?: { isRetry?: boolean }) => {
+    e?.preventDefault();
     if (!invoice) return;
     setIsSubmitting(true);
     setInvoiceFieldErrors(null);
     setInvoiceFormErrors([]);
+
+    if (opts?.isRetry) {
+      toast.info('Retrying payment…', { description: `Attempt ${retryCount + 1} with the same idempotency key` });
+    }
 
     try {
       const payload: any = {
@@ -85,7 +96,8 @@ export default function PayInvoice() {
         paymentMethod: paymentMethod === 'openbanking' ? 'open_banking' : paymentMethod,
         customerEmail: invoice.customer_email,
         description: `Invoice ${invoice.invoice_number}`,
-        idempotencyKey: `inv_${invoice.id}_${Date.now()}`,
+        idempotencyKey,
+        retry: !!opts?.isRetry,
         customer: {
           first: holderName.split(' ')[0] || '',
           last: holderName.split(' ').slice(1).join(' ') || '',
@@ -156,7 +168,15 @@ export default function PayInvoice() {
         (data?.success === false && !data?.transaction);
       if (isFailed) {
         const msg = provResp?.error?.message || provResp?.gateway_message || provResp?.message || data?.error || 'Payment declined';
-        notifyError(msg);
+        setRetryCount((c) => c + 1);
+        setLastProcessorError(msg);
+
+        if (retryCount < 2) {
+          notifyError(msg, { description: 'Try again or use a different payment method.' });
+          setShowRetryPanel(true);
+        } else {
+          notifyError('Payment declined after multiple attempts');
+        }
         return;
       }
 
@@ -422,6 +442,38 @@ export default function PayInvoice() {
           Secured by <span className="font-medium text-foreground">MZZPay</span>
         </p>
       </div>
+
+      {/* Retry overlay */}
+      {showRetryPanel && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl space-y-5">
+            <div className="mx-auto h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground text-center">Payment Failed</h2>
+            <p className="text-sm text-muted-foreground text-center">
+              {lastProcessorError || "Your payment couldn't be processed."}
+            </p>
+            <div className="space-y-3">
+              <Button className="w-full gap-2" disabled={isSubmitting} onClick={() => { setShowRetryPanel(false); handleSubmit(undefined, { isRetry: true }); }}>
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Retry Payment
+              </Button>
+              <Button
+                variant="outline" className="w-full gap-2"
+                onClick={() => {
+                  setShowRetryPanel(false);
+                  setPaymentMethod(paymentMethod === 'card' ? 'openbanking' : 'card');
+                }}
+              >
+                Try {paymentMethod === 'card' ? 'Bank Transfer' : 'Card'} Instead
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Attempt {retryCount} of 3 · Secured by MZZPay
+            </p>
+          </div>
+        </div>
+      )}
 
       <ThreeDSecureModal
         open={show3DS}
