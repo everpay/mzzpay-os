@@ -269,18 +269,17 @@ export default function NewPayment() {
       // Strict server-side validation rejected the payload before any
       // processor call. Surface field-level reasons so the merchant fixes them.
       if (data?.error_code === 'processor_validation_error' || data?.code === 'processor_validation_error') {
-        const fieldErrors = data?.validation?.fieldErrors ?? {};
-        const detail = Object.entries(fieldErrors)
-          .map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
-          .join('\n') || data.error;
+        const fErrors = data?.validation?.fieldErrors ?? {};
+        const fmErrors = data?.validation?.formErrors ?? [];
+        setFieldLevelErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
+        setFormLevelErrors(fmErrors);
         notifyError(
           { code: 'processor_validation_error', message: data.error },
-          { description: detail },
         );
         setResponseMessage({
           type: 'error',
           title: 'Invalid payment details',
-          detail: `${detail} [code: processor_validation_error]`,
+          detail: data.error || 'Validation failed',
         });
         return;
       }
