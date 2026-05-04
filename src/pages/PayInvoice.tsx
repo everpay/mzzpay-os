@@ -120,8 +120,12 @@ export default function PayInvoice() {
         return;
       }
 
-      // Validation error
+      // Validation error — surface field-level details
       if (data?.error_code === 'processor_validation_error') {
+        const fErrors = data?.validation?.fieldErrors ?? {};
+        const fmErrors = data?.validation?.formErrors ?? [];
+        setInvoiceFieldErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
+        setInvoiceFormErrors(fmErrors);
         notifyError(data.error || 'Invalid payment details');
         return;
       }
