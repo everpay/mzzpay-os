@@ -73,6 +73,8 @@ export default function NewPayment() {
   const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [responseMessage, setResponseMessage] = useState<{ type: 'success' | 'error' | 'warning'; title: string; detail: string } | null>(null);
+  const [fieldLevelErrors, setFieldLevelErrors] = useState<Record<string, string[]> | null>(null);
+  const [formLevelErrors, setFormLevelErrors] = useState<string[]>([]);
 
   // 3DS state
   const [show3DS, setShow3DS] = useState(false);
