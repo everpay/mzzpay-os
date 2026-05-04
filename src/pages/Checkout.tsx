@@ -13,6 +13,7 @@ import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { CountrySelect } from '@/components/CountrySelect';
 import { validateCheckoutParams } from '@/lib/checkout-params';
 import { notifyError } from '@/lib/error-toast';
+import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
 
 const DOMAIN = 'mzzpay.io';
 
