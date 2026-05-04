@@ -14,6 +14,7 @@ import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { notifyError } from '@/lib/error-toast';
 import { CountrySelect } from '@/components/CountrySelect';
+import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
 
 export default function PayInvoice() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
