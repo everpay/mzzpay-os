@@ -151,14 +151,11 @@ export default function Checkout() {
       // processor call. Surface the field-level details so the merchant knows
       // exactly what to fix.
       if (data?.error_code === 'processor_validation_error' || data?.code === 'processor_validation_error') {
-        const fieldErrors = data?.validation?.fieldErrors ?? {};
-        const detail = Object.entries(fieldErrors)
-          .map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
-          .join('\n');
-        notifyError(
-          { code: 'processor_validation_error', message: data.error },
-          { description: detail || data.error },
-        );
+        const fErrors = data?.validation?.fieldErrors ?? {};
+        const fmErrors = data?.validation?.formErrors ?? [];
+        setCheckoutFieldErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
+        setCheckoutFormErrors(fmErrors);
+        notifyError({ code: 'processor_validation_error', message: data.error });
         return;
       }
 
