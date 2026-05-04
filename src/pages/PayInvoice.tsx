@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText, Download, Bitcoin } from 'lucide-react';
+import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText, Download, Bitcoin, RefreshCw, AlertTriangle } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
@@ -15,6 +15,7 @@ import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { notifyError } from '@/lib/error-toast';
 import { CountrySelect } from '@/components/CountrySelect';
 import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
+import { toast } from 'sonner';
 
 export default function PayInvoice() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
@@ -36,6 +37,12 @@ export default function PayInvoice() {
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [invoiceFieldErrors, setInvoiceFieldErrors] = useState<Record<string, string[]> | null>(null);
   const [invoiceFormErrors, setInvoiceFormErrors] = useState<string[]>([]);
+  const [retryCount, setRetryCount] = useState(0);
+  const [showRetryPanel, setShowRetryPanel] = useState(false);
+  const [lastProcessorError, setLastProcessorError] = useState('');
+
+  // Stable idempotency key for the invoice payment session
+  const [idempotencyKey] = useState(() => `inv_${invoiceId}_${crypto.randomUUID()}`);
 
   // 3DS state
   const [show3DS, setShow3DS] = useState(false);
