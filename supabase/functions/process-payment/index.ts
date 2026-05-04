@@ -465,7 +465,7 @@ serve(async (req) => {
         providerResponse = { status: 'FAILED', error: String(e), provider: 'risonpay' };
       }
     } else {
-      providerResponse = await processMzzPayPayment(paymentData);
+      providerResponse = await processMzzPayPayment(paymentData, req);
     }
 
 
