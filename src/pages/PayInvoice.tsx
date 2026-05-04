@@ -24,6 +24,12 @@ export default function PayInvoice() {
   const [expYear, setExpYear] = useState('');
   const [cvc, setCvc] = useState('');
   const [holderName, setHolderName] = useState('');
+  const [billingAddress, setBillingAddress] = useState('');
+  const [billingCity, setBillingCity] = useState('');
+  const [billingState, setBillingState] = useState('');
+  const [billingZip, setBillingZip] = useState('');
+  const [billingCountry, setBillingCountry] = useState('US');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
 
