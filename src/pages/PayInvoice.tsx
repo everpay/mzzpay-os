@@ -257,6 +257,14 @@ export default function PayInvoice() {
           )}
         </div>
 
+        {invoiceFieldErrors && (
+          <ValidationErrorBanner
+            title="Payment Validation Failed"
+            fieldErrors={invoiceFieldErrors}
+            formErrors={invoiceFormErrors}
+          />
+        )}
+
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">
           <Tabs value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)} className="w-full">
