@@ -76,11 +76,13 @@ export default function CustomerPortal() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-500/10 text-green-500 border-green-500/20';
+        return 'bg-success/10 text-success border-success/20';
       case 'canceled':
-        return 'bg-red-500/10 text-red-500 border-red-500/20';
+        return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'past_due':
-        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+        return 'bg-warning/10 text-warning border-warning/20';
+      case 'trialing':
+        return 'bg-primary/10 text-primary border-primary/20';
       default:
         return 'bg-muted text-muted-foreground';
     }
