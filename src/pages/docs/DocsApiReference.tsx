@@ -69,12 +69,12 @@ export default function DocsApiReference() {
   };
 
   const downloadSdk = async () => {
-    const mod = await import("@/lib/mzzpay-sdk?raw");
+    const mod = await import("@/lib/api-client/index.ts?raw");
     const blob = new Blob([mod.default], { type: "text/typescript" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "mzzpay-sdk.ts"; a.click();
+    const a = document.createElement("a"); a.href = url; a.download = "mzzpay-api-client.ts"; a.click();
     URL.revokeObjectURL(url);
-    toast.success("TypeScript SDK downloaded");
+    toast.success("Typed API client downloaded");
   };
 
   const copySpec = () => {
