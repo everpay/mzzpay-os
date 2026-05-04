@@ -758,7 +758,7 @@ function simulateShieldhub(data: PaymentRequest, transactionReference: string, a
   return { id: txId, transaction_reference: transactionReference, authorization: Math.floor(100000 + Math.random() * 900000).toString(), status: 'Approved', currency: data.currency, amount: amountStr, error: { code: '000', message: 'Approved transaction' }, test_mode: true };
 }
 
-async function processMzzPayPayment(data: PaymentRequest) {
+async function processMzzPayPayment(data: PaymentRequest, req: Request) {
   const clientId = Deno.env.get('SHIELDHUB_CLIENT_ID');
   const apiSecret = Deno.env.get('SHIELDHUB_API_SECRET');
   const transactionReference = crypto.randomUUID();
