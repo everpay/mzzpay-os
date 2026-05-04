@@ -75,6 +75,8 @@ export default function PayInvoice() {
     e.preventDefault();
     if (!invoice) return;
     setIsSubmitting(true);
+    setInvoiceFieldErrors(null);
+    setInvoiceFormErrors([]);
 
     try {
       const payload: any = {
