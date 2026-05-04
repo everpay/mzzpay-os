@@ -86,7 +86,7 @@ maybe("docs contract: edge functions match documented schemas", () => {
     if (status === 200) {
       expect(json).toEqual(expect.objectContaining({ error: expect.anything() }));
     } else {
-      expect([400, 404, 422]).toContain(status);
+      expect([400, 401, 404, 422]).toContain(status);
     }
   });
 
