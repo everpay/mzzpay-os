@@ -448,7 +448,14 @@ export default function NewPayment() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          {fieldLevelErrors && (
+            <ValidationErrorBanner
+              title="Field Validation Errors"
+              fieldErrors={fieldLevelErrors}
+              formErrors={formLevelErrors}
+            />
+          )}
+
             <div className="space-y-2">
               <Label>Amount</Label>
               <Input
