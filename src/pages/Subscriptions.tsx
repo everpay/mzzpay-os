@@ -488,6 +488,11 @@ export default function Subscriptions() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* SAVED CARDS TAB */}
+        <TabsContent value="saved-cards" className="space-y-4">
+          <SavedCardsTab />
+        </TabsContent>
       </Tabs>
 
       {/* Change Plan Dialog */}
