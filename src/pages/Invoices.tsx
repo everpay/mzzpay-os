@@ -152,7 +152,7 @@ export default function Invoices() {
 
       if (error) throw error;
 
-      const paymentUrl = `${window.location.origin}/pay/${invoiceId}`;
+      const paymentUrl = `https://pay.mzzpay.io/${invoiceId}`;
       await supabase.functions.invoke('send-transactional-email', {
         body: {
           type: 'invoice_sent',
@@ -178,7 +178,7 @@ export default function Invoices() {
     }
   };
 
-  const getPaymentUrl = (invoiceId: string) => `${window.location.origin}/pay/${invoiceId}`;
+  const getPaymentUrl = (invoiceId: string) => `https://pay.mzzpay.io/${invoiceId}`;
 
   const copyPaymentLink = (invoiceId: string) => {
     navigator.clipboard.writeText(getPaymentUrl(invoiceId));
