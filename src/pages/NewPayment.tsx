@@ -77,6 +77,22 @@ export default function NewPayment() {
   const [fieldLevelErrors, setFieldLevelErrors] = useState<Record<string, string[]> | null>(null);
   const [formLevelErrors, setFormLevelErrors] = useState<string[]>([]);
 
+  // Billing address fields
+  const [billingAddress, setBillingAddress] = useState('');
+  const [billingCity, setBillingCity] = useState('');
+  const [billingState, setBillingState] = useState('');
+  const [billingPostalCode, setBillingPostalCode] = useState('');
+  const [billingCountry, setBillingCountry] = useState('US');
+
+  // Customer IP (hidden, auto-detected)
+  const [customerIp, setCustomerIp] = useState('');
+  useState(() => {
+    fetch('https://api.ipify.org?format=json')
+      .then(r => r.json())
+      .then(d => setCustomerIp(d.ip || ''))
+      .catch(() => {});
+  });
+
   // 3DS state
   const [show3DS, setShow3DS] = useState(false);
   const [threeDSUrl, setThreeDSUrl] = useState('');
