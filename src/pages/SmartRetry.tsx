@@ -33,6 +33,13 @@ interface RetrySettings {
   retry_decline_codes: string[];
 }
 
+interface FieldErrors {
+  max_attempts?: string;
+  backoff_seconds?: string;
+  newCode?: string;
+  decline_codes?: string;
+}
+
 export default function SmartRetry({ embedded }: { embedded?: boolean }) {
   const { user } = useAuth();
   const [merchantId, setMerchantId] = useState<string | null>(null);
@@ -46,6 +53,31 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
   const [newCode, setNewCode] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState<FieldErrors>({});
+
+  const validate = (): boolean => {
+    const e: FieldErrors = {};
+    if (!Number.isInteger(s.max_attempts) || s.max_attempts < 1 || s.max_attempts > 10) {
+      e.max_attempts = 'Must be a whole number between 1 and 10';
+    }
+    if (!Number.isInteger(s.backoff_seconds) || s.backoff_seconds < 10 || s.backoff_seconds > 86400) {
+      e.backoff_seconds = 'Must be between 10 and 86,400 seconds (24 hours)';
+    }
+    if (s.retry_decline_codes.length === 0) {
+      e.decline_codes = 'At least one decline code is required';
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validateNewCode = (code: string): string | null => {
+    const c = code.trim().toLowerCase().replace(/\s+/g, '_');
+    if (!c) return 'Code cannot be empty';
+    if (c.length > 50) return 'Code must be 50 characters or fewer';
+    if (!/^[a-z0-9_]+$/.test(c)) return 'Only lowercase letters, numbers, and underscores';
+    if (s.retry_decline_codes.includes(c)) return 'This code is already added';
+    return null;
+  };
 
   useEffect(() => {
     (async () => {
