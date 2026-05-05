@@ -155,17 +155,16 @@ export default function Invoices() {
       const paymentUrl = `https://pay.mzzpay.io/${invoiceId}`;
       await supabase.functions.invoke('send-transactional-email', {
         body: {
-          type: 'invoice_sent',
-          to: inv.customer_email,
-          data: {
-            invoice_number: inv.invoice_number,
-            amount: inv.amount,
-            currency: inv.currency,
-            customer_name: inv.customer_name,
+          templateName: 'invoice-created',
+          recipientEmail: inv.customer_email,
+          idempotencyKey: `invoice-sent-${invoiceId}`,
+          templateData: {
+            invoiceNumber: inv.invoice_number,
+            amount: `${inv.amount} ${inv.currency}`,
+            customerName: inv.customer_name,
             description: inv.description,
-            due_date: inv.due_date,
-            payment_url: paymentUrl,
-            items: inv.items,
+            dueDate: inv.due_date,
+            paymentUrl,
           },
         },
       });
