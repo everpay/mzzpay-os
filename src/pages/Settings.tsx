@@ -60,6 +60,9 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { CountrySelect } from "@/components/CountrySelect";
 import { CardTestResultsPanel } from "@/components/CardTestResultsPanel";
 import { notifyError, notifySuccess } from '@/lib/error-toast';
+import ProcessorRouting from './ProcessorRouting';
+import MultiAcquirer from './MultiAcquirer';
+import SmartRetry from './SmartRetry';
 
 type SettingsSection =
   | "main"
