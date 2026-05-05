@@ -128,10 +128,16 @@ const isCheckoutSubdomain =
   typeof window !== "undefined" &&
   window.location.hostname.startsWith("checkout.");
 
+const isBillingSubdomain =
+  typeof window !== "undefined" &&
+  window.location.hostname.startsWith("billing.");
+
 const CheckoutRootRedirect = () => {
   const search = typeof window !== "undefined" ? window.location.search : "";
   return <Navigate to={`/checkout${search}`} replace />;
 };
+
+const BillingRootRedirect = () => <Navigate to="/portal" replace />;
 
 const AppRoutes = () => (
   <Routes>
