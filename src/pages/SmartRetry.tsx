@@ -226,7 +226,7 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
               <p className="text-xs text-muted-foreground">
                 Only retry payments that fail with these decline codes. Hard declines (lost/stolen card, fraud) are never retried.
               </p>
-              <div className="flex flex-wrap gap-2 p-3 rounded-xl border border-border bg-muted/30 min-h-[60px]">
+              <div className={`flex flex-wrap gap-2 p-3 rounded-xl border bg-muted/30 min-h-[60px] ${errors.decline_codes ? 'border-destructive' : 'border-border'}`}>
                 {s.retry_decline_codes.length === 0 && (
                   <span className="text-xs text-muted-foreground">No codes configured</span>
                 )}
@@ -244,6 +244,9 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
                   </Badge>
                 ))}
               </div>
+              {errors.decline_codes && (
+                <p className="text-xs text-destructive">{errors.decline_codes}</p>
+              )}
               <div className="flex gap-2">
                 <Input
                   className="rounded-2xl"
