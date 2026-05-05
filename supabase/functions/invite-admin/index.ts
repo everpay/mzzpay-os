@@ -113,7 +113,7 @@ serve(async (req) => {
         body: {
           templateName: 'team-invite',
           recipientEmail: email,
-          idempotencyKey: `team-invite-${userId}-${role}-${Date.now()}`,
+          idempotencyKey: `team-invite-${userId}-${role}`,
           templateData: {
             inviteeName: fullName || email.split('@')[0],
             inviterName: caller.email || 'A team member',
