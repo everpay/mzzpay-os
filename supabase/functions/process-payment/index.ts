@@ -36,8 +36,8 @@ const PaymentRequestSchema = z.object({
     first: z.string().max(80).optional(),
     last: z.string().max(80).optional(),
     phone: z.string().max(40).optional(),
-    ip: z.string().max(64).optional(),
-  }).optional(),
+    ip: z.string().min(1, 'Customer IP is required').max(64),
+  }),
   billing: z.object({
     address: z.string().min(1, 'Billing address is required').max(255),
     postal_code: z.string().min(1, 'Postal code is required').max(20),
