@@ -118,14 +118,6 @@ export const navSections: NavSection[] = [
     ],
   },
   {
-    title: "Configuration",
-    items: [
-      { to: "/processor-routing", icon: GitBranch, label: "Processor Routing" },
-      { to: "/multi-acquirer", icon: Globe2, label: "Multi-Acquirer" },
-      { to: "/smart-retry", icon: Repeat, label: "Smart Retry" },
-    ],
-  },
-  {
     title: "Super Admin",
     items: [
       { to: "/admin/processors", icon: Server, label: "Processor Admin", visibleTo: ["super_admin", "admin"] },
