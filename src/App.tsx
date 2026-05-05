@@ -157,6 +157,12 @@ const PayRootRedirect = () => {
   return <div className="min-h-screen flex items-center justify-center text-muted-foreground">No invoice specified</div>;
 };
 
+/** On pay.mzzpay.io, /:id renders PayInvoice directly */
+const PayInvoiceSubdomainWrapper = () => {
+  // Re-use the same PayInvoice component; the route param is "invoiceId"
+  return <PayInvoice />;
+};
+
 const AppRoutes = () => (
   <Routes>
     <Route
