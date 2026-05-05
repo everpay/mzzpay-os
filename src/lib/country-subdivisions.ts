@@ -134,3 +134,30 @@ export function getSubdivisionsForCountry(countryCode: string): SubdivisionConfi
   if (REGION_COUNTRIES.has(upper)) return { label: 'Region', items: [] };
   return { label: 'State / Province', items: [] };
 }
+
+/**
+ * Returns the localized label for the postal/zip code field by country.
+ */
+export function getPostalCodeLabel(countryCode: string): string {
+  const upper = (countryCode || '').toUpperCase();
+  if (upper === 'US') return 'ZIP Code';
+  if (upper === 'GB') return 'Postcode';
+  if (['CA', 'PH'].includes(upper)) return 'Postal Code';
+  if (['BR'].includes(upper)) return 'CEP';
+  if (['IN'].includes(upper)) return 'PIN Code';
+  return 'Postal Code';
+}
+
+/**
+ * Returns localized billing field labels for a given country.
+ */
+export function getBillingLabels(countryCode: string) {
+  const subdiv = getSubdivisionsForCountry(countryCode);
+  return {
+    stateLabel: subdiv?.label || 'State / Province',
+    postalLabel: getPostalCodeLabel(countryCode),
+    addressLabel: 'Street Address',
+    cityLabel: 'City',
+    countryLabel: 'Country',
+  };
+}
