@@ -160,7 +160,7 @@ const AppRoutes = () => (
   <Routes>
     <Route
       path="/"
-      element={isBillingSubdomain ? <BillingRootRedirect /> : isCheckoutSubdomain ? <CheckoutRootRedirect /> : <Landing />}
+      element={isPaySubdomain ? <PayRootRedirect /> : isBillingSubdomain ? <BillingRootRedirect /> : isCheckoutSubdomain ? <CheckoutRootRedirect /> : isJsSubdomain ? <Navigate to="/hosted-payment" replace /> : <Landing />}
     />
     <Route path="/pricing" element={<FrontPricing />} />
     <Route path="/demo" element={<FrontDemo />} />
