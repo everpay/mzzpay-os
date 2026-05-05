@@ -797,6 +797,8 @@ export default function Settings() {
                       role: inviteRole,
                       status: "pending",
                       last_sent_at: new Date().toISOString(),
+                      email_sent: data?.emailSent ?? false,
+                      email_error: data?.emailError ?? null,
                     }, { onConflict: "merchant_id,email" } as any);
 
                     if (data?.emailSent) {
