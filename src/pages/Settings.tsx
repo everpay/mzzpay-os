@@ -101,6 +101,8 @@ interface TeamInvitation {
   status: "pending" | "accepted" | "revoked";
   last_sent_at: string;
   created_at: string;
+  email_sent?: boolean;
+  email_error?: string | null;
 }
 
 interface SavedBankAccount {
@@ -778,10 +780,15 @@ export default function Settings() {
                   setIsInviting(true);
                   try {
                     const { data, error } = await supabase.functions.invoke("invite-admin", {
-                      body: { email: inviteEmail, fullName: inviteFullName, role: inviteRole },
+                      body: { email: inviteEmail, fullName: inviteFullName, role: inviteRole, idempotencyKey: `invite-${inviteEmail.toLowerCase()}-${inviteRole}` },
                     });
                     if (error) throw error;
                     if (data?.error) throw new Error(data.error);
+                    if (data?.duplicate) {
+                      notifySuccess(`This invitation was already sent (${data.first_seen_at ? 'at ' + new Date(data.first_seen_at).toLocaleString() : 'previously'})`);
+                      setIsInviting(false);
+                      return;
+                    }
                     await supabase.from("team_invitations" as any).upsert({
                       merchant_id: merchant.id,
                       invited_by: user!.id,
@@ -790,6 +797,8 @@ export default function Settings() {
                       role: inviteRole,
                       status: "pending",
                       last_sent_at: new Date().toISOString(),
+                      email_sent: data?.emailSent ?? false,
+                      email_error: data?.emailError ?? null,
                     }, { onConflict: "merchant_id,email" } as any);
 
                     if (data?.emailSent) {
@@ -1039,7 +1048,12 @@ function TeamInvitationsList({ merchantId }: { merchantId?: string }) {
                         {inv.status}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">{inv.email} · sent {formatDate(inv.last_sent_at)}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {inv.email} · sent {formatDate(inv.last_sent_at)}
+                      {inv.email_sent === true && <span className="ml-1 text-emerald-500">✓ email delivered</span>}
+                      {inv.email_sent === false && inv.email_error && <span className="ml-1 text-destructive">✗ {inv.email_error}</span>}
+                      {inv.email_sent === false && !inv.email_error && <span className="ml-1 text-amber-500">⚠ email pending</span>}
+                    </p>
                   </div>
                   <Button
                     variant="outline"

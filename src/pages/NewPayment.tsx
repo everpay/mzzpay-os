@@ -77,6 +77,22 @@ export default function NewPayment() {
   const [fieldLevelErrors, setFieldLevelErrors] = useState<Record<string, string[]> | null>(null);
   const [formLevelErrors, setFormLevelErrors] = useState<string[]>([]);
 
+  // Billing address fields
+  const [billingAddress, setBillingAddress] = useState('');
+  const [billingCity, setBillingCity] = useState('');
+  const [billingState, setBillingState] = useState('');
+  const [billingPostalCode, setBillingPostalCode] = useState('');
+  const [billingCountry, setBillingCountry] = useState('US');
+
+  // Customer IP (hidden, auto-detected)
+  const [customerIp, setCustomerIp] = useState('');
+  useState(() => {
+    fetch('https://api.ipify.org?format=json')
+      .then(r => r.json())
+      .then(d => setCustomerIp(d.ip || ''))
+      .catch(() => {});
+  });
+
   // 3DS state
   const [show3DS, setShow3DS] = useState(false);
   const [threeDSUrl, setThreeDSUrl] = useState('');
@@ -192,6 +208,12 @@ export default function NewPayment() {
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Invalid email format';
 
+    // Billing address validation (required for all processors)
+    if (!billingAddress.trim()) errors.billingAddress = 'Billing address is required';
+    if (!billingCity.trim()) errors.billingCity = 'City is required';
+    if (!billingPostalCode.trim()) errors.billingPostalCode = 'Postal code is required';
+    if (!billingCountry) errors.billingCountry = 'Country is required';
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -231,6 +253,16 @@ export default function NewPayment() {
         customerEmail: email,
         description,
         idempotencyKey,
+        billing: {
+          address: billingAddress.trim(),
+          city: billingCity.trim(),
+          state: billingState.trim(),
+          postal_code: billingPostalCode.trim(),
+          country: billingCountry,
+        },
+        customer: {
+          ip: customerIp || undefined,
+        },
       };
 
       if (paymentMethod === 'card') {
@@ -393,6 +425,7 @@ export default function NewPayment() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       setAmount(''); setEmail(''); setDescription('');
       setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
+            setBillingAddress(''); setBillingCity(''); setBillingState(''); setBillingPostalCode('');
     } catch (error) {
       console.error('Payment error:', error);
       setResponseMessage({
@@ -432,6 +465,7 @@ export default function NewPayment() {
               onClick={() => {
                 setAmount(''); setEmail(''); setDescription('');
                 setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
+            setBillingAddress(''); setBillingCity(''); setBillingState(''); setBillingPostalCode('');
                 setPaymentMethod('card'); setCardEntryMode('standard');
                 setValidationErrors({}); setResponseMessage(null); setVgsToken('');
               }}
@@ -665,6 +699,73 @@ export default function NewPayment() {
             {validationErrors.email && <p className="text-xs text-destructive">{validationErrors.email}</p>}
           </div>
 
+          {/* Billing Address */}
+          <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+            <Label className="text-sm font-semibold">Billing Address</Label>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Street Address</Label>
+              <Input
+                placeholder="123 Main St" value={billingAddress}
+                onChange={(e) => setBillingAddress(e.target.value)}
+                className={`bg-background border-border ${validationErrors.billingAddress ? 'border-destructive' : ''}`}
+              />
+              {validationErrors.billingAddress && <p className="text-xs text-destructive">{validationErrors.billingAddress}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">City</Label>
+                <Input
+                  placeholder="New York" value={billingCity}
+                  onChange={(e) => setBillingCity(e.target.value)}
+                  className={`bg-background border-border ${validationErrors.billingCity ? 'border-destructive' : ''}`}
+                />
+                {validationErrors.billingCity && <p className="text-xs text-destructive">{validationErrors.billingCity}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">State / Province</Label>
+                <Input
+                  placeholder="NY" value={billingState}
+                  onChange={(e) => setBillingState(e.target.value)}
+                  className="bg-background border-border"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Postal Code</Label>
+                <Input
+                  placeholder="10001" value={billingPostalCode}
+                  onChange={(e) => setBillingPostalCode(e.target.value)}
+                  className={`bg-background border-border ${validationErrors.billingPostalCode ? 'border-destructive' : ''}`}
+                />
+                {validationErrors.billingPostalCode && <p className="text-xs text-destructive">{validationErrors.billingPostalCode}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Country</Label>
+                <Select value={billingCountry} onValueChange={setBillingCountry}>
+                  <SelectTrigger className={`bg-background border-border ${validationErrors.billingCountry ? 'border-destructive' : ''}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="US">🇺🇸 United States</SelectItem>
+                    <SelectItem value="CA">🇨🇦 Canada</SelectItem>
+                    <SelectItem value="GB">🇬🇧 United Kingdom</SelectItem>
+                    <SelectItem value="DE">🇩🇪 Germany</SelectItem>
+                    <SelectItem value="FR">🇫🇷 France</SelectItem>
+                    <SelectItem value="ES">🇪🇸 Spain</SelectItem>
+                    <SelectItem value="IT">🇮🇹 Italy</SelectItem>
+                    <SelectItem value="NL">🇳🇱 Netherlands</SelectItem>
+                    <SelectItem value="BR">🇧🇷 Brazil</SelectItem>
+                    <SelectItem value="MX">🇲🇽 Mexico</SelectItem>
+                    <SelectItem value="AU">🇦🇺 Australia</SelectItem>
+                    <SelectItem value="JP">🇯🇵 Japan</SelectItem>
+                  </SelectContent>
+                </Select>
+                {validationErrors.billingCountry && <p className="text-xs text-destructive">{validationErrors.billingCountry}</p>}
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
@@ -858,6 +959,7 @@ export default function NewPayment() {
           queryClient.invalidateQueries({ queryKey: ['transactions'] });
           setAmount(''); setEmail(''); setDescription('');
           setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
+            setBillingAddress(''); setBillingCity(''); setBillingState(''); setBillingPostalCode('');
         }}
       />
     </AppLayout>

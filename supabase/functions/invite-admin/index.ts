@@ -41,9 +41,24 @@ serve(async (req) => {
       if (!callerRole) throw new Error('Only super admins can invite other admins');
     }
 
-    const { email, fullName, role } = await req.json();
+    const { email, fullName, role, idempotencyKey } = await req.json();
 
     if (!email || !role) throw new Error('email and role are required');
+
+    // Idempotency: if same key was used, return cached result
+    if (idempotencyKey) {
+      const { data: existing } = await supabase
+        .from('idempotency_keys')
+        .select('response, created_at')
+        .eq('key', idempotencyKey)
+        .maybeSingle();
+      if (existing?.response) {
+        return new Response(
+          JSON.stringify({ ...existing.response, duplicate: true, first_seen_at: existing.created_at }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     // Check if user already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
@@ -98,7 +113,7 @@ serve(async (req) => {
         body: {
           templateName: 'team-invite',
           recipientEmail: email,
-          idempotencyKey: `team-invite-${userId}-${role}-${Date.now()}`,
+          idempotencyKey: `team-invite-${userId}-${role}`,
           templateData: {
             inviteeName: fullName || email.split('@')[0],
             inviterName: caller.email || 'A team member',
@@ -118,8 +133,43 @@ serve(async (req) => {
       console.error('Failed to send team-invite transactional email:', emailErr);
     }
 
+    const result = { success: true, userId, email, role, emailSent, emailError };
+
+    // Cache in idempotency_keys so repeated clicks return the same result
+    if (idempotencyKey) {
+      await supabase.from('idempotency_keys').upsert({
+        key: idempotencyKey,
+        merchant_id: caller.id, // use caller id as scoping key
+        response: result,
+      }, { onConflict: 'key' }).catch(() => {});
+    }
+
+    // Log invite email outcome in provider_events for activity feed auditing
+    try {
+      // Find merchant for the caller
+      const { data: callerMerchant } = await supabase
+        .from('merchants')
+        .select('id')
+        .eq('user_id', caller.id)
+        .maybeSingle();
+      if (callerMerchant) {
+        await supabase.from('provider_events').insert({
+          merchant_id: callerMerchant.id,
+          provider: 'system',
+          event_type: emailSent ? 'invite.email_sent' : 'invite.email_failed',
+          payload: {
+            invitee_email: email,
+            role,
+            inviter: caller.email,
+            emailSent,
+            emailError: emailError || null,
+          },
+        });
+      }
+    } catch (_) { /* best-effort */ }
+
     return new Response(
-      JSON.stringify({ success: true, userId, email, role, emailSent, emailError }),
+      JSON.stringify(result),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
