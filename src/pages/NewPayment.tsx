@@ -210,11 +210,12 @@ export default function NewPayment() {
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Invalid email format';
 
-    // Billing address validation (required for all processors)
-    if (!billingAddress.trim()) errors.billingAddress = 'Billing address is required';
-    if (!billingCity.trim()) errors.billingCity = 'City is required';
-    if (!billingPostalCode.trim()) errors.billingPostalCode = 'Postal code is required';
-    if (!billingCountry) errors.billingCountry = 'Country is required';
+    // Billing address validation (required for all processors) — use localized labels
+    const labels = getBillingLabels(billingCountry);
+    if (!billingAddress.trim()) errors.billingAddress = `${labels.addressLabel} is required`;
+    if (!billingCity.trim()) errors.billingCity = `${labels.cityLabel} is required`;
+    if (!billingPostalCode.trim()) errors.billingPostalCode = `${labels.postalLabel} is required`;
+    if (!billingCountry) errors.billingCountry = `${labels.countryLabel} is required`;
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
