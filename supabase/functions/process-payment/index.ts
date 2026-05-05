@@ -765,6 +765,47 @@ serve(async (req) => {
     console.error('Error processing payment:', error);
     const errMsg = error instanceof Error ? error.message : String(error);
 
+    const errorType = errMsg.includes('Invalid amount') || errMsg.includes('Currency is required') || errMsg.includes('Amount exceeds') || errMsg.includes('Amount mismatch')
+      ? 'validation_error'
+      : errMsg === 'Unauthorized' ? 'authentication_error'
+      : errMsg.includes('Merchant not found') ? 'not_found'
+      : errMsg.includes('blocked by fraud') ? 'fraud_block'
+      : 'payment_error';
+
+    // Record the failure in the activity feed for traceability
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const sb = createClient(supabaseUrl, supabaseKey);
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await sb.auth.getUser(token);
+        if (user) {
+          const { data: m } = await sb.from('merchants').select('id').eq('user_id', user.id).maybeSingle();
+          if (m) {
+            const isDescriptorErr = errMsg.includes('descriptor') || errMsg.includes('Processor not found');
+            const isLedgerErr = errMsg.includes('ledger') || errMsg.includes('account') || errMsg.includes('balance');
+            const eventType = isDescriptorErr
+              ? 'payment.descriptor_error'
+              : isLedgerErr
+                ? 'payment.ledger_posting_failed'
+                : 'payment.creation_failed';
+            await sb.from('provider_events').insert({
+              merchant_id: m.id,
+              provider: 'system',
+              event_type: eventType,
+              payload: {
+                error: errMsg,
+                error_type: errorType,
+                timestamp: new Date().toISOString(),
+              },
+            });
+          }
+        }
+      }
+    } catch (_auditErr) { /* best-effort audit */ }
+
     // CRITICAL: Always return HTTP 200 so the Supabase SDK delivers the full
     // JSON body to the client. Non-200 causes supabase-js to discard the body
     // and surface a generic "FunctionsHttpError" with no decline details.
@@ -772,12 +813,7 @@ serve(async (req) => {
       success: false, 
       ok: false,
       error: errMsg,
-      error_type: errMsg.includes('Invalid amount') || errMsg.includes('Currency is required') || errMsg.includes('Amount exceeds') || errMsg.includes('Amount mismatch')
-        ? 'validation_error'
-        : errMsg === 'Unauthorized' ? 'authentication_error'
-        : errMsg.includes('Merchant not found') ? 'not_found'
-        : errMsg.includes('blocked by fraud') ? 'fraud_block'
-        : 'payment_error',
+      error_type: errorType,
       details: errMsg,
       timestamp: new Date().toISOString(),
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
