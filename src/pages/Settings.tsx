@@ -819,6 +819,10 @@ export default function Settings() {
 
       {section === "surcharging" && <SurchargeSettingsSection merchantId={merchant?.id} />}
 
+      {section === "processor-routing" && <ProcessorRouting embedded />}
+      {section === "multi-acquirer" && <MultiAcquirer embedded />}
+      {section === "smart-retry" && <SmartRetry embedded />}
+
       {section === "deactivation" && (
         <div className="max-w-2xl">
           <Card className="border-destructive/30">
