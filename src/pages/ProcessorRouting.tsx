@@ -247,6 +247,9 @@ export default function ProcessorRouting({ embedded }: { embedded?: boolean }) {
           )}
         </CardContent>
       </Card>
-    </AppLayout>
+    </>
   );
+
+  if (embedded) return content;
+  return <AppLayout>{content}</AppLayout>;
 }
