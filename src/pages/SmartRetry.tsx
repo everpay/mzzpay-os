@@ -114,10 +114,15 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
   };
 
   const addCode = (code: string) => {
+    const codeError = validateNewCode(code);
+    if (codeError) {
+      setErrors(prev => ({ ...prev, newCode: codeError }));
+      return;
+    }
     const c = code.trim().toLowerCase().replace(/\s+/g, '_');
-    if (!c || s.retry_decline_codes.includes(c)) return;
     setS({ ...s, retry_decline_codes: [...s.retry_decline_codes, c] });
     setNewCode('');
+    setErrors(prev => ({ ...prev, newCode: undefined, decline_codes: undefined }));
   };
 
   const removeCode = (code: string) => {
