@@ -791,7 +791,15 @@ export default function Settings() {
                       status: "pending",
                       last_sent_at: new Date().toISOString(),
                     }, { onConflict: "merchant_id,email" } as any);
-                    notifySuccess(`Invitation sent to ${inviteEmail}`);
+
+                    if (data?.emailSent) {
+                      notifySuccess(`Invitation sent to ${inviteEmail} — invite email delivered`);
+                    } else if (data?.emailError) {
+                      notifySuccess(`Member invited, but the email could not be sent: ${data.emailError}`);
+                    } else {
+                      notifySuccess(`Invitation sent to ${inviteEmail}`);
+                    }
+
                     setInviteEmail("");
                     setInviteFullName("");
                     setInviteRole("admin");
