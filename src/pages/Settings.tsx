@@ -71,6 +71,9 @@ type SettingsSection =
   | "webhooks"
   | "verification"
   | "surcharging"
+  | "processor-routing"
+  | "multi-acquirer"
+  | "smart-retry"
   | "deactivation";
 
 type TeamRole = "admin" | "reseller" | "developer" | "compliance_officer" | "support" | "agent" | "employee";
