@@ -85,7 +85,6 @@ export const navSections: NavSection[] = [
       { to: "/invoices", icon: FileText, label: "Invoices" },
       { to: "/products", icon: Package, label: "Products" },
       { to: "/subscriptions", icon: RefreshCw, label: "Subscriptions" },
-      { to: "/saved-cards", icon: CreditCard, label: "Saved Cards" },
     ],
   },
   {
