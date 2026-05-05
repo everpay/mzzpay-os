@@ -11,6 +11,8 @@ import Payouts from "./pages/Payouts";
 import NewPayment from "./pages/NewPayment";
 import PaymentLinks from "./pages/PaymentLinks";
 import Checkout from "./pages/Checkout";
+import CheckoutThankYou from "./pages/CheckoutThankYou";
+import CheckoutDeclined from "./pages/CheckoutDeclined";
 import Analytics from "./pages/Analytics";
 import Subscriptions from "./pages/Subscriptions";
 import CustomerPortal from "./pages/CustomerPortal";
@@ -126,16 +128,22 @@ const isCheckoutSubdomain =
   typeof window !== "undefined" &&
   window.location.hostname.startsWith("checkout.");
 
+const isBillingSubdomain =
+  typeof window !== "undefined" &&
+  window.location.hostname.startsWith("billing.");
+
 const CheckoutRootRedirect = () => {
   const search = typeof window !== "undefined" ? window.location.search : "";
   return <Navigate to={`/checkout${search}`} replace />;
 };
 
+const BillingRootRedirect = () => <Navigate to="/portal" replace />;
+
 const AppRoutes = () => (
   <Routes>
     <Route
       path="/"
-      element={isCheckoutSubdomain ? <CheckoutRootRedirect /> : <Landing />}
+      element={isBillingSubdomain ? <BillingRootRedirect /> : isCheckoutSubdomain ? <CheckoutRootRedirect /> : <Landing />}
     />
     <Route path="/pricing" element={<FrontPricing />} />
     <Route path="/demo" element={<FrontDemo />} />
@@ -201,6 +209,8 @@ const AppRoutes = () => (
     <Route path="/payments/new" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><NewPayment /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/payment-links" element={<ProtectedRoute><PaymentLinks /></ProtectedRoute>} />
     <Route path="/checkout" element={<Checkout />} />
+    <Route path="/checkout/thank-you" element={<CheckoutThankYou />} />
+    <Route path="/checkout/declined" element={<CheckoutDeclined />} />
     <Route path="/pay/:invoiceId" element={<PayInvoice />} />
     <Route path="/receipts/:id" element={<Receipt />} />
     <Route path="/subscriptions" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><Subscriptions /></RoleProtectedRoute></ProtectedRoute>} />
