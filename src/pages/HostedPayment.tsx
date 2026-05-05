@@ -31,16 +31,26 @@ export default function HostedPayment() {
   });
   const [copied, setCopied] = useState<string | null>(null);
 
-  const embedCode = `<!-- MzzPay Hosted Payment -->
+  const embedCode = `<!-- MzzPay Hosted Payment Widget -->
 <script src="https://${JS_CDN_HOST}/mzzpay.js"></script>
 <div id="mzzpay-payment"></div>
 <script>
-  MzzPay.init({
+  var widget = MzzPay.init({
+    // Required parameters
     containerId: 'mzzpay-payment',
-    publicKey: 'pk_live_YOUR_KEY',
+    publicKey: 'pk_live_YOUR_KEY',       // Replace with your API key
     amount: ${config.amount || '0'},
     currency: '${config.currency}',
+    merchantId: 'YOUR_MERCHANT_UUID',    // Your merchant ID from Settings
+
+    // Optional parameters
     description: '${config.description || 'Payment'}',
+    testMode: ${config.testMode},         // Toggle: true = sandbox, false = live
+    // invoiceId: 'inv_xxxx',            // Pre-fill from an existing invoice
+    // successUrl: '${config.successUrl || 'https://yoursite.com/thank-you'}',
+    // cancelUrl: '${config.cancelUrl || 'https://yoursite.com/cancel'}',
+    // metadata: { orderId: '12345' },   // Forwarded to the transaction
+
     theme: {
       primaryColor: '${config.brandColor}',
       buttonText: '${config.buttonText}',
@@ -49,21 +59,30 @@ export default function HostedPayment() {
     options: {
       showCardBrands: ${config.showCardBrands},
       enableAPMs: ${config.enableAPMs},
-      testMode: ${config.testMode},
       locale: '${config.locale}',
     },
+
+    // Callbacks — all optional
     callbacks: {
       onSuccess: function(result) {
-        ${config.successUrl ? `window.location.href = '${config.successUrl}';` : "console.log('Payment successful:', result);"}
+        // result = { transactionId, status, amount, currency }
+        console.log('Payment successful:', result);
+        ${config.successUrl ? `window.location.href = '${config.successUrl}';` : ''}
       },
       onError: function(error) {
+        // error = { code, message, errorCode, processorMessage }
         console.error('Payment failed:', error);
       },
+      onReady: function() {
+        console.log('Widget loaded and ready');
+      },
       onClose: function() {
-        console.log('Widget closed');
+        console.log('Widget closed by user');
       }
     }
   });
+
+  // widget.destroy() — removes the iframe and cleans up listeners
 </script>`;
 
   const reactCode = `import { useEffect } from 'react';
