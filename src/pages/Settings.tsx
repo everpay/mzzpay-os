@@ -101,6 +101,8 @@ interface TeamInvitation {
   status: "pending" | "accepted" | "revoked";
   last_sent_at: string;
   created_at: string;
+  email_sent?: boolean;
+  email_error?: string | null;
 }
 
 interface SavedBankAccount {
