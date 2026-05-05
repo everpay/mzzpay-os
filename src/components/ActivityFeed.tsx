@@ -2,6 +2,7 @@ import { useProviderEvents } from '@/hooks/useProviderEvents';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime } from '@/lib/format';
 import { Zap } from 'lucide-react';
+import { getProviderLogo } from '@/lib/payment-method-logos';
 
 export function ActivityFeed({ limit = 5 }: { limit?: number }) {
   const { data: allEvents = [], isLoading } = useProviderEvents();
@@ -23,23 +24,45 @@ export function ActivityFeed({ limit = 5 }: { limit?: number }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {events.map((event) => (
-          <div key={event.id} className="flex items-start gap-3 rounded-lg p-2 transition-colors hover:bg-muted/30">
-            <div className="mt-0.5 h-2 w-2 rounded-full bg-primary animate-pulse-glow flex-shrink-0" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <Badge variant="provider" className="text-[10px]">{event.provider}</Badge>
-                <span className="text-xs font-medium text-foreground">{event.event_type}</span>
+          {events.map((event) => {
+            const payload: any = event.payload || {};
+            const code = String(payload?.error?.code || payload?.code || payload?.failure_subtype || '').toUpperCase();
+            const is3DSFail = ['3DS_TIMEOUT', '3DS_REDIRECT_MISSING_URL', '3DS_FAILED'].includes(code) || event.event_type === 'payment.timeout';
+            const failLabel =
+              code === '3DS_TIMEOUT' ? '3DS Timeout — issuer never returned OTP result' :
+              code === '3DS_REDIRECT_MISSING_URL' ? '3DS Failed — acquirer returned no challenge URL' :
+              code === '3DS_FAILED' ? '3DS Failed — issuer rejected authentication' :
+              event.event_type === 'payment.timeout' ? 'Payment timeout — auto-failed by watcher' :
+              null;
+            const providerLogo = getProviderLogo(event.provider);
+            return (
+              <div key={event.id} className="flex items-start gap-3 rounded-lg p-2 transition-colors hover:bg-muted/30">
+                <div className={`mt-0.5 h-2 w-2 rounded-full flex-shrink-0 ${is3DSFail ? 'bg-destructive' : 'bg-primary animate-pulse-glow'}`} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {providerLogo ? (
+                      <img src={providerLogo} alt={event.provider} className="h-4 w-auto rounded" />
+                    ) : (
+                      <Badge variant="provider" className="text-[10px]">{event.provider}</Badge>
+                    )}
+                    <span className="text-xs font-medium text-foreground">{event.event_type}</span>
+                    {is3DSFail && (
+                      <Badge variant="destructive" className="text-[10px]">{code || '3DS'}</Badge>
+                    )}
+                  </div>
+                  {failLabel && (
+                    <p className="mt-1 text-[11px] text-destructive/80">{failLabel}</p>
+                  )}
+                  <div className="mt-1 flex items-center gap-2">
+                    {event.transaction_id && (
+                      <span className="font-mono text-[10px] text-muted-foreground">{event.transaction_id}</span>
+                    )}
+                    <span className="text-[10px] text-muted-foreground">{formatRelativeTime(event.created_at)}</span>
+                  </div>
+                </div>
               </div>
-              <div className="mt-1 flex items-center gap-2">
-                {event.transaction_id && (
-                  <span className="font-mono text-[10px] text-muted-foreground">{event.transaction_id}</span>
-                )}
-                <span className="text-[10px] text-muted-foreground">{formatRelativeTime(event.created_at)}</span>
-              </div>
-            </div>
-          </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

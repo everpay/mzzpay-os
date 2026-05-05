@@ -7,7 +7,7 @@ import { getTransactionStatusInfo } from '@/lib/transaction-status';
 import { TransactionDetailDrawer } from './TransactionDetailDrawer';
 import { ChevronLeft, ChevronRight, Eye, CreditCard } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getMethodLogo, METHOD_LOGOS } from '@/lib/payment-method-logos';
+import { getMethodLogo, getProviderLogo, METHOD_LOGOS } from '@/lib/payment-method-logos';
 
 const BRAND_LOGOS = METHOD_LOGOS;
 
@@ -29,42 +29,43 @@ function getCardBrand(first6: string): string {
   return 'unknown';
 }
 
-function getPaymentMethodInfo(tx: Transaction): { logoSrc?: string; label: string } {
+function getPaymentMethodInfo(tx: Transaction): { logoSrc?: string; label: string; providerLogo?: string } {
   const meta = (tx as any).metadata || {};
   const method = meta.payment_method || meta.paymentMethod || '';
   const brand = (meta.card_brand || meta.cardBrand || tx.card_brand || '').toLowerCase();
+  const providerLogo = getProviderLogo(tx.provider);
 
   if (method) {
     const logo = getMethodLogo(method);
     if (logo) {
       const label = method.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
-      return { logoSrc: logo, label };
+      return { logoSrc: logo, label, providerLogo };
     }
   }
 
-  if (method === 'mobile_money' || method === 'mpesa') return { logoSrc: getMethodLogo('mpesa'), label: 'M-Pesa' };
-  if (method === 'bank_transfer' || method === 'sepa' || method === 'pix' || method === 'spei') return { label: method.toUpperCase() };
-  if (method === 'wallet') return { label: 'Wallet' };
+  if (method === 'mobile_money' || method === 'mpesa') return { logoSrc: getMethodLogo('mpesa'), label: 'M-Pesa', providerLogo };
+  if (method === 'bank_transfer' || method === 'sepa' || method === 'pix' || method === 'spei') return { logoSrc: getMethodLogo(method), label: method.toUpperCase(), providerLogo };
+  if (method === 'wallet') return { label: 'Wallet', providerLogo };
 
-  if (brand && BRAND_LOGOS[brand]) return { logoSrc: BRAND_LOGOS[brand], label: brand.charAt(0).toUpperCase() + brand.slice(1) };
+  if (brand && BRAND_LOGOS[brand]) return { logoSrc: BRAND_LOGOS[brand], label: brand.charAt(0).toUpperCase() + brand.slice(1), providerLogo };
 
   const cardFirst6 = meta.cardFirst6 || meta.card_first6 || tx.card_bin || '';
   if (cardFirst6) {
     const detected = getCardBrand(cardFirst6);
-    if (detected !== 'unknown') return { logoSrc: BRAND_LOGOS[detected], label: detected.charAt(0).toUpperCase() + detected.slice(1) };
-    return { label: 'Card' };
+    if (detected !== 'unknown') return { logoSrc: BRAND_LOGOS[detected], label: detected.charAt(0).toUpperCase() + detected.slice(1), providerLogo };
+    return { label: 'Card', providerLogo };
   }
 
   const prov = tx.provider as string;
-  if (prov === 'makapay') return { logoSrc: getMethodLogo('bkash'), label: 'Mobile Wallet' };
-  if (prov === 'lipad') return { logoSrc: getMethodLogo('mpesa'), label: 'Mobile Money' };
+  if (prov === 'makapay') return { logoSrc: getMethodLogo('bkash'), label: 'Mobile Wallet', providerLogo };
+  if (prov === 'lipad') return { logoSrc: getMethodLogo('mpesa'), label: 'Mobile Money', providerLogo };
   if (prov === 'paygate10') {
     const providerMethod = meta.provider_method || '';
-    if (providerMethod.toLowerCase().includes('jazz')) return { logoSrc: getMethodLogo('jazzcash'), label: 'JazzCash' };
-    if (providerMethod.toLowerCase().includes('easy')) return { logoSrc: getMethodLogo('easypaisa'), label: 'EasyPaisa' };
-    return { label: 'Local Payment' };
+    if (providerMethod.toLowerCase().includes('jazz')) return { logoSrc: getMethodLogo('jazzcash'), label: 'JazzCash', providerLogo };
+    if (providerMethod.toLowerCase().includes('easy')) return { logoSrc: getMethodLogo('easypaisa'), label: 'EasyPaisa', providerLogo };
+    return { label: 'Local Payment', providerLogo };
   }
-  return { label: 'Card' };
+  return { label: 'Card', providerLogo };
 }
 
 function getTransactionType(tx: Transaction): string {
@@ -131,19 +132,27 @@ export function TransactionTable({ transactions, compact = false, disableDrawer 
                       <span className="font-mono text-xs text-primary hover:underline">{tx.id.slice(0, 12)}…</span>
                     </td>
 
-                    {/* Method - card brand icon */}
+                    {/* Method - card brand icon + provider logo */}
                     <td className="px-3 py-2.5">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex items-center justify-center w-10 h-6">
-                            {pmInfo.logoSrc ? (
-                              <img src={pmInfo.logoSrc} alt={pmInfo.label} className="h-5 w-auto" />
-                            ) : (
-                              <CreditCard className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex items-center justify-center w-10 h-6 rounded bg-card border border-border overflow-hidden">
+                              {pmInfo.logoSrc ? (
+                                <img src={pmInfo.logoSrc} alt={pmInfo.label} className="h-4 w-auto" />
+                              ) : (
+                                <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                              )}
+                            </div>
+                            {pmInfo.providerLogo && (
+                              <img src={pmInfo.providerLogo} alt={tx.provider} className="h-4 w-4 rounded-sm opacity-60" />
                             )}
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>{pmInfo.label}</TooltipContent>
+                        <TooltipContent>
+                          <span>{pmInfo.label}</span>
+                          {tx.provider && <span className="text-muted-foreground ml-1">via {tx.provider}</span>}
+                        </TooltipContent>
                       </Tooltip>
                     </td>
 
