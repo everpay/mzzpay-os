@@ -249,10 +249,13 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
               )}
               <div className="flex gap-2">
                 <Input
-                  className="rounded-2xl"
+                  className={`rounded-2xl ${errors.newCode ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   placeholder="e.g. expired_card"
                   value={newCode}
-                  onChange={(e) => setNewCode(e.target.value)}
+                  onChange={(e) => {
+                    setNewCode(e.target.value);
+                    setErrors(prev => ({ ...prev, newCode: undefined }));
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -269,6 +272,9 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+              {errors.newCode && (
+                <p className="text-xs text-destructive">{errors.newCode}</p>
+              )}
               <div className="flex flex-wrap gap-1.5 pt-1">
                 <span className="text-xs text-muted-foreground mr-1">Suggested:</span>
                 {SUGGESTED_CODES.filter((c) => !s.retry_decline_codes.includes(c)).map((c) => (
