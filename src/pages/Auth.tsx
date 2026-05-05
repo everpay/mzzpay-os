@@ -179,10 +179,10 @@ export default function Auth({ defaultMode = 'login' }: AuthProps) {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="gradient-glow pointer-events-none fixed inset-0" />
       <div className="relative w-full max-w-md">
-        <Link to="/" className="flex items-center justify-center mb-8">
+        <Link to="/" className="flex items-center justify-center mb-4">
           <BrandLogo
             iconOnly
-            iconSizeClassName="h-44 md:h-52"
+            iconSizeClassName="h-64 md:h-80"
             textClassName="text-foreground"
           />
         </Link>
