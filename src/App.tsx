@@ -277,6 +277,8 @@ const AppRoutes = () => (
     <Route path="/merchant/disputes" element={<Navigate to="/chargebacks/disputes" replace />} />
     <Route path="/merchant/evidence" element={<Navigate to="/chargebacks/evidence" replace />} />
     <Route path="/merchant/analytics" element={<Navigate to="/chargebacks/analytics" replace />} />
+    {/* pay.mzzpay.io/<id> → render PayInvoice directly */}
+    {isPaySubdomain && <Route path="/:invoiceId" element={<PayInvoiceSubdomainWrapper />} />}
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
