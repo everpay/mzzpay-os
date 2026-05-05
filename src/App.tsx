@@ -78,6 +78,7 @@ import AdminProcessors from "./pages/admin/AdminProcessors";
 import AdminEmailLog from "./pages/admin/AdminEmailLog";
 import ProcessorAnalyticsPage from "./pages/ProcessorAnalyticsPage";
 import PaymentWidget from "./pages/PaymentWidget";
+import HostedPayment from "./pages/HostedPayment";
 import SavedCards from "./pages/SavedCards";
 import PaymentMethodsPage from "./pages/PaymentMethodsPage";
 import LiveAnalytics from "./pages/LiveAnalytics";
