@@ -349,9 +349,25 @@ export function BusinessVerificationSection() {
                   );
                 })}
               </div>
-              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <div
+                className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/40 transition-colors"
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) {
+                    const input = document.getElementById('doc-upload-settings') as HTMLInputElement;
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    input.files = dt.files;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                  }
+                }}
+              >
                 <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground mb-2">Drop files or click to upload</p>
+                <p className="text-sm text-muted-foreground mb-1">Drop files or click to upload</p>
+                <p className="text-xs text-muted-foreground mb-2">PDF, JPG, PNG — max 10 MB</p>
                 <input
                   type="file"
                   onChange={handleDocUpload}
