@@ -1048,7 +1048,12 @@ function TeamInvitationsList({ merchantId }: { merchantId?: string }) {
                         {inv.status}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">{inv.email} · sent {formatDate(inv.last_sent_at)}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {inv.email} · sent {formatDate(inv.last_sent_at)}
+                      {inv.email_sent === true && <span className="ml-1 text-emerald-500">✓ email delivered</span>}
+                      {inv.email_sent === false && inv.email_error && <span className="ml-1 text-destructive">✗ {inv.email_error}</span>}
+                      {inv.email_sent === false && !inv.email_error && <span className="ml-1 text-amber-500">⚠ email pending</span>}
+                    </p>
                   </div>
                   <Button
                     variant="outline"
