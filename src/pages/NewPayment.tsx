@@ -425,6 +425,7 @@ export default function NewPayment() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       setAmount(''); setEmail(''); setDescription('');
       setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
+            setBillingAddress(''); setBillingCity(''); setBillingState(''); setBillingPostalCode('');
     } catch (error) {
       console.error('Payment error:', error);
       setResponseMessage({
@@ -464,6 +465,7 @@ export default function NewPayment() {
               onClick={() => {
                 setAmount(''); setEmail(''); setDescription('');
                 setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
+            setBillingAddress(''); setBillingCity(''); setBillingState(''); setBillingPostalCode('');
                 setPaymentMethod('card'); setCardEntryMode('standard');
                 setValidationErrors({}); setResponseMessage(null); setVgsToken('');
               }}
@@ -957,6 +959,7 @@ export default function NewPayment() {
           queryClient.invalidateQueries({ queryKey: ['transactions'] });
           setAmount(''); setEmail(''); setDescription('');
           setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
+            setBillingAddress(''); setBillingCity(''); setBillingState(''); setBillingPostalCode('');
         }}
       />
     </AppLayout>
