@@ -153,15 +153,17 @@ export default function CustomerPortal() {
     setUpdatingPM(true);
     try {
       // Save new card as payment method
+      const cleanNum = newCardNumber.replace(/\s/g, '');
       const { data: pm, error: pmError } = await supabase
         .from('payment_methods')
         .insert({
           customer_id: data.customer.id,
-          card_brand: detectCardBrand(newCardNumber.replace(/\s/g, '')),
-          card_last4: newCardNumber.replace(/\s/g, '').slice(-4),
-          exp_month: parseInt(newExpMonth),
-          exp_year: parseInt(newExpYear),
+          card_brand: detectCardBrand(cleanNum),
+          card_last4: cleanNum.slice(-4),
+          exp_month: newExpMonth,
+          exp_year: newExpYear,
           is_default: true,
+          vgs_alias: `tok_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`,
         })
         .select('id')
         .single();
