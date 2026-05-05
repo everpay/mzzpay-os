@@ -60,6 +60,9 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { CountrySelect } from "@/components/CountrySelect";
 import { CardTestResultsPanel } from "@/components/CardTestResultsPanel";
 import { notifyError, notifySuccess } from '@/lib/error-toast';
+import ProcessorRouting from './ProcessorRouting';
+import MultiAcquirer from './MultiAcquirer';
+import SmartRetry from './SmartRetry';
 
 type SettingsSection =
   | "main"
@@ -71,6 +74,9 @@ type SettingsSection =
   | "webhooks"
   | "verification"
   | "surcharging"
+  | "processor-routing"
+  | "multi-acquirer"
+  | "smart-retry"
   | "deactivation";
 
 type TeamRole = "admin" | "reseller" | "developer" | "compliance_officer" | "support" | "agent" | "employee";
@@ -363,10 +369,10 @@ export default function Settings() {
     { key: "team", label: "Members", icon: Users },
     { key: "surcharging", label: "Surcharging", icon: Hash },
     { key: "developers", label: "Developers & Activity", icon: Code },
-    { key: "processor-routing" as any, label: "Processor Routing", icon: Globe, link: "/processor-routing" },
-    { key: "processor-analytics" as any, label: "Processor Analytics", icon: Zap, link: "/processor-analytics" },
-    { key: "multi-acquirer" as any, label: "Multi-Acquirer", icon: Globe, link: "/multi-acquirer" },
-    { key: "smart-retry" as any, label: "Smart Retry AI", icon: Zap, link: "/smart-retry" },
+    { key: "processor-routing", label: "Processor Routing", icon: Globe },
+    { key: "processor-routing" as any, label: "Processor Analytics", icon: Zap, link: "/processor-analytics" },
+    { key: "multi-acquirer", label: "Multi-Acquirer", icon: Globe },
+    { key: "smart-retry", label: "Smart Retry AI", icon: Zap },
     { key: "deactivation", label: "Close Account", icon: AlertTriangle, destructive: true },
   ];
 
@@ -812,6 +818,10 @@ export default function Settings() {
       
 
       {section === "surcharging" && <SurchargeSettingsSection merchantId={merchant?.id} />}
+
+      {section === "processor-routing" && <ProcessorRouting embedded />}
+      {section === "multi-acquirer" && <MultiAcquirer embedded />}
+      {section === "smart-retry" && <SmartRetry embedded />}
 
       {section === "deactivation" && (
         <div className="max-w-2xl">

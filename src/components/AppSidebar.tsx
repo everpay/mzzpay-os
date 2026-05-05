@@ -28,11 +28,10 @@ import {
   BadgeCheck,
   Activity,
   Lock,
-  Repeat,
   ShieldCheck,
   BookOpen,
   Plug,
-  GitBranch,
+  Globe2,
   Globe2,
   Server,
   LayoutGrid,
@@ -115,14 +114,6 @@ export const navSections: NavSection[] = [
       { to: "/payment-methods", icon: Layers, label: "Payment Methods" },
       { to: "/live-analytics", icon: Radio, label: "Live Analytics" },
       { to: "/reports", icon: FileText, label: "Reports" },
-    ],
-  },
-  {
-    title: "Configuration",
-    items: [
-      { to: "/processor-routing", icon: GitBranch, label: "Processor Routing" },
-      { to: "/multi-acquirer", icon: Globe2, label: "Multi-Acquirer" },
-      { to: "/smart-retry", icon: Repeat, label: "Smart Retry" },
     ],
   },
   {

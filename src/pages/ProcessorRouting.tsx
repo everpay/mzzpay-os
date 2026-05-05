@@ -38,14 +38,20 @@ function useProcessorRouting() {
   });
 }
 
-export default function ProcessorRouting() {
+export default function ProcessorRouting({ embedded }: { embedded?: boolean }) {
   const { data, isLoading } = useProcessorRouting();
   const rules = data?.rules || [];
   const feeProfiles = data?.feeProfiles || [];
   const mids = data?.mids || [];
 
-  return (
-    <AppLayout>
+  const content = (
+    <>
+      <div className="mb-6">
+        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Processor Routing</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          View the routing rules, processor fee profiles, and acquiring connections assigned to your account.
+        </p>
+      </div>
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Processor Routing</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -241,6 +247,9 @@ export default function ProcessorRouting() {
           )}
         </CardContent>
       </Card>
-    </AppLayout>
+    </>
   );
+
+  if (embedded) return content;
+  return <AppLayout>{content}</AppLayout>;
 }
