@@ -78,6 +78,7 @@ import AdminProcessors from "./pages/admin/AdminProcessors";
 import AdminEmailLog from "./pages/admin/AdminEmailLog";
 import ProcessorAnalyticsPage from "./pages/ProcessorAnalyticsPage";
 import PaymentWidget from "./pages/PaymentWidget";
+import HostedPayment from "./pages/HostedPayment";
 import SavedCards from "./pages/SavedCards";
 import PaymentMethodsPage from "./pages/PaymentMethodsPage";
 import LiveAnalytics from "./pages/LiveAnalytics";
@@ -132,6 +133,14 @@ const isBillingSubdomain =
   typeof window !== "undefined" &&
   window.location.hostname.startsWith("billing.");
 
+const isPaySubdomain =
+  typeof window !== "undefined" &&
+  window.location.hostname.startsWith("pay.");
+
+const isJsSubdomain =
+  typeof window !== "undefined" &&
+  window.location.hostname.startsWith("js.");
+
 const CheckoutRootRedirect = () => {
   const search = typeof window !== "undefined" ? window.location.search : "";
   return <Navigate to={`/checkout${search}`} replace />;
@@ -139,11 +148,26 @@ const CheckoutRootRedirect = () => {
 
 const BillingRootRedirect = () => <Navigate to="/portal" replace />;
 
+/** pay.mzzpay.io/<invoiceId> → /pay/<invoiceId> */
+const PayRootRedirect = () => {
+  // On pay.mzzpay.io the path IS the invoice id (e.g. pay.mzzpay.io/abc-123)
+  const path = typeof window !== "undefined" ? window.location.pathname : "/";
+  const invoiceId = path.replace(/^\/+/, "");
+  if (invoiceId) return <Navigate to={`/pay/${invoiceId}`} replace />;
+  return <div className="min-h-screen flex items-center justify-center text-muted-foreground">No invoice specified</div>;
+};
+
+/** On pay.mzzpay.io, /:id renders PayInvoice directly */
+const PayInvoiceSubdomainWrapper = () => {
+  // Re-use the same PayInvoice component; the route param is "invoiceId"
+  return <PayInvoice />;
+};
+
 const AppRoutes = () => (
   <Routes>
     <Route
       path="/"
-      element={isBillingSubdomain ? <BillingRootRedirect /> : isCheckoutSubdomain ? <CheckoutRootRedirect /> : <Landing />}
+      element={isPaySubdomain ? <PayRootRedirect /> : isBillingSubdomain ? <BillingRootRedirect /> : isCheckoutSubdomain ? <CheckoutRootRedirect /> : isJsSubdomain ? <Navigate to="/hosted-payment" replace /> : <Landing />}
     />
     <Route path="/pricing" element={<FrontPricing />} />
     <Route path="/demo" element={<FrontDemo />} />
@@ -248,6 +272,7 @@ const AppRoutes = () => (
     <Route path="/admin/email-log" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><AdminEmailLog /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/integrations" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><Integrations /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/payment-widget" element={<ProtectedRoute><PaymentWidget /></ProtectedRoute>} />
+    <Route path="/hosted-payment" element={<ProtectedRoute><HostedPayment /></ProtectedRoute>} />
     <Route path="/saved-cards" element={<ProtectedRoute><SavedCards /></ProtectedRoute>} />
     <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsPage /></ProtectedRoute>} />
     <Route path="/live-analytics" element={<ProtectedRoute><LiveAnalytics /></ProtectedRoute>} />
@@ -258,6 +283,8 @@ const AppRoutes = () => (
     <Route path="/merchant/disputes" element={<Navigate to="/chargebacks/disputes" replace />} />
     <Route path="/merchant/evidence" element={<Navigate to="/chargebacks/evidence" replace />} />
     <Route path="/merchant/analytics" element={<Navigate to="/chargebacks/analytics" replace />} />
+    {/* pay.mzzpay.io/<id> → render PayInvoice directly */}
+    {isPaySubdomain && <Route path="/:invoiceId" element={<PayInvoiceSubdomainWrapper />} />}
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

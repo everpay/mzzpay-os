@@ -74,6 +74,7 @@ export const navSections: NavSection[] = [
       { to: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
       { to: "/payments/new", icon: CreditCard, label: "New Payment" },
       { to: "/payment-links", icon: Link2, label: "Payment Links" },
+      { to: "/hosted-payment", icon: Globe2, label: "Hosted Payment" },
       { to: "/payment-widget", icon: LayoutGrid, label: "Payment Widget" },
       { to: "/refunds", icon: RotateCcw, label: "Refunds" },
     ],
