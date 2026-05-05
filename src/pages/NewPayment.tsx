@@ -724,12 +724,34 @@ export default function NewPayment() {
                 {validationErrors.billingCity && <p className="text-xs text-destructive">{validationErrors.billingCity}</p>}
               </div>
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">State / Province</Label>
-                <Input
-                  placeholder="NY" value={billingState}
-                  onChange={(e) => setBillingState(e.target.value)}
-                  className="bg-background border-border"
-                />
+                {(() => {
+                  const subdiv = getSubdivisionsForCountry(billingCountry);
+                  const label = subdiv?.label || 'State / Province';
+                  const items = subdiv?.items || [];
+                  return (
+                    <>
+                      <Label className="text-xs text-muted-foreground">{label}</Label>
+                      {items.length > 0 ? (
+                        <Select value={billingState} onValueChange={setBillingState}>
+                          <SelectTrigger className="bg-background border-border">
+                            <SelectValue placeholder={`Select ${label.toLowerCase()}...`} />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {items.map((s) => (
+                              <SelectItem key={s.code} value={s.code}>{s.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          placeholder={label} value={billingState}
+                          onChange={(e) => setBillingState(e.target.value)}
+                          className="bg-background border-border"
+                        />
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -744,25 +766,10 @@ export default function NewPayment() {
               </div>
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Country</Label>
-                <Select value={billingCountry} onValueChange={setBillingCountry}>
-                  <SelectTrigger className={`bg-background border-border ${validationErrors.billingCountry ? 'border-destructive' : ''}`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="US">🇺🇸 United States</SelectItem>
-                    <SelectItem value="CA">🇨🇦 Canada</SelectItem>
-                    <SelectItem value="GB">🇬🇧 United Kingdom</SelectItem>
-                    <SelectItem value="DE">🇩🇪 Germany</SelectItem>
-                    <SelectItem value="FR">🇫🇷 France</SelectItem>
-                    <SelectItem value="ES">🇪🇸 Spain</SelectItem>
-                    <SelectItem value="IT">🇮🇹 Italy</SelectItem>
-                    <SelectItem value="NL">🇳🇱 Netherlands</SelectItem>
-                    <SelectItem value="BR">🇧🇷 Brazil</SelectItem>
-                    <SelectItem value="MX">🇲🇽 Mexico</SelectItem>
-                    <SelectItem value="AU">🇦🇺 Australia</SelectItem>
-                    <SelectItem value="JP">🇯🇵 Japan</SelectItem>
-                  </SelectContent>
-                </Select>
+                <CountrySelect
+                  value={billingCountry}
+                  onValueChange={(v) => { setBillingCountry(v); setBillingState(''); }}
+                />
                 {validationErrors.billingCountry && <p className="text-xs text-destructive">{validationErrors.billingCountry}</p>}
               </div>
             </div>
