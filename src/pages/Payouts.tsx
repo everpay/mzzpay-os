@@ -146,14 +146,21 @@ export default function Payouts() {
     }
   }, [destinationCurrency]);
 
+  const [payoutSubmitting, setPayoutSubmitting] = useState(false);
+
   const handleCreatePayout = async () => {
+    if (payoutSubmitting) return; // prevent double-click
     if (!amount || parseFloat(amount) <= 0) { notifyError({ message: 'Enter a valid amount' }); return; }
     if (parseFloat(amount) > availableBalance) { notifyError({ message: 'Insufficient balance' }); return; }
     if (!institutionNumber || !transitNumber || !accountNumber || !accountHolderName) {
       notifyError({ message: 'Fill in all bank details' }); return;
     }
 
+    setPayoutSubmitting(true);
     try {
+      // Deterministic idempotency key prevents duplicate payouts on repeated clicks
+      const idempotencyKey = `payout-${institutionNumber}-${transitNumber}-${accountNumber.slice(-4)}-${amount}-${destinationCurrency}-${Date.now().toString(36)}`;
+
       const result = await createPayout.mutateAsync({
         amount: parseFloat(amount),
         currency_code: destinationCurrency,
@@ -164,6 +171,7 @@ export default function Payouts() {
           account_number: accountNumber,
           account_holder_name: accountHolderName,
         },
+        idempotencyKey,
       });
 
       if (saveAccount && !selectedSavedAccount && accountNumber.length >= 4) {
@@ -184,6 +192,14 @@ export default function Payouts() {
         }
       }
 
+      // Check for duplicate/idempotency replay
+      if (result.duplicate || result.idempotency_replayed) {
+        toast.warning('This payout was already submitted — no duplicate was created.');
+        setIsOpen(false);
+        resetForm();
+        return;
+      }
+
       setPayouts(prev => [{ id: result.payout_id, amount: parseFloat(amount), currency: destinationCurrency, status: 'processing', bank_name: `Bank ${institutionNumber}`, account_last4: accountNumber.slice(-4), created_at: new Date().toISOString() }, ...prev]);
 
       try {
@@ -200,6 +216,8 @@ export default function Payouts() {
       resetForm();
     } catch (error) {
       notifyError(error, { fallback: 'Failed to create payout' });
+    } finally {
+      setPayoutSubmitting(false);
     }
   };
 
