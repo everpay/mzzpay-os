@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RefreshCw, X, Plus, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-
 import { notifyError, notifySuccess } from '@/lib/error-toast';
+import { validateSmartRetry, declineCodeSchema, type BackoffStrategy } from '@/lib/smart-retry-schema';
 
 const DEFAULT_DECLINE_CODES = ['insufficient_funds', 'do_not_honor', 'try_again_later'];
 const SUGGESTED_CODES = [
