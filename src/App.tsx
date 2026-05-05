@@ -266,6 +266,7 @@ const AppRoutes = () => (
     <Route path="/admin/email-log" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><AdminEmailLog /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/integrations" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><Integrations /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/payment-widget" element={<ProtectedRoute><PaymentWidget /></ProtectedRoute>} />
+    <Route path="/hosted-payment" element={<ProtectedRoute><HostedPayment /></ProtectedRoute>} />
     <Route path="/saved-cards" element={<ProtectedRoute><SavedCards /></ProtectedRoute>} />
     <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsPage /></ProtectedRoute>} />
     <Route path="/live-analytics" element={<ProtectedRoute><LiveAnalytics /></ProtectedRoute>} />
