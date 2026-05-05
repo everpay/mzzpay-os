@@ -33,6 +33,13 @@ interface RetrySettings {
   retry_decline_codes: string[];
 }
 
+interface FieldErrors {
+  max_attempts?: string;
+  backoff_seconds?: string;
+  newCode?: string;
+  decline_codes?: string;
+}
+
 export default function SmartRetry({ embedded }: { embedded?: boolean }) {
   const { user } = useAuth();
   const [merchantId, setMerchantId] = useState<string | null>(null);
@@ -46,6 +53,31 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
   const [newCode, setNewCode] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState<FieldErrors>({});
+
+  const validate = (): boolean => {
+    const e: FieldErrors = {};
+    if (!Number.isInteger(s.max_attempts) || s.max_attempts < 1 || s.max_attempts > 10) {
+      e.max_attempts = 'Must be a whole number between 1 and 10';
+    }
+    if (!Number.isInteger(s.backoff_seconds) || s.backoff_seconds < 10 || s.backoff_seconds > 86400) {
+      e.backoff_seconds = 'Must be between 10 and 86,400 seconds (24 hours)';
+    }
+    if (s.retry_decline_codes.length === 0) {
+      e.decline_codes = 'At least one decline code is required';
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validateNewCode = (code: string): string | null => {
+    const c = code.trim().toLowerCase().replace(/\s+/g, '_');
+    if (!c) return 'Code cannot be empty';
+    if (c.length > 50) return 'Code must be 50 characters or fewer';
+    if (!/^[a-z0-9_]+$/.test(c)) return 'Only lowercase letters, numbers, and underscores';
+    if (s.retry_decline_codes.includes(c)) return 'This code is already added';
+    return null;
+  };
 
   useEffect(() => {
     (async () => {
@@ -71,6 +103,7 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
 
   const save = async () => {
     if (!merchantId) return;
+    if (!validate()) return;
     setSaving(true);
     const { error } = await supabase
       .from('retry_settings')
@@ -81,10 +114,15 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
   };
 
   const addCode = (code: string) => {
+    const codeError = validateNewCode(code);
+    if (codeError) {
+      setErrors(prev => ({ ...prev, newCode: codeError }));
+      return;
+    }
     const c = code.trim().toLowerCase().replace(/\s+/g, '_');
-    if (!c || s.retry_decline_codes.includes(c)) return;
     setS({ ...s, retry_decline_codes: [...s.retry_decline_codes, c] });
     setNewCode('');
+    setErrors(prev => ({ ...prev, newCode: undefined, decline_codes: undefined }));
   };
 
   const removeCode = (code: string) => {
@@ -126,15 +164,22 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
             <div className="space-y-2">
               <Label>Max Attempts</Label>
               <Input
-                className="rounded-2xl"
+                className={`rounded-2xl ${errors.max_attempts ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 type="number"
                 min={1}
                 max={10}
                 value={s.max_attempts}
-                onChange={(e) => setS({ ...s, max_attempts: parseInt(e.target.value) || 3 })}
+                onChange={(e) => {
+                  setS({ ...s, max_attempts: parseInt(e.target.value) || 0 });
+                  setErrors(prev => ({ ...prev, max_attempts: undefined }));
+                }}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">Maximum number of retries per failed payment (1-10)</p>
+              {errors.max_attempts ? (
+                <p className="text-xs text-destructive">{errors.max_attempts}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Maximum number of retries per failed payment (1-10)</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -156,16 +201,24 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
             <div className="space-y-2">
               <Label>Initial Backoff (seconds)</Label>
               <Input
-                className="rounded-2xl"
+                className={`rounded-2xl ${errors.backoff_seconds ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 type="number"
                 min={10}
+                max={86400}
                 value={s.backoff_seconds}
-                onChange={(e) => setS({ ...s, backoff_seconds: parseInt(e.target.value) || 60 })}
+                onChange={(e) => {
+                  setS({ ...s, backoff_seconds: parseInt(e.target.value) || 0 });
+                  setErrors(prev => ({ ...prev, backoff_seconds: undefined }));
+                }}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">
-                Wait time before the first retry. Subsequent retries scale per the strategy above.
-              </p>
+              {errors.backoff_seconds ? (
+                <p className="text-xs text-destructive">{errors.backoff_seconds}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Wait time before the first retry. Subsequent retries scale per the strategy above.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -173,7 +226,7 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
               <p className="text-xs text-muted-foreground">
                 Only retry payments that fail with these decline codes. Hard declines (lost/stolen card, fraud) are never retried.
               </p>
-              <div className="flex flex-wrap gap-2 p-3 rounded-xl border border-border bg-muted/30 min-h-[60px]">
+              <div className={`flex flex-wrap gap-2 p-3 rounded-xl border bg-muted/30 min-h-[60px] ${errors.decline_codes ? 'border-destructive' : 'border-border'}`}>
                 {s.retry_decline_codes.length === 0 && (
                   <span className="text-xs text-muted-foreground">No codes configured</span>
                 )}
@@ -191,12 +244,18 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
                   </Badge>
                 ))}
               </div>
+              {errors.decline_codes && (
+                <p className="text-xs text-destructive">{errors.decline_codes}</p>
+              )}
               <div className="flex gap-2">
                 <Input
-                  className="rounded-2xl"
+                  className={`rounded-2xl ${errors.newCode ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   placeholder="e.g. expired_card"
                   value={newCode}
-                  onChange={(e) => setNewCode(e.target.value)}
+                  onChange={(e) => {
+                    setNewCode(e.target.value);
+                    setErrors(prev => ({ ...prev, newCode: undefined }));
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -213,6 +272,9 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+              {errors.newCode && (
+                <p className="text-xs text-destructive">{errors.newCode}</p>
+              )}
               <div className="flex flex-wrap gap-1.5 pt-1">
                 <span className="text-xs text-muted-foreground mr-1">Suggested:</span>
                 {SUGGESTED_CODES.filter((c) => !s.retry_decline_codes.includes(c)).map((c) => (
