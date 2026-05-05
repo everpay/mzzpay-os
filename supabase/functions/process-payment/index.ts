@@ -918,6 +918,15 @@ async function processMzzPayPayment(data: PaymentRequest, req: Request) {
   if (missing.length > 0) {
     const msg = `Shieldhub processor row is misconfigured — missing: ${missing.join(', ')}`;
     console.error('[process-payment]', msg);
+    // Log descriptor/config error in activity feed
+    try {
+      await supabase.from('provider_events').insert({
+        merchant_id: null, // no merchant context in this helper — will be logged by caller
+        provider: 'shieldhub',
+        event_type: 'payment.descriptor_error',
+        payload: { error: msg, missing_fields: missing },
+      });
+    } catch (_) { /* best-effort */ }
     return {
       status: 'FAILED',
       code: 'processor_misconfigured',
