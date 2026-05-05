@@ -714,6 +714,48 @@ serve(async (req) => {
       }, { onConflict: 'merchant_id,key' });
     }
 
+    // ── Transactional email notifications (best-effort, fire-and-forget) ──
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const svcKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const emailRecipient = paymentData.customerEmail || customer?.email;
+      if (emailRecipient) {
+        const templateName = (txStatus === 'completed' || txStatus === 'processing')
+          ? 'payment-confirmation'
+          : 'payment-declined';
+        const templateData = {
+          amount: `${amount.toFixed(2)} ${currency}`,
+          status: txStatus,
+          transactionId: transaction.id,
+          description: paymentData.description || 'Payment',
+          errorCode: procErrorCode || undefined,
+          errorMessage: procErrorMessage || undefined,
+          provider,
+          cardLast4: cardDetails?.number?.slice(-4) || undefined,
+          cardBrand: providerResponse?.card_brand || undefined,
+          date: new Date().toISOString(),
+          customerName: `${paymentData.customer?.first || ''} ${paymentData.customer?.last || ''}`.trim() || undefined,
+        };
+        // Fire-and-forget — don't block the payment response
+        fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${svcKey}`,
+            apikey: Deno.env.get('SUPABASE_ANON_KEY') || '',
+          },
+          body: JSON.stringify({
+            templateName,
+            recipientEmail: emailRecipient,
+            idempotencyKey: `${templateName}-${transaction.id}`,
+            templateData,
+          }),
+        }).catch(e => console.error('Email notification error:', e));
+      }
+    } catch (emailErr) {
+      console.error('Email notification setup error:', emailErr);
+    }
+
     return new Response(
       JSON.stringify({ success: true, transaction, providerResponse }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
