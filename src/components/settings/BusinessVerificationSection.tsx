@@ -136,17 +136,44 @@ export function BusinessVerificationSection() {
   const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate file type + size client-side for early feedback
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      notifyError('Only PDF, JPG, and PNG files are accepted');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      notifyError('File must be under 10 MB');
+      e.target.value = '';
+      return;
+    }
+
     setUploadingDoc(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      const path = `${user.id}/${Date.now()}_${file.name}`;
-      const { error } = await supabase.storage.from('kyb-documents').upload(path, file);
-      if (error) throw error;
+      if (!user) {
+        notifyError('You must be signed in to upload documents. Please log in first.');
+        return;
+      }
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${user.id}/${Date.now()}_${safeName}`;
+      const { error } = await supabase.storage.from('kyb-documents').upload(path, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+      if (error) {
+        console.error('KYB doc upload error:', error);
+        if (error.message?.includes('row-level security') || error.message?.includes('policy')) {
+          throw new Error('Upload permission denied. Please ensure your email is verified and you are signed in.');
+        }
+        throw error;
+      }
       setDocuments((prev) => [...prev, { name: file.name, path }]);
-      notifySuccess('Document uploaded');
+      notifySuccess('Document uploaded successfully');
     } catch (err: any) {
-      notifyError(err.message || 'Failed to upload document');
+      notifyError(err.message || 'Failed to upload document. Please try again.');
     } finally {
       setUploadingDoc(false);
       e.target.value = '';
@@ -322,9 +349,25 @@ export function BusinessVerificationSection() {
                   );
                 })}
               </div>
-              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <div
+                className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/40 transition-colors"
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) {
+                    const input = document.getElementById('doc-upload-settings') as HTMLInputElement;
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    input.files = dt.files;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                  }
+                }}
+              >
                 <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground mb-2">Drop files or click to upload</p>
+                <p className="text-sm text-muted-foreground mb-1">Drop files or click to upload</p>
+                <p className="text-xs text-muted-foreground mb-2">PDF, JPG, PNG — max 10 MB</p>
                 <input
                   type="file"
                   onChange={handleDocUpload}
