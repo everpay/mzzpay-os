@@ -41,9 +41,24 @@ serve(async (req) => {
       if (!callerRole) throw new Error('Only super admins can invite other admins');
     }
 
-    const { email, fullName, role } = await req.json();
+    const { email, fullName, role, idempotencyKey } = await req.json();
 
     if (!email || !role) throw new Error('email and role are required');
+
+    // Idempotency: if same key was used, return cached result
+    if (idempotencyKey) {
+      const { data: existing } = await supabase
+        .from('idempotency_keys')
+        .select('response, created_at')
+        .eq('key', idempotencyKey)
+        .maybeSingle();
+      if (existing?.response) {
+        return new Response(
+          JSON.stringify({ ...existing.response, duplicate: true, first_seen_at: existing.created_at }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     // Check if user already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
