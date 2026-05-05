@@ -757,7 +757,7 @@ export default function NewPayment() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Postal Code</Label>
+                <Label className="text-xs text-muted-foreground">{getPostalCodeLabel(billingCountry)}</Label>
                 <Input
                   placeholder="10001" value={billingPostalCode}
                   onChange={(e) => setBillingPostalCode(e.target.value)}
