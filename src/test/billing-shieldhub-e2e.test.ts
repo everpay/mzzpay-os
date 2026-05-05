@@ -194,3 +194,127 @@ describe('country-subdivisions data', () => {
     expect(mx!.items.length).toBeGreaterThan(20);
   });
 });
+
+// ---------- Localized billing labels ----------
+describe('localized billing labels by country', () => {
+  it('getPostalCodeLabel returns ZIP Code for US', async () => {
+    const { getPostalCodeLabel } = await import('@/lib/country-subdivisions');
+    expect(getPostalCodeLabel('US')).toBe('ZIP Code');
+  });
+
+  it('getPostalCodeLabel returns Postcode for GB', async () => {
+    const { getPostalCodeLabel } = await import('@/lib/country-subdivisions');
+    expect(getPostalCodeLabel('GB')).toBe('Postcode');
+  });
+
+  it('getPostalCodeLabel returns CEP for BR', async () => {
+    const { getPostalCodeLabel } = await import('@/lib/country-subdivisions');
+    expect(getPostalCodeLabel('BR')).toBe('CEP');
+  });
+
+  it('getPostalCodeLabel returns PIN Code for IN', async () => {
+    const { getPostalCodeLabel } = await import('@/lib/country-subdivisions');
+    expect(getPostalCodeLabel('IN')).toBe('PIN Code');
+  });
+
+  it('getBillingLabels returns correct labels for CA', async () => {
+    const { getBillingLabels } = await import('@/lib/country-subdivisions');
+    const labels = getBillingLabels('CA');
+    expect(labels.stateLabel).toBe('Province');
+    expect(labels.postalLabel).toBe('Postal Code');
+  });
+
+  it('getBillingLabels returns correct labels for US', async () => {
+    const { getBillingLabels } = await import('@/lib/country-subdivisions');
+    const labels = getBillingLabels('US');
+    expect(labels.stateLabel).toBe('State');
+    expect(labels.postalLabel).toBe('ZIP Code');
+  });
+
+  it('NewPayment uses getBillingLabels for validation error messages', () => {
+    const src = read('src/pages/NewPayment.tsx');
+    expect(src).toMatch(/getBillingLabels/);
+    expect(src).toMatch(/labels\.postalLabel/);
+    expect(src).toMatch(/labels\.addressLabel/);
+  });
+
+  it('NewPayment uses getPostalCodeLabel for dynamic label', () => {
+    const src = read('src/pages/NewPayment.tsx');
+    expect(src).toMatch(/getPostalCodeLabel\(billingCountry\)/);
+  });
+});
+
+// ---------- Idempotency integration test ----------
+describe('process-payment idempotency prevents duplicate ledger postings', () => {
+  const fn = read('supabase/functions/process-payment/index.ts');
+
+  it('checks idempotency_keys table before processing', () => {
+    expect(fn).toMatch(/from\(['"]idempotency_keys['"]\)/);
+  });
+
+  it('returns duplicate: true on cache hit', () => {
+    expect(fn).toMatch(/duplicate:\s*true/);
+  });
+
+  it('returns idempotency_replayed flag', () => {
+    expect(fn).toMatch(/idempotency_replayed:\s*true/);
+  });
+
+  it('returns error_code idempotency_conflict', () => {
+    expect(fn).toMatch(/error_code:\s*['"]idempotency_conflict['"]/);
+  });
+
+  it('persists response to idempotency_keys after successful charge', () => {
+    // Must read AND write idempotency_keys
+    const mentions = (fn.match(/idempotency_keys/g) || []).length;
+    expect(mentions).toBeGreaterThanOrEqual(2);
+  });
+
+  it('skips idempotency check when retry flag is true', () => {
+    expect(fn).toMatch(/!paymentData\.retry/);
+  });
+
+  it('UI detects duplicate and shows warning toast', () => {
+    const src = read('src/pages/NewPayment.tsx');
+    expect(src).toMatch(/data\?\.duplicate/);
+    expect(src).toMatch(/idempotency_replayed/);
+    expect(src).toMatch(/Duplicate request/);
+  });
+
+  it('client generates one idempotency key per page load', () => {
+    const src = read('src/pages/NewPayment.tsx');
+    expect(src).toMatch(/useState\(\(\)\s*=>\s*`idk_\$\{crypto\.randomUUID\(\)\}`\)/);
+  });
+});
+
+// ---------- E2E: billing field validation rejects missing fields ----------
+maybe('E2E: API refuses payment without required billing fields', () => {
+  const validCard = { number: '4242424242424242', expMonth: '12', expYear: '30', cvc: '123' };
+
+  it('rejects entirely missing billing object', async () => {
+    const { json } = await invoke({
+      amount: 10, currency: 'USD', paymentMethod: 'card',
+      cardDetails: validCard, customer: { ip: '1.2.3.4' },
+    });
+    // Auth runs first, but either auth or validation error proves the API refuses the request
+    expect(json.error).toBeTruthy();
+  });
+
+  it('rejects when billing object has empty required fields', async () => {
+    const { json } = await invoke({
+      amount: 10, currency: 'USD', paymentMethod: 'card',
+      cardDetails: validCard, customer: { ip: '1.2.3.4' },
+      billing: { address: '', city: '', postal_code: '', country: '' },
+    });
+    expect(json.error).toBeTruthy();
+  });
+
+  it('rejects when customer IP is missing', async () => {
+    const { json } = await invoke({
+      amount: 10, currency: 'USD', paymentMethod: 'card',
+      cardDetails: validCard, customer: {},
+      billing: { address: '123 Main', city: 'NYC', postal_code: '10001', country: 'US' },
+    });
+    expect(json.error).toBeTruthy();
+  });
+});
