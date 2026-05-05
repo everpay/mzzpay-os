@@ -366,10 +366,10 @@ export default function Settings() {
     { key: "team", label: "Members", icon: Users },
     { key: "surcharging", label: "Surcharging", icon: Hash },
     { key: "developers", label: "Developers & Activity", icon: Code },
-    { key: "processor-routing" as any, label: "Processor Routing", icon: Globe, link: "/processor-routing" },
-    { key: "processor-analytics" as any, label: "Processor Analytics", icon: Zap, link: "/processor-analytics" },
-    { key: "multi-acquirer" as any, label: "Multi-Acquirer", icon: Globe, link: "/multi-acquirer" },
-    { key: "smart-retry" as any, label: "Smart Retry AI", icon: Zap, link: "/smart-retry" },
+    { key: "processor-routing", label: "Processor Routing", icon: Globe },
+    { key: "processor-routing" as any, label: "Processor Analytics", icon: Zap, link: "/processor-analytics" },
+    { key: "multi-acquirer", label: "Multi-Acquirer", icon: Globe },
+    { key: "smart-retry", label: "Smart Retry AI", icon: Zap },
     { key: "deactivation", label: "Close Account", icon: AlertTriangle, destructive: true },
   ];
 
