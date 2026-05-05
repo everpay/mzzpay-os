@@ -226,16 +226,16 @@ export default function Subscriptions() {
   return (
     <AppLayout>
       <div className="mb-4">
-        <h1 className="font-heading text-2xl font-bold tracking-tight text-primary uppercase">Subscriptions</h1>
+        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Subscriptions</h1>
         <p className="mt-1 text-sm text-muted-foreground">Recurring plans, multi-currency pricing, trials & smart retries</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0">
-          {['Plans', 'Subscriptions'].map(tab => (
+          {['Plans', 'Subscriptions', 'Saved Cards'].map(tab => (
             <TabsTrigger
               key={tab}
-              value={tab.toLowerCase()}
+              value={tab.toLowerCase().replace(' ', '-')}
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-2 text-sm font-medium"
             >
               {tab}
