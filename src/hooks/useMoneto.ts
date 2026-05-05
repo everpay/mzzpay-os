@@ -23,6 +23,7 @@ interface CreatePayoutParams {
     account_holder_name: string;
   };
   description?: string;
+  idempotencyKey?: string;
 }
 
 export function useCreateMonetoPayment() {
