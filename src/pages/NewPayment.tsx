@@ -253,6 +253,16 @@ export default function NewPayment() {
         customerEmail: email,
         description,
         idempotencyKey,
+        billing: {
+          address: billingAddress.trim(),
+          city: billingCity.trim(),
+          state: billingState.trim(),
+          postal_code: billingPostalCode.trim(),
+          country: billingCountry,
+        },
+        customer: {
+          ip: customerIp || undefined,
+        },
       };
 
       if (paymentMethod === 'card') {
