@@ -164,15 +164,22 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
             <div className="space-y-2">
               <Label>Max Attempts</Label>
               <Input
-                className="rounded-2xl"
+                className={`rounded-2xl ${errors.max_attempts ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 type="number"
                 min={1}
                 max={10}
                 value={s.max_attempts}
-                onChange={(e) => setS({ ...s, max_attempts: parseInt(e.target.value) || 3 })}
+                onChange={(e) => {
+                  setS({ ...s, max_attempts: parseInt(e.target.value) || 0 });
+                  setErrors(prev => ({ ...prev, max_attempts: undefined }));
+                }}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">Maximum number of retries per failed payment (1-10)</p>
+              {errors.max_attempts ? (
+                <p className="text-xs text-destructive">{errors.max_attempts}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Maximum number of retries per failed payment (1-10)</p>
+              )}
             </div>
 
             <div className="space-y-2">
