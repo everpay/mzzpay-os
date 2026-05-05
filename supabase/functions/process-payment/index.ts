@@ -600,7 +600,24 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (txError) throw txError;
+    if (txError) {
+      // Log ledger/transaction posting failure in activity feed
+      try {
+        await supabase.from('provider_events').insert({
+          merchant_id: merchant.id,
+          provider,
+          event_type: 'payment.ledger_posting_failed',
+          payload: {
+            error: txError.message,
+            code: txError.code,
+            details: txError.details,
+            hint: txError.hint,
+            provider_ref: providerResponse?.id ?? providerResponse?.transaction_id ?? null,
+          },
+        });
+      } catch (_) { /* best-effort */ }
+      throw txError;
+    }
 
     await supabase.from('provider_events').insert({
       merchant_id: merchant.id,
