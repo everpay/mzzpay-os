@@ -90,6 +90,26 @@ serve(async (req) => {
         .insert({ user_id: userId, display_name: fullName });
     }
 
+    // Send transactional team-invite email so invitee gets a branded notification
+    try {
+      await supabase.functions.invoke('send-transactional-email', {
+        body: {
+          templateName: 'team-invite',
+          recipientEmail: email,
+          idempotencyKey: `team-invite-${userId}-${role}`,
+          templateData: {
+            inviteeName: fullName || email.split('@')[0],
+            inviterName: caller.email || 'A team member',
+            role,
+            loginUrl: 'https://mzzpay.io/auth',
+          },
+        },
+      });
+    } catch (emailErr) {
+      console.error('Failed to send team-invite transactional email:', emailErr);
+      // Non-fatal — the auth invite email is the primary mechanism
+    }
+
     return new Response(
       JSON.stringify({ success: true, userId, email, role }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
