@@ -778,10 +778,15 @@ export default function Settings() {
                   setIsInviting(true);
                   try {
                     const { data, error } = await supabase.functions.invoke("invite-admin", {
-                      body: { email: inviteEmail, fullName: inviteFullName, role: inviteRole },
+                      body: { email: inviteEmail, fullName: inviteFullName, role: inviteRole, idempotencyKey: `invite-${inviteEmail.toLowerCase()}-${inviteRole}` },
                     });
                     if (error) throw error;
                     if (data?.error) throw new Error(data.error);
+                    if (data?.duplicate) {
+                      notifySuccess(`This invitation was already sent (${data.first_seen_at ? 'at ' + new Date(data.first_seen_at).toLocaleString() : 'previously'})`);
+                      setIsInviting(false);
+                      return;
+                    }
                     await supabase.from("team_invitations" as any).upsert({
                       merchant_id: merchant.id,
                       invited_by: user!.id,
