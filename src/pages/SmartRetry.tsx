@@ -103,6 +103,7 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
 
   const save = async () => {
     if (!merchantId) return;
+    if (!validate()) return;
     setSaving(true);
     const { error } = await supabase
       .from('retry_settings')
