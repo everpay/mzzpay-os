@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RefreshCw, X, Plus, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-
 import { notifyError, notifySuccess } from '@/lib/error-toast';
+import { validateSmartRetry, declineCodeSchema, type BackoffStrategy } from '@/lib/smart-retry-schema';
 
 const DEFAULT_DECLINE_CODES = ['insufficient_funds', 'do_not_honor', 'try_again_later'];
 const SUGGESTED_CODES = [
@@ -56,26 +56,19 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
   const [errors, setErrors] = useState<FieldErrors>({});
 
   const validate = (): boolean => {
+    const fieldErrors = validateSmartRetry(s);
     const e: FieldErrors = {};
-    if (!Number.isInteger(s.max_attempts) || s.max_attempts < 1 || s.max_attempts > 10) {
-      e.max_attempts = 'Must be a whole number between 1 and 10';
-    }
-    if (!Number.isInteger(s.backoff_seconds) || s.backoff_seconds < 10 || s.backoff_seconds > 86400) {
-      e.backoff_seconds = 'Must be between 10 and 86,400 seconds (24 hours)';
-    }
-    if (s.retry_decline_codes.length === 0) {
-      e.decline_codes = 'At least one decline code is required';
-    }
+    if (fieldErrors.max_attempts) e.max_attempts = fieldErrors.max_attempts;
+    if (fieldErrors.backoff_seconds) e.backoff_seconds = fieldErrors.backoff_seconds;
+    if (fieldErrors.retry_decline_codes) e.decline_codes = fieldErrors.retry_decline_codes;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const validateNewCode = (code: string): string | null => {
-    const c = code.trim().toLowerCase().replace(/\s+/g, '_');
-    if (!c) return 'Code cannot be empty';
-    if (c.length > 50) return 'Code must be 50 characters or fewer';
-    if (!/^[a-z0-9_]+$/.test(c)) return 'Only lowercase letters, numbers, and underscores';
-    if (s.retry_decline_codes.includes(c)) return 'This code is already added';
+    const result = declineCodeSchema.safeParse(code);
+    if (!result.success) return result.error.issues[0]?.message || 'Invalid code';
+    if (s.retry_decline_codes.includes(result.data)) return 'This code is already added';
     return null;
   };
 

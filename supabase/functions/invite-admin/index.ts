@@ -91,12 +91,14 @@ serve(async (req) => {
     }
 
     // Send transactional team-invite email so invitee gets a branded notification
+    let emailSent = false;
+    let emailError: string | null = null;
     try {
-      await supabase.functions.invoke('send-transactional-email', {
+      const emailRes = await supabase.functions.invoke('send-transactional-email', {
         body: {
           templateName: 'team-invite',
           recipientEmail: email,
-          idempotencyKey: `team-invite-${userId}-${role}`,
+          idempotencyKey: `team-invite-${userId}-${role}-${Date.now()}`,
           templateData: {
             inviteeName: fullName || email.split('@')[0],
             inviterName: caller.email || 'A team member',
@@ -105,13 +107,19 @@ serve(async (req) => {
           },
         },
       });
+      if (emailRes.error) {
+        emailError = emailRes.error.message || 'Email service error';
+        console.error('Transactional email error:', emailRes.error);
+      } else {
+        emailSent = true;
+      }
     } catch (emailErr) {
+      emailError = emailErr instanceof Error ? emailErr.message : String(emailErr);
       console.error('Failed to send team-invite transactional email:', emailErr);
-      // Non-fatal — the auth invite email is the primary mechanism
     }
 
     return new Response(
-      JSON.stringify({ success: true, userId, email, role }),
+      JSON.stringify({ success: true, userId, email, role, emailSent, emailError }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
