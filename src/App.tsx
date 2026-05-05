@@ -263,11 +263,11 @@ const AppRoutes = () => (
     <Route path="/risk" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><RiskProfile /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/chargeflow" element={<Navigate to="/chargebacks" replace />} />
     <Route path="/3ds-settings" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin']}><ThreeDSecureSettings /></RoleProtectedRoute></ProtectedRoute>} />
-    <Route path="/smart-retry" element={<ProtectedRoute><SmartRetry /></ProtectedRoute>} />
-    <Route path="/processor-routing" element={<ProtectedRoute><ProcessorRouting /></ProtectedRoute>} />
-    <Route path="/processor-transparency" element={<Navigate to="/processor-routing" replace />} />
-    <Route path="/processor-analytics" element={<ProtectedRoute><ProcessorAnalyticsPage /></ProtectedRoute>} />
-    <Route path="/multi-acquirer" element={<ProtectedRoute><MultiAcquirer /></ProtectedRoute>} />
+     <Route path="/smart-retry" element={<Navigate to="/settings" replace />} />
+     <Route path="/processor-routing" element={<Navigate to="/settings" replace />} />
+     <Route path="/processor-transparency" element={<Navigate to="/settings" replace />} />
+     <Route path="/processor-analytics" element={<ProtectedRoute><ProcessorAnalyticsPage /></ProtectedRoute>} />
+     <Route path="/multi-acquirer" element={<Navigate to="/settings" replace />} />
     <Route path="/admin/processors" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><AdminProcessors /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/admin/email-log" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><AdminEmailLog /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/integrations" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin']}><Integrations /></RoleProtectedRoute></ProtectedRoute>} />
