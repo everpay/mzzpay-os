@@ -192,6 +192,14 @@ export default function Payouts() {
         }
       }
 
+      // Check for duplicate/idempotency replay
+      if (result.duplicate || result.idempotency_replayed) {
+        toast.warning('This payout was already submitted — no duplicate was created.');
+        setIsOpen(false);
+        resetForm();
+        return;
+      }
+
       setPayouts(prev => [{ id: result.payout_id, amount: parseFloat(amount), currency: destinationCurrency, status: 'processing', bank_name: `Bank ${institutionNumber}`, account_last4: accountNumber.slice(-4), created_at: new Date().toISOString() }, ...prev]);
 
       try {
@@ -208,6 +216,8 @@ export default function Payouts() {
       resetForm();
     } catch (error) {
       notifyError(error, { fallback: 'Failed to create payout' });
+    } finally {
+      setPayoutSubmitting(false);
     }
   };
 
