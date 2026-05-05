@@ -201,16 +201,24 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
             <div className="space-y-2">
               <Label>Initial Backoff (seconds)</Label>
               <Input
-                className="rounded-2xl"
+                className={`rounded-2xl ${errors.backoff_seconds ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 type="number"
                 min={10}
+                max={86400}
                 value={s.backoff_seconds}
-                onChange={(e) => setS({ ...s, backoff_seconds: parseInt(e.target.value) || 60 })}
+                onChange={(e) => {
+                  setS({ ...s, backoff_seconds: parseInt(e.target.value) || 0 });
+                  setErrors(prev => ({ ...prev, backoff_seconds: undefined }));
+                }}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">
-                Wait time before the first retry. Subsequent retries scale per the strategy above.
-              </p>
+              {errors.backoff_seconds ? (
+                <p className="text-xs text-destructive">{errors.backoff_seconds}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Wait time before the first retry. Subsequent retries scale per the strategy above.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
