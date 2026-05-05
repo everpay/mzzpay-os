@@ -118,7 +118,7 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
               </div>
               <Switch
                 checked={s.enabled}
-                onCheckedChange={v => setS({ ...s, enabled: v })}
+                onCheckedChange={(v) => setS({ ...s, enabled: v })}
                 disabled={loading}
               />
             </div>
@@ -131,7 +131,7 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
                 min={1}
                 max={10}
                 value={s.max_attempts}
-                onChange={e => setS({ ...s, max_attempts: parseInt(e.target.value) || 3 })}
+                onChange={(e) => setS({ ...s, max_attempts: parseInt(e.target.value) || 3 })}
                 disabled={loading}
               />
               <p className="text-xs text-muted-foreground">Maximum number of retries per failed payment (1-10)</p>
@@ -160,7 +160,7 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
                 type="number"
                 min={10}
                 value={s.backoff_seconds}
-                onChange={e => setS({ ...s, backoff_seconds: parseInt(e.target.value) || 60 })}
+                onChange={(e) => setS({ ...s, backoff_seconds: parseInt(e.target.value) || 60 })}
                 disabled={loading}
               />
               <p className="text-xs text-muted-foreground">
@@ -177,7 +177,7 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
                 {s.retry_decline_codes.length === 0 && (
                   <span className="text-xs text-muted-foreground">No codes configured</span>
                 )}
-                {s.retry_decline_codes.map(code => (
+                {s.retry_decline_codes.map((code) => (
                   <Badge key={code} variant="secondary" className="gap-1 pr-1">
                     {code}
                     <button
@@ -196,8 +196,8 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
                   className="rounded-2xl"
                   placeholder="e.g. expired_card"
                   value={newCode}
-                  onChange={e => setNewCode(e.target.value)}
-                  onKeyDown={e => {
+                  onChange={(e) => setNewCode(e.target.value)}
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       addCode(newCode);
@@ -215,7 +215,7 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
               </div>
               <div className="flex flex-wrap gap-1.5 pt-1">
                 <span className="text-xs text-muted-foreground mr-1">Suggested:</span>
-                {SUGGESTED_CODES.filter(c => !s.retry_decline_codes.includes(c)).map(c => (
+                {SUGGESTED_CODES.filter((c) => !s.retry_decline_codes.includes(c)).map((c) => (
                   <button
                     key={c}
                     type="button"
@@ -241,10 +241,14 @@ export default function SmartRetry({ embedded }: { embedded?: boolean }) {
             </Button>
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 
-  if (embedded) return content;
-  return <AppLayout>{content}</AppLayout>;
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <AppLayout>{content}</AppLayout>
+  );
 }

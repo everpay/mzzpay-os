@@ -32,7 +32,6 @@ import {
   BookOpen,
   Plug,
   Globe2,
-  Globe2,
   Server,
   LayoutGrid,
   Layers,
