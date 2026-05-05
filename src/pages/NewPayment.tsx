@@ -697,6 +697,73 @@ export default function NewPayment() {
             {validationErrors.email && <p className="text-xs text-destructive">{validationErrors.email}</p>}
           </div>
 
+          {/* Billing Address */}
+          <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+            <Label className="text-sm font-semibold">Billing Address</Label>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Street Address</Label>
+              <Input
+                placeholder="123 Main St" value={billingAddress}
+                onChange={(e) => setBillingAddress(e.target.value)}
+                className={`bg-background border-border ${validationErrors.billingAddress ? 'border-destructive' : ''}`}
+              />
+              {validationErrors.billingAddress && <p className="text-xs text-destructive">{validationErrors.billingAddress}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">City</Label>
+                <Input
+                  placeholder="New York" value={billingCity}
+                  onChange={(e) => setBillingCity(e.target.value)}
+                  className={`bg-background border-border ${validationErrors.billingCity ? 'border-destructive' : ''}`}
+                />
+                {validationErrors.billingCity && <p className="text-xs text-destructive">{validationErrors.billingCity}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">State / Province</Label>
+                <Input
+                  placeholder="NY" value={billingState}
+                  onChange={(e) => setBillingState(e.target.value)}
+                  className="bg-background border-border"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Postal Code</Label>
+                <Input
+                  placeholder="10001" value={billingPostalCode}
+                  onChange={(e) => setBillingPostalCode(e.target.value)}
+                  className={`bg-background border-border ${validationErrors.billingPostalCode ? 'border-destructive' : ''}`}
+                />
+                {validationErrors.billingPostalCode && <p className="text-xs text-destructive">{validationErrors.billingPostalCode}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Country</Label>
+                <Select value={billingCountry} onValueChange={setBillingCountry}>
+                  <SelectTrigger className={`bg-background border-border ${validationErrors.billingCountry ? 'border-destructive' : ''}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="US">🇺🇸 United States</SelectItem>
+                    <SelectItem value="CA">🇨🇦 Canada</SelectItem>
+                    <SelectItem value="GB">🇬🇧 United Kingdom</SelectItem>
+                    <SelectItem value="DE">🇩🇪 Germany</SelectItem>
+                    <SelectItem value="FR">🇫🇷 France</SelectItem>
+                    <SelectItem value="ES">🇪🇸 Spain</SelectItem>
+                    <SelectItem value="IT">🇮🇹 Italy</SelectItem>
+                    <SelectItem value="NL">🇳🇱 Netherlands</SelectItem>
+                    <SelectItem value="BR">🇧🇷 Brazil</SelectItem>
+                    <SelectItem value="MX">🇲🇽 Mexico</SelectItem>
+                    <SelectItem value="AU">🇦🇺 Australia</SelectItem>
+                    <SelectItem value="JP">🇯🇵 Japan</SelectItem>
+                  </SelectContent>
+                </Select>
+                {validationErrors.billingCountry && <p className="text-xs text-destructive">{validationErrors.billingCountry}</p>}
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
