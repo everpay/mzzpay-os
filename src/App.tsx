@@ -132,12 +132,29 @@ const isBillingSubdomain =
   typeof window !== "undefined" &&
   window.location.hostname.startsWith("billing.");
 
+const isPaySubdomain =
+  typeof window !== "undefined" &&
+  window.location.hostname.startsWith("pay.");
+
+const isJsSubdomain =
+  typeof window !== "undefined" &&
+  window.location.hostname.startsWith("js.");
+
 const CheckoutRootRedirect = () => {
   const search = typeof window !== "undefined" ? window.location.search : "";
   return <Navigate to={`/checkout${search}`} replace />;
 };
 
 const BillingRootRedirect = () => <Navigate to="/portal" replace />;
+
+/** pay.mzzpay.io/<invoiceId> → /pay/<invoiceId> */
+const PayRootRedirect = () => {
+  // On pay.mzzpay.io the path IS the invoice id (e.g. pay.mzzpay.io/abc-123)
+  const path = typeof window !== "undefined" ? window.location.pathname : "/";
+  const invoiceId = path.replace(/^\/+/, "");
+  if (invoiceId) return <Navigate to={`/pay/${invoiceId}`} replace />;
+  return <div className="min-h-screen flex items-center justify-center text-muted-foreground">No invoice specified</div>;
+};
 
 const AppRoutes = () => (
   <Routes>
