@@ -33,7 +33,7 @@ interface RetrySettings {
   retry_decline_codes: string[];
 }
 
-export default function SmartRetry() {
+export default function SmartRetry({ embedded }: { embedded?: boolean }) {
   const { user } = useAuth();
   const [merchantId, setMerchantId] = useState<string | null>(null);
   const [s, setS] = useState<RetrySettings>({
@@ -91,9 +91,8 @@ export default function SmartRetry() {
     setS({ ...s, retry_decline_codes: s.retry_decline_codes.filter(c => c !== code) });
   };
 
-  return (
-    <AppLayout>
-      <div className="space-y-6 max-w-3xl">
+  const content = (
+    <div className="space-y-6 max-w-3xl">
         <div>
           <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
             <RefreshCw className="h-6 w-6 text-primary" />
@@ -243,6 +242,9 @@ export default function SmartRetry() {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
+    </div>
   );
+
+  if (embedded) return content;
+  return <AppLayout>{content}</AppLayout>;
 }
