@@ -31,7 +31,7 @@ function useMultiAcquirerView() {
   });
 }
 
-export default function MultiAcquirer() {
+export default function MultiAcquirer({ embedded }: { embedded?: boolean }) {
   const { data, isLoading } = useMultiAcquirerView();
   const acquirers = data?.acquirers || [];
   const enabledIds = data?.enabledIds || new Set();
@@ -39,8 +39,8 @@ export default function MultiAcquirer() {
   const enabledCount = acquirers.filter((a: any) => enabledIds.has(a.id)).length;
   const regions = new Set(acquirers.map((a: any) => a.country).filter(Boolean));
 
-  return (
-    <AppLayout>
+  const content = (
+    <>
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Multi-Acquirer</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -141,6 +141,9 @@ export default function MultiAcquirer() {
           )}
         </CardContent>
       </Card>
-    </AppLayout>
+    </>
   );
+
+  if (embedded) return content;
+  return <AppLayout>{content}</AppLayout>;
 }
