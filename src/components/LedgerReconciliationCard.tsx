@@ -32,7 +32,7 @@ interface ReconciliationRow {
  * consistent than fetching all entries and aggregating client-side.
  */
 export function LedgerReconciliationCard() {
-  const { data, isLoading, refetch, isFetching } = useQuery({
+  const { data, isLoading, refetch, isFetching, isError, error } = useQuery({
     queryKey: ['dashboard-ledger-reconciliation'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -53,7 +53,7 @@ export function LedgerReconciliationCard() {
 
       if (error) {
         console.error('Reconciliation RPC error:', error);
-        return [] as ReconciliationRow[];
+        throw new Error(error.message || 'Reconciliation service unavailable');
       }
 
       return ((rows as any[]) || []).map((r: any): ReconciliationRow => ({
@@ -67,6 +67,7 @@ export function LedgerReconciliationCard() {
       }));
     },
     staleTime: 60_000,
+    retry: 2,
   });
 
   const stats = useMemo(() => {
