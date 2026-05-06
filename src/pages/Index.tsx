@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { PeriodSelector, type PeriodValue, getPeriodCutoff } from '@/components/PeriodSelector';
 import { CurrencySelector } from '@/components/CurrencySelector';
 // Card battery test panel moved to Transactions (super_admin only).
+import { LedgerReconciliationCard } from '@/components/LedgerReconciliationCard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
