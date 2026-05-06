@@ -98,6 +98,7 @@ export default function PayInvoice() {
           first: holderName.split(' ')[0] || '',
           last: holderName.split(' ').slice(1).join(' ') || '',
           phone: customerPhone,
+          ip: '0.0.0.0',
         },
         billing: {
           address: billingAddress,
@@ -131,7 +132,7 @@ export default function PayInvoice() {
       }
 
       // Validation error — surface field-level details
-      if (data?.error_code === 'processor_validation_error') {
+      if (data?.error_code === 'processor_validation_error' || data?.code === 'processor_validation_error') {
         let fErrors: Record<string, string[]> = {};
         const raw = data?.validation?.fieldErrors;
         if (Array.isArray(raw)) {
@@ -146,7 +147,7 @@ export default function PayInvoice() {
         const fmErrors = Array.isArray(data?.validation?.formErrors) ? data.validation.formErrors : [];
         setInvoiceFieldErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
         setInvoiceFormErrors(fmErrors);
-        notifyError(data.error || 'Invalid payment details');
+        // Only show the inline FormValidationBanner — no redundant toast
         return;
       }
 

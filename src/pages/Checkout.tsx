@@ -130,6 +130,7 @@ export default function Checkout() {
           first: customerName.split(' ')[0] || '',
           last: customerName.split(' ').slice(1).join(' ') || '',
           phone: customerPhone,
+          ip: '0.0.0.0',
         },
         billing: {
           address: billingAddress,
@@ -169,7 +170,7 @@ export default function Checkout() {
         const fmErrors = Array.isArray(data?.validation?.formErrors) ? data.validation.formErrors : [];
         setCheckoutFieldErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
         setCheckoutFormErrors(fmErrors);
-        notifyError({ code: 'processor_validation_error', message: data.error });
+        // Only show the inline FormValidationBanner — no redundant toast
         return;
       }
 
