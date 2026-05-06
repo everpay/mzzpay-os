@@ -245,7 +245,8 @@ export default function NewPayment() {
       }
 
       if (data?.success) {
-        setValidationError(null);
+        setFieldErrors(null);
+        setFormErrors([]);
         idempotencyKeyRef.current = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const desc = `${amount} ${currency} via ${selectedProvider} — ${data.transaction.id.slice(0, 8)}. Verifying ledger...`;
         setResultBanner({ tone: 'info', title: 'Verifying charge', description: desc, txId: data.transaction.id });
