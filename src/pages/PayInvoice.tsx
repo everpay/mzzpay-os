@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText, Download, Bitcoin, RefreshCw, AlertTriangle } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
-import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { getThreeDSecureRedirectUrl } from '@/lib/three-d-secure';
 import { formatCurrency } from '@/lib/format';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
@@ -44,11 +43,6 @@ export default function PayInvoice() {
 
   // Stable idempotency key for the invoice payment session
   const [idempotencyKey] = useState(() => `inv_${invoiceId}_${crypto.randomUUID()}`);
-
-  // 3DS state
-  const [show3DS, setShow3DS] = useState(false);
-  const [threeDSUrl, setThreeDSUrl] = useState('');
-  const [threeDSTxId, setThreeDSTxId] = useState('');
 
   useEffect(() => {
     if (!invoiceId) return;
@@ -165,9 +159,10 @@ export default function PayInvoice() {
       const provResp = data?.providerResponse || {};
       const threeDsRedirect = getThreeDSecureRedirectUrl(provResp, 'card');
       if (threeDsRedirect) {
-        setThreeDSUrl(threeDsRedirect);
-        setThreeDSTxId(data.transaction?.id || '');
-        setShow3DS(true);
+        // Direct redirect to issuer OTP — no modal
+        sessionStorage.setItem('3ds_transaction_id', data.transaction?.id || '');
+        sessionStorage.setItem('3ds_return_to', window.location.pathname);
+        window.location.href = threeDsRedirect;
         return;
       }
 
@@ -479,18 +474,6 @@ export default function PayInvoice() {
         </div>
       )}
 
-      <ThreeDSecureModal
-        open={show3DS}
-        onClose={() => setShow3DS(false)}
-        redirectUrl={threeDSUrl}
-        transactionId={threeDSTxId}
-        onComplete={handle3DSComplete}
-        onFailed={(result) => {
-          setShow3DS(false);
-          const reason = result?.errorMessage || 'Authentication failed';
-          toast.error(reason);
-        }}
-      />
     </div>
   );
 }
