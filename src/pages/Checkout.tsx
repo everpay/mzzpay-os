@@ -8,7 +8,6 @@ import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Buil
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 import { supabase } from '@/integrations/supabase/client';
-import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { getThreeDSecureRedirectUrl } from '@/lib/three-d-secure';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { CountrySelect } from '@/components/CountrySelect';
@@ -54,10 +53,6 @@ export default function Checkout() {
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [checkoutFieldErrors, setCheckoutFieldErrors] = useState<Record<string, string[]> | null>(null);
   const [checkoutFormErrors, setCheckoutFormErrors] = useState<string[]>([]);
-
-  const [show3DS, setShow3DS] = useState(false);
-  const [threeDSUrl, setThreeDSUrl] = useState('');
-  const [threeDSTxId, setThreeDSTxId] = useState('');
 
   // Retry / processor-error UI state
   const [retryCount, setRetryCount] = useState(0);
@@ -243,9 +238,10 @@ export default function Checkout() {
       const provResp = data?.providerResponse || {};
       const threeDsRedirect = getThreeDSecureRedirectUrl(provResp, 'card');
       if (threeDsRedirect) {
-        setThreeDSUrl(threeDsRedirect);
-        setThreeDSTxId(data.transaction?.id || '');
-        setShow3DS(true);
+        // Direct redirect to issuer OTP — no modal
+        sessionStorage.setItem('3ds_transaction_id', data.transaction?.id || '');
+        sessionStorage.setItem('3ds_return_to', '/checkout' + window.location.search);
+        window.location.href = threeDsRedirect;
         return;
       }
 
@@ -687,22 +683,6 @@ export default function Checkout() {
         </div>
       )}
 
-      <ThreeDSecureModal
-        open={show3DS}
-        onClose={() => setShow3DS(false)}
-        redirectUrl={threeDSUrl}
-        transactionId={threeDSTxId}
-        onComplete={() => {
-          setPaymentComplete(true);
-          redirectToOutcome('success', threeDSTxId);
-        }}
-        onFailed={(result) => {
-          setShow3DS(false);
-          const reason = result?.errorMessage || 'Authentication failed';
-          toast.error(reason);
-          redirectToOutcome('failed', threeDSTxId);
-        }}
-      />
     </div>
   );
 }
