@@ -4067,6 +4067,18 @@ export type Database = {
         Args: { _account_id: string }
         Returns: number
       }
+      merchant_reconciliation_rows: {
+        Args: { _merchant_id: string }
+        Returns: {
+          account_id: string
+          currency: string
+          discrepancy: number
+          entry_count: number
+          ledger_total: number
+          status: string
+          stored_balance: number
+        }[]
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
