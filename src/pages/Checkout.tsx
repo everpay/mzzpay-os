@@ -15,6 +15,7 @@ import { validateCheckoutParams } from '@/lib/checkout-params';
 import { notifyError } from '@/lib/error-toast';
 
 import { toast } from 'sonner';
+import { FormValidationBanner } from '@/components/FormValidationBanner';
 
 const DOMAIN = 'mzzpay.io';
 
@@ -53,6 +54,10 @@ export default function Checkout() {
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [checkoutFieldErrors, setCheckoutFieldErrors] = useState<Record<string, string[]> | null>(null);
   const [checkoutFormErrors, setCheckoutFormErrors] = useState<string[]>([]);
+  // Unified validation banner data
+  const validationBannerData = (checkoutFieldErrors || checkoutFormErrors.length > 0)
+    ? { fieldErrors: checkoutFieldErrors, formErrors: checkoutFormErrors }
+    : null;
 
   // Retry / processor-error UI state
   const [retryCount, setRetryCount] = useState(0);
@@ -512,6 +517,9 @@ export default function Checkout() {
             </p>
           </DialogContent>
         </Dialog>
+
+        {/* Validation banner */}
+        <FormValidationBanner data={validationBannerData} onDismiss={() => { setCheckoutFieldErrors(null); setCheckoutFormErrors([]); }} />
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">
