@@ -27,6 +27,7 @@ import { template as subscriptionRenewed } from './subscription-renewed.tsx'
 import { template as subscriptionCanceled } from './subscription-canceled.tsx'
 import { template as settlementReady } from './settlement-ready.tsx'
 import { template as teamInvite } from './team-invite.tsx'
+import { template as adminNewSignup } from './admin-new-signup.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'payment-confirmation': paymentConfirmation,
@@ -47,4 +48,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'subscription-canceled': subscriptionCanceled,
   'settlement-ready': settlementReady,
   'team-invite': teamInvite,
+  'admin-new-signup': adminNewSignup,
 }

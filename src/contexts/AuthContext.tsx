@@ -80,10 +80,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
         if (welcomeError) {
           console.warn('Welcome email could not be queued', { reason, welcomeError });
-          // Allow a retry next event since this attempt failed before the
-          // server-side idempotency reservation.
           welcomeAttemptedThisSession.delete(user.id);
         }
+
+        // Notify admin about the new signup (idempotent – one per user)
+        supabase.functions.invoke('send-transactional-email', {
+          body: {
+            templateName: 'admin-new-signup',
+            recipientEmail: 'admin@mzzpay.io',
+            idempotencyKey: `admin-new-signup-${user.id}`,
+            templateData: {
+              userEmail: recipient,
+              displayName,
+              businessName: merchantName,
+              signupDate: new Date().toISOString(),
+            },
+          },
+        }).catch((err) => console.warn('Admin signup notification skipped:', err));
       } catch (err) {
         console.warn('welcome email skipped:', err);
       }
