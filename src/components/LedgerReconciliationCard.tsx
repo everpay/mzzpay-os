@@ -32,7 +32,7 @@ interface ReconciliationRow {
  * consistent than fetching all entries and aggregating client-side.
  */
 export function LedgerReconciliationCard() {
-  const { data, isLoading, refetch, isFetching } = useQuery({
+  const { data, isLoading, refetch, isFetching, isError, error } = useQuery({
     queryKey: ['dashboard-ledger-reconciliation'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -53,7 +53,7 @@ export function LedgerReconciliationCard() {
 
       if (error) {
         console.error('Reconciliation RPC error:', error);
-        return [] as ReconciliationRow[];
+        throw new Error(error.message || 'Reconciliation service unavailable');
       }
 
       return ((rows as any[]) || []).map((r: any): ReconciliationRow => ({
@@ -67,6 +67,7 @@ export function LedgerReconciliationCard() {
       }));
     },
     staleTime: 60_000,
+    retry: 2,
   });
 
   const stats = useMemo(() => {
@@ -103,7 +104,18 @@ export function LedgerReconciliationCard() {
       </CardHeader>
 
       <CardContent className="space-y-3">
-        {isLoading ? (
+        {isError ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center gap-3" data-testid="recon-error-fallback">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+            <p className="text-sm text-muted-foreground">
+              Reconciliation data is temporarily unavailable. Please try again.
+            </p>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
+              Retry
+            </Button>
+          </div>
+        ) : isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>

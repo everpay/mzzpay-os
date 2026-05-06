@@ -58,7 +58,7 @@ serve(async (req) => {
     if (rpcErr) {
       console.error("Reconciliation RPC error:", rpcErr);
       return new Response(
-        JSON.stringify({ error: "Failed to compute reconciliation", details: rpcErr.message }),
+        JSON.stringify({ error: "RECONCILIATION_SERVICE_ERROR", fallback: true, details: rpcErr.message }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }

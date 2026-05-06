@@ -41,8 +41,9 @@ describe('NewPayment validation error handling', () => {
     expect(src).not.toContain('ValidationPayload');
   });
 
-  it('calls notifyError for processor validation errors', () => {
-    expect(src).toContain("notifyError({ code: 'processor_validation_error'");
+  it('does NOT fire a redundant toast for validation errors', () => {
+    // After the fix, processor_validation_error should only show the inline banner
+    expect(src).not.toMatch(/notifyError.*processor_validation_error/);
   });
 });
 
