@@ -155,7 +155,8 @@ export default function NewPayment() {
     }
 
     setResultBanner(null);
-    setValidationError(null);
+    setFieldErrors(null);
+    setFormErrors([]);
     setIsSubmitting(true);
 
     try {
