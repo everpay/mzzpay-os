@@ -13,7 +13,7 @@ import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { CountrySelect } from '@/components/CountrySelect';
 import { validateCheckoutParams } from '@/lib/checkout-params';
 import { notifyError } from '@/lib/error-toast';
-import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
+
 import { toast } from 'sonner';
 
 const DOMAIN = 'mzzpay.io';
@@ -401,13 +401,6 @@ export default function Checkout() {
           </div>
         )}
 
-        {checkoutFieldErrors && (
-          <ValidationErrorBanner
-            title="Payment Validation Failed"
-            fieldErrors={checkoutFieldErrors}
-            formErrors={checkoutFormErrors}
-          />
-        )}
 
         {!checkoutBlocked && warningIssues.length > 0 && (
           <div

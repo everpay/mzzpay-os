@@ -14,7 +14,7 @@ import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { notifyError } from '@/lib/error-toast';
 import { CountrySelect } from '@/components/CountrySelect';
-import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
+
 import { toast } from 'sonner';
 
 export default function PayInvoice() {
@@ -289,13 +289,6 @@ export default function PayInvoice() {
           )}
         </div>
 
-        {invoiceFieldErrors && (
-          <ValidationErrorBanner
-            title="Payment Validation Failed"
-            fieldErrors={invoiceFieldErrors}
-            formErrors={invoiceFormErrors}
-          />
-        )}
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">
