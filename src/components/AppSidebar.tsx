@@ -233,7 +233,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border px-3 py-3 space-y-1">
+      <div className="shrink-0 border-t border-sidebar-border px-3 py-3 space-y-1">
         {user && (
           <div className="px-3 py-1.5">
             <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
