@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { PeriodSelector, type PeriodValue, getPeriodCutoff } from '@/components/PeriodSelector';
 import { CurrencySelector } from '@/components/CurrencySelector';
 // Card battery test panel moved to Transactions (super_admin only).
+import { LedgerReconciliationCard } from '@/components/LedgerReconciliationCard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
@@ -238,6 +239,15 @@ const Index = () => {
             <ProviderAnalytics />
           </TabsContent>
         </Tabs>
+      </motion.div>
+
+      <motion.div
+        className="mb-6"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <LedgerReconciliationCard />
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
