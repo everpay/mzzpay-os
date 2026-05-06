@@ -195,7 +195,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       {/* Logo */}
-      <div className="flex h-14 items-center justify-center border-b border-sidebar-border px-3">
+      <div className="flex h-14 shrink-0 items-center justify-center border-b border-sidebar-border px-3">
         <BrandLogo
           iconOnly
           iconSizeClassName="h-12"
@@ -233,7 +233,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border px-3 py-3 space-y-1">
+      <div className="shrink-0 border-t border-sidebar-border px-3 py-3 space-y-1">
         {user && (
           <div className="px-3 py-1.5">
             <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
