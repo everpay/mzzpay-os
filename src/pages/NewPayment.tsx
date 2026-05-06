@@ -17,7 +17,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SecureCardForm } from '@/components/SecureCardForm';
 import { isValidationError, type ValidationPayload } from '@/components/ValidationErrorBanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
+
 import { usePaymentPolling } from '@/hooks/usePaymentPolling';
 import { getThreeDSecureRedirectUrl } from '@/lib/three-d-secure';
 import { PaymentResultBanner, type PaymentResultBannerData } from '@/components/PaymentResultBanner';
@@ -77,9 +77,6 @@ export default function NewPayment() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [vgsToken, setVgsToken] = useState('');
   const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
-  const [threeDSUrl, setThreeDSUrl] = useState('');
-  const [threeDSTransactionId, setThreeDSTransactionId] = useState('');
-  const [showThreeDS, setShowThreeDS] = useState(false);
   const [resultBanner, setResultBanner] = useState<PaymentResultBannerData | null>(null);
   const [validationError, setValidationError] = useState<ValidationPayload | null>(null);
   const [formResetKey, setFormResetKey] = useState(0);
@@ -220,12 +217,11 @@ export default function NewPayment() {
       const threeDSRedirectUrl = !isTerminal ? getThreeDSecureRedirectUrl(data?.providerResponse, paymentMethod) : null;
 
       if (threeDSRedirectUrl) {
-        setResultBanner(null);
-        setThreeDSUrl(threeDSRedirectUrl);
-        setThreeDSTransactionId(data.transaction?.id || '');
-        setShowThreeDS(true);
+        // Store context for the /3ds-result callback page, then redirect to issuer OTP
+        sessionStorage.setItem('3ds_transaction_id', data.transaction?.id || '');
+        sessionStorage.setItem('3ds_return_to', '/payments/new');
         if (data.transaction?.id) startPolling(data.transaction.id);
-        setIsSubmitting(false);
+        window.location.href = threeDSRedirectUrl;
         return;
       }
 
@@ -496,35 +492,6 @@ export default function NewPayment() {
         </div>
       </div>
 
-      {showThreeDS && threeDSUrl && (
-        <ThreeDSecureModal
-          open={showThreeDS}
-          onClose={() => setShowThreeDS(false)}
-          redirectUrl={threeDSUrl}
-          transactionId={threeDSTransactionId}
-          onComplete={async (result) => {
-            setShowThreeDS(false);
-            const { data: confirmData, error: confirmErr } = await supabase.functions.invoke('confirm-3ds-result', {
-              body: { transaction_id: threeDSTransactionId, transaction_reference: result?.transactionReference, status: 'completed', raw_status: result?.rawStatus },
-            });
-            if (confirmErr) {
-              setResultBanner({ tone: 'error', title: 'Payment could not be confirmed', description: confirmErr?.message || 'Could not verify authentication' });
-              return;
-            }
-            setResultBanner({ tone: 'success', title: 'Payment approved', description: 'Authentication completed.' });
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
-          }}
-          onFailed={async (result) => {
-            setShowThreeDS(false);
-            const reason = result?.errorMessage || 'Authentication failed';
-            await supabase.functions.invoke('confirm-3ds-result', {
-              body: { transaction_id: threeDSTransactionId, transaction_reference: result?.transactionReference, status: 'failed', error_code: result?.errorCode || '3DS_FAILED', error_message: reason, raw_status: result?.rawStatus },
-            });
-            setResultBanner({ tone: 'error', title: 'Payment declined', description: reason, code: result?.errorCode });
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
-          }}
-        />
-      )}
     </AppLayout>
   );
 }
