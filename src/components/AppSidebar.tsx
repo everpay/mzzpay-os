@@ -289,7 +289,7 @@ export function AppSidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[240px] flex-col border-r border-sidebar-border bg-sidebar">
+    <aside className="fixed left-0 top-0 z-40 flex h-dvh w-[240px] flex-col border-r border-sidebar-border bg-sidebar">
       <SidebarBody />
     </aside>
   );
