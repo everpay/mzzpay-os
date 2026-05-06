@@ -204,7 +204,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
         {navSections.map((section, idx) => {
           if (!isSectionVisible(section.title)) return null;
           const visibleItems = section.items.filter(isItemVisible).filter(isItemAllowedForSupport);
