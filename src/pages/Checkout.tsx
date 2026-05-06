@@ -9,11 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
+import { getThreeDSecureRedirectUrl } from '@/lib/three-d-secure';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { CountrySelect } from '@/components/CountrySelect';
 import { validateCheckoutParams } from '@/lib/checkout-params';
 import { notifyError } from '@/lib/error-toast';
-import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
+
 import { toast } from 'sonner';
 
 const DOMAIN = 'mzzpay.io';
@@ -238,10 +239,10 @@ export default function Checkout() {
         return;
       }
 
-      // 3DS redirect
+      // 3DS redirect — use full Everpay detection logic
       const provResp = data?.providerResponse || {};
-      const threeDsRedirect = provResp['3d_secure_redirect_url'] || provResp.redirect_url;
-      if (provResp.transaction_status === 'INITIATED' && threeDsRedirect) {
+      const threeDsRedirect = getThreeDSecureRedirectUrl(provResp, 'card');
+      if (threeDsRedirect) {
         setThreeDSUrl(threeDsRedirect);
         setThreeDSTxId(data.transaction?.id || '');
         setShow3DS(true);
@@ -401,13 +402,6 @@ export default function Checkout() {
           </div>
         )}
 
-        {checkoutFieldErrors && (
-          <ValidationErrorBanner
-            title="Payment Validation Failed"
-            fieldErrors={checkoutFieldErrors}
-            formErrors={checkoutFormErrors}
-          />
-        )}
 
         {!checkoutBlocked && warningIssues.length > 0 && (
           <div
@@ -701,6 +695,12 @@ export default function Checkout() {
         onComplete={() => {
           setPaymentComplete(true);
           redirectToOutcome('success', threeDSTxId);
+        }}
+        onFailed={(result) => {
+          setShow3DS(false);
+          const reason = result?.errorMessage || 'Authentication failed';
+          toast.error(reason);
+          redirectToOutcome('failed', threeDSTxId);
         }}
       />
     </div>

@@ -15,7 +15,7 @@ import { CreditCard, ArrowRight, Loader2, Globe, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SecureCardForm } from '@/components/SecureCardForm';
-import { ValidationErrorBanner, isValidationError, type ValidationPayload } from '@/components/ValidationErrorBanner';
+import { isValidationError, type ValidationPayload } from '@/components/ValidationErrorBanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
 import { usePaymentPolling } from '@/hooks/usePaymentPolling';
@@ -279,7 +279,7 @@ export default function NewPayment() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-5 rounded-xl border border-border bg-card p-6 shadow-card">
-          {validationError && <ValidationErrorBanner data={validationError} />}
+          {/* Validation errors surfaced via PaymentResultBanner */}
           <PaymentResultBanner banner={resultBanner} onDismiss={() => setResultBanner(null)} />
 
           <div className="grid grid-cols-2 gap-4">

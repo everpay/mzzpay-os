@@ -9,12 +9,13 @@ import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Buil
 
 import { supabase } from '@/integrations/supabase/client';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
+import { getThreeDSecureRedirectUrl } from '@/lib/three-d-secure';
 import { formatCurrency } from '@/lib/format';
 import { generateInvoicePDF } from '@/lib/invoice-pdf';
 import { CryptoPaymentPanel } from '@/components/CryptoPaymentPanel';
 import { notifyError } from '@/lib/error-toast';
 import { CountrySelect } from '@/components/CountrySelect';
-import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
+
 import { toast } from 'sonner';
 
 export default function PayInvoice() {
@@ -160,10 +161,10 @@ export default function PayInvoice() {
         return;
       }
 
-      // Check for 3DS redirect — handle both Shieldhub and Mondo response shapes
+      // 3DS redirect — use full Everpay detection logic
       const provResp = data?.providerResponse || {};
-      const threeDsRedirect = provResp['3d_secure_redirect_url'] || provResp.redirect_url;
-      if ((provResp.transaction_status === 'INITIATED' || provResp.status === 'Redirect') && threeDsRedirect) {
+      const threeDsRedirect = getThreeDSecureRedirectUrl(provResp, 'card');
+      if (threeDsRedirect) {
         setThreeDSUrl(threeDsRedirect);
         setThreeDSTxId(data.transaction?.id || '');
         setShow3DS(true);
@@ -289,13 +290,6 @@ export default function PayInvoice() {
           )}
         </div>
 
-        {invoiceFieldErrors && (
-          <ValidationErrorBanner
-            title="Payment Validation Failed"
-            fieldErrors={invoiceFieldErrors}
-            formErrors={invoiceFormErrors}
-          />
-        )}
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">
@@ -491,6 +485,11 @@ export default function PayInvoice() {
         redirectUrl={threeDSUrl}
         transactionId={threeDSTxId}
         onComplete={handle3DSComplete}
+        onFailed={(result) => {
+          setShow3DS(false);
+          const reason = result?.errorMessage || 'Authentication failed';
+          toast.error(reason);
+        }}
       />
     </div>
   );
