@@ -202,17 +202,6 @@ export default function PayInvoice() {
     }
   };
 
-  const handle3DSComplete = async () => {
-    if (invoice && threeDSTxId) {
-      await supabase.from('invoices').update({
-        status: 'paid',
-        paid_at: new Date().toISOString(),
-        transaction_id: threeDSTxId,
-      }).eq('id', invoice.id);
-    }
-    setPaymentComplete(true);
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
