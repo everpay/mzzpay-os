@@ -220,7 +220,7 @@ export default function NewPayment() {
         const fmErrors = Array.isArray(data?.validation?.formErrors) ? data.validation.formErrors : [];
         setFieldErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
         setFormErrors(fmErrors);
-        notifyError({ code: 'processor_validation_error', message: data.error });
+        // Only show the inline FormValidationBanner — no redundant toast
         setIsSubmitting(false);
         return;
       }
