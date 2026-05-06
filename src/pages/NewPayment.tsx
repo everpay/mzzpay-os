@@ -79,8 +79,11 @@ export default function NewPayment() {
   const [vgsToken, setVgsToken] = useState('');
   const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
   const [resultBanner, setResultBanner] = useState<PaymentResultBannerData | null>(null);
-  const [validationError, setValidationError] = useState<ValidationPayload | null>(null);
-  const [formResetKey, setFormResetKey] = useState(0);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]> | null>(null);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+  const validationBannerData: FormValidationBannerData | null = (fieldErrors || formErrors.length > 0)
+    ? { fieldErrors, formErrors }
+    : null;
   const idempotencyKeyRef = useRef(`pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
 
   const queryClient = useQueryClient();
