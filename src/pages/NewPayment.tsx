@@ -295,8 +295,10 @@ export default function NewPayment() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-5 rounded-xl border border-border bg-card p-6 shadow-card">
-          {/* Validation errors surfaced via PaymentResultBanner */}
+          {/* Payment result banner (success/error/info) */}
           <PaymentResultBanner banner={resultBanner} onDismiss={() => setResultBanner(null)} />
+          {/* Field-level validation errors from the processor */}
+          <FormValidationBanner data={validationBannerData} onDismiss={() => { setFieldErrors(null); setFormErrors([]); }} />
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
