@@ -84,6 +84,7 @@ export default function NewPayment() {
   const validationBannerData: FormValidationBannerData | null = (fieldErrors || formErrors.length > 0)
     ? { fieldErrors, formErrors }
     : null;
+  const [formResetKey, setFormResetKey] = useState(0);
   const idempotencyKeyRef = useRef(`pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
 
   const queryClient = useQueryClient();
