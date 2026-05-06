@@ -15,8 +15,9 @@ import { CreditCard, ArrowRight, Loader2, Globe, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SecureCardForm } from '@/components/SecureCardForm';
-import { isValidationError, type ValidationPayload } from '@/components/ValidationErrorBanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FormValidationBanner, type FormValidationBannerData } from '@/components/FormValidationBanner';
+import { notifyError } from '@/lib/error-toast';
 
 import { usePaymentPolling } from '@/hooks/usePaymentPolling';
 import { getThreeDSecureRedirectUrl } from '@/lib/three-d-secure';
