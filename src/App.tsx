@@ -230,6 +230,7 @@ const AppRoutes = () => (
     <Route path="/payments/new" element={<ProtectedRoute><RoleProtectedRoute strict allowedRoles={['super_admin','admin','merchant','reseller','developer','compliance_officer','agent','employee']}><NewPayment /></RoleProtectedRoute></ProtectedRoute>} />
     <Route path="/payment-links" element={<ProtectedRoute><PaymentLinks /></ProtectedRoute>} />
     <Route path="/checkout" element={<Checkout />} />
+    <Route path="/3ds-result" element={<ThreeDSecureResult />} />
     <Route path="/checkout/thank-you" element={<CheckoutThankYou />} />
     <Route path="/checkout/declined" element={<CheckoutDeclined />} />
     <Route path="/pay/:invoiceId" element={<PayInvoice />} />
