@@ -81,7 +81,7 @@ describe('PayInvoice validation error handling', () => {
 
   it('parses processor_validation_error with field-level detail', () => {
     expect(src).toContain("processor_validation_error");
-    expect(src).toContain('setInvoiceFieldErrors') || expect(src).toContain('invoiceFieldErrors');
+    expect(src).toMatch(/setInvoiceFieldErrors|invoiceFieldErrors/);
   });
 });
 
