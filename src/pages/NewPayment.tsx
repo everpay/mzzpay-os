@@ -204,9 +204,22 @@ export default function NewPayment() {
         throw new Error(typeof errBody === 'string' ? errBody : JSON.stringify(errBody));
       }
 
-      if (isValidationError(data)) {
-        setValidationError(data as ValidationPayload);
-        setResultBanner({ tone: 'error', title: 'Validation error', description: 'Please correct the highlighted fields.' });
+      if (data?.error_code === 'processor_validation_error' || data?.code === 'processor_validation_error') {
+        let fErrors: Record<string, string[]> = {};
+        const raw = data?.validation?.fieldErrors;
+        if (Array.isArray(raw)) {
+          for (const e of raw) {
+            const k = e?.field ?? 'unknown';
+            if (!fErrors[k]) fErrors[k] = [];
+            fErrors[k].push(e?.message ?? String(e));
+          }
+        } else if (raw && typeof raw === 'object') {
+          fErrors = raw;
+        }
+        const fmErrors = Array.isArray(data?.validation?.formErrors) ? data.validation.formErrors : [];
+        setFieldErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
+        setFormErrors(fmErrors);
+        notifyError({ code: 'processor_validation_error', message: data.error });
         setIsSubmitting(false);
         return;
       }
