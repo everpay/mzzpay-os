@@ -153,7 +153,7 @@ describe('Settlement and payout status transition UI', () => {
     const src = await import.meta.glob('/src/components/ActivityFeed.tsx', { as: 'raw', eager: true });
     const code = Object.values(src)[0] as string;
     expect(code).toBeTruthy();
-    expect(code).toContain('activity');
+    expect(code).toContain('event');
   });
 
   it('PayoutSettlementTimeline component exists', async () => {
