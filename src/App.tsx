@@ -48,6 +48,7 @@ import DocsVerification from "./pages/docs/DocsVerification";
 import DocsApiReference from "./pages/docs/DocsApiReference";
 import Invoices from "./pages/Invoices";
 import PayInvoice from "./pages/PayInvoice";
+import ThreeDSecureResult from "./pages/ThreeDSecureResult";
 import ResellerPortal from "./pages/ResellerPortal";
 import Customers from "./pages/Customers";
 import MerchantDisputes from "./pages/merchant/MerchantDisputes";
