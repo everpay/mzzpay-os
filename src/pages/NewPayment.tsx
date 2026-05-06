@@ -15,8 +15,9 @@ import { CreditCard, ArrowRight, Loader2, Globe, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SecureCardForm } from '@/components/SecureCardForm';
-import { isValidationError, type ValidationPayload } from '@/components/ValidationErrorBanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FormValidationBanner, type FormValidationBannerData } from '@/components/FormValidationBanner';
+import { notifyError } from '@/lib/error-toast';
 
 import { usePaymentPolling } from '@/hooks/usePaymentPolling';
 import { getThreeDSecureRedirectUrl } from '@/lib/three-d-secure';
@@ -78,7 +79,11 @@ export default function NewPayment() {
   const [vgsToken, setVgsToken] = useState('');
   const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
   const [resultBanner, setResultBanner] = useState<PaymentResultBannerData | null>(null);
-  const [validationError, setValidationError] = useState<ValidationPayload | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]> | null>(null);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+  const validationBannerData: FormValidationBannerData | null = (fieldErrors || formErrors.length > 0)
+    ? { fieldErrors, formErrors }
+    : null;
   const [formResetKey, setFormResetKey] = useState(0);
   const idempotencyKeyRef = useRef(`pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
 
@@ -150,7 +155,8 @@ export default function NewPayment() {
     }
 
     setResultBanner(null);
-    setValidationError(null);
+    setFieldErrors(null);
+    setFormErrors([]);
     setIsSubmitting(true);
 
     try {
@@ -198,9 +204,22 @@ export default function NewPayment() {
         throw new Error(typeof errBody === 'string' ? errBody : JSON.stringify(errBody));
       }
 
-      if (isValidationError(data)) {
-        setValidationError(data as ValidationPayload);
-        setResultBanner({ tone: 'error', title: 'Validation error', description: 'Please correct the highlighted fields.' });
+      if (data?.error_code === 'processor_validation_error' || data?.code === 'processor_validation_error') {
+        let fErrors: Record<string, string[]> = {};
+        const raw = data?.validation?.fieldErrors;
+        if (Array.isArray(raw)) {
+          for (const e of raw) {
+            const k = e?.field ?? 'unknown';
+            if (!fErrors[k]) fErrors[k] = [];
+            fErrors[k].push(e?.message ?? String(e));
+          }
+        } else if (raw && typeof raw === 'object') {
+          fErrors = raw;
+        }
+        const fmErrors = Array.isArray(data?.validation?.formErrors) ? data.validation.formErrors : [];
+        setFieldErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
+        setFormErrors(fmErrors);
+        notifyError({ code: 'processor_validation_error', message: data.error });
         setIsSubmitting(false);
         return;
       }
@@ -226,7 +245,8 @@ export default function NewPayment() {
       }
 
       if (data?.success) {
-        setValidationError(null);
+        setFieldErrors(null);
+        setFormErrors([]);
         idempotencyKeyRef.current = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const desc = `${amount} ${currency} via ${selectedProvider} — ${data.transaction.id.slice(0, 8)}. Verifying ledger...`;
         setResultBanner({ tone: 'info', title: 'Verifying charge', description: desc, txId: data.transaction.id });
@@ -275,8 +295,10 @@ export default function NewPayment() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-5 rounded-xl border border-border bg-card p-6 shadow-card">
-          {/* Validation errors surfaced via PaymentResultBanner */}
+          {/* Payment result banner (success/error/info) */}
           <PaymentResultBanner banner={resultBanner} onDismiss={() => setResultBanner(null)} />
+          {/* Field-level validation errors from the processor */}
+          <FormValidationBanner data={validationBannerData} onDismiss={() => { setFieldErrors(null); setFormErrors([]); }} />
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

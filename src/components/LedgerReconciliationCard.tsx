@@ -27,10 +27,9 @@ interface ReconciliationRow {
 /**
  * Reconciliation widget for the dashboard.
  *
- * Fetches every merchant account balance and the signed sum of its
- * ledger_entries (credit − debit), then flags any rows where they
- * diverge. This is the at-a-glance integrity check for the double-
- * entry accounting system.
+ * Calls the `merchant_reconciliation_rows` RPC which computes signed
+ * ledger sums server-side via SQL GROUP BY — far more efficient and
+ * consistent than fetching all entries and aggregating client-side.
  */
 export function LedgerReconciliationCard() {
   const { data, isLoading, refetch, isFetching } = useQuery({
@@ -46,45 +45,26 @@ export function LedgerReconciliationCard() {
         .maybeSingle();
       if (!merchant) return [] as ReconciliationRow[];
 
-      // Fetch all accounts for this merchant
-      const { data: accounts } = await supabase
-        .from('accounts')
-        .select('id, currency, balance')
-        .eq('merchant_id', merchant.id);
+      // Call the SQL RPC instead of fetching all ledger entries
+      const { data: rows, error } = await supabase.rpc(
+        'merchant_reconciliation_rows' as any,
+        { _merchant_id: merchant.id },
+      );
 
-      if (!accounts?.length) return [] as ReconciliationRow[];
+      if (error) {
+        console.error('Reconciliation RPC error:', error);
+        return [] as ReconciliationRow[];
+      }
 
-      // Fetch ledger sums per account — use a single query with GROUP BY
-      // by pulling all entries and aggregating client-side (avoids RPC).
-      const accountIds = accounts.map((a) => a.id);
-      const { data: entries } = await supabase
-        .from('ledger_entries')
-        .select('account_id, entry_type, amount')
-        .in('account_id', accountIds);
-
-      const ledgerSums = new Map<string, { total: number; count: number }>();
-      (entries || []).forEach((e) => {
-        const prev = ledgerSums.get(e.account_id) || { total: 0, count: 0 };
-        const signed = e.entry_type === 'credit' ? Number(e.amount) : -Number(e.amount);
-        ledgerSums.set(e.account_id, {
-          total: prev.total + signed,
-          count: prev.count + 1,
-        });
-      });
-
-      return accounts.map((a): ReconciliationRow => {
-        const ledger = ledgerSums.get(a.id) || { total: 0, count: 0 };
-        const discrepancy = Math.round((Number(a.balance) - ledger.total) * 100) / 100;
-        return {
-          account_id: a.id,
-          currency: a.currency,
-          stored_balance: Number(a.balance),
-          ledger_total: ledger.total,
-          discrepancy,
-          entry_count: ledger.count,
-          status: Math.abs(discrepancy) < 0.01 ? 'matched' : 'discrepancy',
-        };
-      });
+      return ((rows as any[]) || []).map((r: any): ReconciliationRow => ({
+        account_id: r.account_id,
+        currency: r.currency,
+        stored_balance: Number(r.stored_balance),
+        ledger_total: Number(r.ledger_total),
+        discrepancy: Number(r.discrepancy),
+        entry_count: Number(r.entry_count),
+        status: r.status === 'matched' ? 'matched' : 'discrepancy',
+      }));
     },
     staleTime: 60_000,
   });
