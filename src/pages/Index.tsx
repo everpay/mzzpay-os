@@ -241,6 +241,15 @@ const Index = () => {
         </Tabs>
       </motion.div>
 
+      <motion.div
+        className="mb-6"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <LedgerReconciliationCard />
+      </motion.div>
+
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-heading text-xl font-bold text-foreground">Recent Transactions</h2>
