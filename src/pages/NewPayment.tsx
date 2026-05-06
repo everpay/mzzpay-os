@@ -175,14 +175,15 @@ export default function NewPayment() {
         description,
         idempotencyKey,
         redirectMode: 'modal',
-        customerDetails: {
-          firstName: firstName || 'Customer',
-          lastName: lastName || 'User',
+        customer: {
+          first: firstName || 'Customer',
+          last: lastName || 'User',
           phone: phone || '1234567890',
+          ip: '0.0.0.0',
         },
-        billingDetails: {
+        billing: {
           address: billingAddress || '123 Main St',
-          postalCode: billingPostalCode || '12345',
+          postal_code: billingPostalCode || '12345',
           city: billingCity || 'New York',
           state: billingState || 'NY',
           country: billingCountry || 'US',
@@ -193,7 +194,7 @@ export default function NewPayment() {
         if (cardEntryMode === 'vgs' && vgsToken) {
           payload.vgsToken = vgsToken;
         } else if (cardNumber) {
-          payload.cardDetails = { number: cardNumber, expMonth, expYear, cvc, holderName: holderName || `${firstName} ${lastName}` };
+          payload.cardDetails = { number: cardNumber.replace(/\s/g, ''), expMonth, expYear, cvc, holderName: holderName || `${firstName} ${lastName}` };
         }
       }
 
