@@ -204,7 +204,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
         {navSections.map((section, idx) => {
           if (!isSectionVisible(section.title)) return null;
           const visibleItems = section.items.filter(isItemVisible).filter(isItemAllowedForSupport);
@@ -289,7 +289,7 @@ export function AppSidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[240px] flex-col border-r border-sidebar-border bg-sidebar">
+    <aside className="fixed left-0 top-0 z-40 flex h-dvh w-[240px] flex-col border-r border-sidebar-border bg-sidebar">
       <SidebarBody />
     </aside>
   );
