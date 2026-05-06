@@ -234,7 +234,14 @@ export default function NewPayment() {
 
       const txStatus = String(data?.transaction?.status || '').toLowerCase();
       const isTerminal = txStatus === 'completed' || txStatus === 'failed';
-      const threeDSRedirectUrl = !isTerminal ? getThreeDSecureRedirectUrl(data?.providerResponse, paymentMethod) : null;
+
+      // 2D MID safety: if the edge function already confirmed success, NEVER
+      // attempt 3DS detection — the processor approved the charge without an
+      // ACS challenge. Any redirect_url in the raw providerResponse is a
+      // receipt/status page, not an issuer authentication page.
+      const threeDSRedirectUrl = (!isTerminal && !data?.success)
+        ? getThreeDSecureRedirectUrl(data?.providerResponse, paymentMethod)
+        : null;
 
       if (threeDSRedirectUrl) {
         // Store context for the /3ds-result callback page, then redirect to issuer OTP

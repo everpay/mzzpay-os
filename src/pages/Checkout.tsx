@@ -240,9 +240,10 @@ export default function Checkout() {
         return;
       }
 
-      // 3DS redirect — use full Everpay detection logic
+      // 3DS redirect — only when the processor explicitly requires it.
+      // 2D MID safety: skip 3DS detection if the edge function already confirmed success.
       const provResp = data?.providerResponse || {};
-      const threeDsRedirect = getThreeDSecureRedirectUrl(provResp, 'card');
+      const threeDsRedirect = !data?.success ? getThreeDSecureRedirectUrl(provResp, 'card') : null;
       if (threeDsRedirect) {
         // Direct redirect to issuer OTP — no modal
         sessionStorage.setItem('3ds_transaction_id', data.transaction?.id || '');
