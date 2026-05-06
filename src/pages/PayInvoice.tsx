@@ -16,6 +16,7 @@ import { notifyError } from '@/lib/error-toast';
 import { CountrySelect } from '@/components/CountrySelect';
 
 import { toast } from 'sonner';
+import { FormValidationBanner } from '@/components/FormValidationBanner';
 
 export default function PayInvoice() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
@@ -274,6 +275,14 @@ export default function PayInvoice() {
           )}
         </div>
 
+
+        {/* Validation banner */}
+        <FormValidationBanner
+          data={(invoiceFieldErrors || invoiceFormErrors.length > 0)
+            ? { fieldErrors: invoiceFieldErrors, formErrors: invoiceFormErrors }
+            : null}
+          onDismiss={() => { setInvoiceFieldErrors(null); setInvoiceFormErrors([]); }}
+        />
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 shadow-card space-y-5">
