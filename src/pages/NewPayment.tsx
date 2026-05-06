@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,45 +8,39 @@ import { Textarea } from '@/components/ui/textarea';
 import { Currency } from '@/lib/types';
 import { resolveProvider } from '@/lib/providers';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, ArrowRight, Loader2, Globe, MapPin, CheckCircle2, XCircle, AlertTriangle, RotateCcw } from 'lucide-react';
+import { CountrySelect } from '@/components/CountrySelect';
+import { StateRegionSelect } from '@/components/StateRegionSelect';
+import { getConfigForCountry } from '@/lib/country-routing';
+import { CreditCard, ArrowRight, Loader2, Globe, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { VGSCardForm } from '@/components/VGSCardForm';
+import { SecureCardForm } from '@/components/SecureCardForm';
+import { ValidationErrorBanner, isValidationError, type ValidationPayload } from '@/components/ValidationErrorBanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThreeDSecureModal } from '@/components/ThreeDSecureModal';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
-import { notifyError } from '@/lib/error-toast';
-import { ProcessorValidationRulesDrawer } from '@/components/ProcessorValidationRulesDrawer';
-import { ValidationErrorBanner } from '@/components/ValidationErrorBanner';
-import { CountrySelect, COUNTRIES } from '@/components/CountrySelect';
-import { getSubdivisionsForCountry, getBillingLabels, getPostalCodeLabel } from '@/lib/country-subdivisions';
+import { usePaymentPolling } from '@/hooks/usePaymentPolling';
+import { getThreeDSecureRedirectUrl } from '@/lib/three-d-secure';
+import { PaymentResultBanner, type PaymentResultBannerData } from '@/components/PaymentResultBanner';
+import { VGSCardForm } from '@/components/VGSCardForm';
 
-// Detect region from browser locale / timezone
+type PaymentMethod = 'card' | 'pix' | 'boleto' | 'apple_pay' | 'open_banking' | 'crypto';
+
 function detectRegion(): { region: string; label: string; flag: string } {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const locale = navigator.language || 'en-US';
-
-    if (tz.startsWith('Europe/') || locale.startsWith('en-GB') || locale.startsWith('de') || locale.startsWith('fr') || locale.startsWith('es-ES')) {
+    if (tz.startsWith('Europe/') || locale.startsWith('en-GB') || locale.startsWith('de') || locale.startsWith('fr') || locale.startsWith('es-ES'))
       return { region: 'EU', label: 'EU Region', flag: '🇪🇺' };
-    }
-    if (tz.startsWith('America/Sao_Paulo') || tz.startsWith('Brazil') || locale.startsWith('pt-BR')) {
+    if (tz.startsWith('America/Sao_Paulo') || tz.startsWith('Brazil') || locale.startsWith('pt-BR'))
       return { region: 'BR', label: 'Brazil', flag: '🇧🇷' };
-    }
-    if (tz.startsWith('America/Mexico') || locale.startsWith('es-MX')) {
+    if (tz.startsWith('America/Mexico') || locale.startsWith('es-MX'))
       return { region: 'MX', label: 'Mexico', flag: '🇲🇽' };
-    }
-    if (tz.startsWith('America/Bogota') || locale.startsWith('es-CO')) {
+    if (tz.startsWith('America/Bogota') || locale.startsWith('es-CO'))
       return { region: 'CO', label: 'Colombia', flag: '🇨🇴' };
-    }
     return { region: 'US', label: 'US/Global', flag: '🌐' };
-  } catch {
-    return { region: 'US', label: 'US/Global', flag: '🌐' };
-  }
+  } catch { return { region: 'US', label: 'US/Global', flag: '🌐' }; }
 }
 
-// Map region to preferred currency
 function regionToCurrency(region: string): Currency {
   switch (region) {
     case 'EU': return 'EUR';
@@ -65,63 +59,44 @@ export default function NewPayment() {
   const [currency, setCurrency] = useState<Currency>(defaultCurrency);
   const [email, setEmail] = useState('');
   const [description, setDescription] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | 'boleto' | 'apple_pay' | 'open_banking'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [cardNumber, setCardNumber] = useState('');
   const [expMonth, setExpMonth] = useState('');
   const [expYear, setExpYear] = useState('');
   const [cvc, setCvc] = useState('');
   const [holderName, setHolderName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [vgsToken, setVgsToken] = useState('');
-  const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [responseMessage, setResponseMessage] = useState<{ type: 'success' | 'error' | 'warning'; title: string; detail: string } | null>(null);
-  const [fieldLevelErrors, setFieldLevelErrors] = useState<Record<string, string[]> | null>(null);
-  const [formLevelErrors, setFormLevelErrors] = useState<string[]>([]);
-
-  // Billing address fields
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
   const [billingCity, setBillingCity] = useState('');
   const [billingState, setBillingState] = useState('');
   const [billingPostalCode, setBillingPostalCode] = useState('');
   const [billingCountry, setBillingCountry] = useState('US');
-
-  // Customer IP (hidden, auto-detected)
-  const [customerIp, setCustomerIp] = useState('');
-  useState(() => {
-    fetch('https://api.ipify.org?format=json')
-      .then(r => r.json())
-      .then(d => setCustomerIp(d.ip || ''))
-      .catch(() => {});
-  });
-
-  // 3DS state
-  const [show3DS, setShow3DS] = useState(false);
+  const selectedCountryConfig = getConfigForCountry(billingCountry);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vgsToken, setVgsToken] = useState('');
+  const [cardEntryMode, setCardEntryMode] = useState<'standard' | 'vgs'>('standard');
   const [threeDSUrl, setThreeDSUrl] = useState('');
-  const [threeDSTxId, setThreeDSTxId] = useState('');
+  const [threeDSTransactionId, setThreeDSTransactionId] = useState('');
+  const [showThreeDS, setShowThreeDS] = useState(false);
+  const [resultBanner, setResultBanner] = useState<PaymentResultBannerData | null>(null);
+  const [validationError, setValidationError] = useState<ValidationPayload | null>(null);
+  const [formResetKey, setFormResetKey] = useState(0);
+  const idempotencyKeyRef = useRef(`pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
 
   const queryClient = useQueryClient();
 
-  // Pull the merchant's per-merchant routing overrides so the Routing Preview
-  // mirrors EXACTLY what process-payment will pick at submit time:
-  //   - merchants.gambling_enabled  → Matrix routing for casino/sportsbook
-  //   - routing_rules               → currency/amount overrides (highest priority wins)
   const { data: routingCtx } = useQuery({
     queryKey: ['new-payment-routing-context'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { gamblingEnabled: false, rules: [] as any[] };
-      const { data: merchant } = await supabase
-        .from('merchants')
-        .select('id, gambling_enabled')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const { data: merchant } = await supabase.from('merchants').select('id, gambling_enabled').eq('user_id', user.id).maybeSingle();
       if (!merchant) return { gamblingEnabled: false, rules: [] as any[] };
       const { data: rules } = await (supabase.from as any)('routing_rules')
         .select('id, name, priority, active, currency_match, amount_min, amount_max, target_provider, fallback_provider')
-        .eq('merchant_id', merchant.id)
-        .eq('active', true)
-        .order('priority', { ascending: true });
+        .eq('merchant_id', merchant.id).eq('active', true).order('priority', { ascending: true });
       return { gamblingEnabled: !!merchant.gambling_enabled, rules: rules ?? [] };
     },
     staleTime: 60_000,
@@ -133,119 +108,59 @@ export default function NewPayment() {
     amount: amount ? parseFloat(amount) : undefined,
     rules: routingCtx?.rules,
   });
-  // UUID-based idempotency key generated client-side once per page load.
-  // Same key on retries guarantees the backend treats them as the SAME logical
-  // payment (returns the cached response with `duplicate: true`).
-  const [idempotencyKey] = useState(() => `idk_${crypto.randomUUID()}`);
 
-  // Authoritative server-side resolution. The Routing Preview tooltip is
-  // derived from client-side state, but actual processor selection happens
-  // server-side in process-payment. We re-run the same algorithm in
-  // `resolve-routing` and compare — if the matched rule ID differs we surface
-  // a mismatch warning so the operator never trusts a stale tooltip.
-  const debouncedAmount = amount ? parseFloat(amount) : null;
-  const { data: serverRouting } = useQuery({
-    queryKey: ['resolve-routing', currency, debouncedAmount, paymentMethod],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('resolve-routing', {
-        body: {
-          currency,
-          amount: debouncedAmount,
-          paymentMethod,
-        },
-      });
-      if (error) throw error;
-      return data as {
-        provider: string;
-        reason: string;
-        matched_rule_id: string | null;
-        matched_rule: { id: string; priority: number; target_provider: string } | null;
-      };
+  const idempotencyKey = idempotencyKeyRef.current;
+
+  const { isPolling, currentStatus: pollingStatus, startPolling } = usePaymentPolling({
+    transactionId: null,
+    enabled: false,
+    intervalMs: 2000,
+    maxAttempts: 60,
+    onComplete: (status) => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      setResultBanner((prev) => prev ? {
+        ...prev, tone: 'success', title: 'Charge confirmed',
+        description: `Card was charged. Status: ${status}. Ledger updated.`,
+      } : prev);
     },
-    staleTime: 15_000,
-    retry: false,
+    onFailed: (status) => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      setResultBanner((prev) => prev ? {
+        ...prev, tone: 'error', title: 'Charge not completed',
+        description: `Card was NOT charged. Final status: ${status}.`,
+      } : prev);
+    },
   });
 
-  // Hoist the mismatch decision so the submit button + handler can block on
-  // it. The detailed warning UI in the Routing Preview re-derives the same
-  // values for display.
-  const clientMatchedRule = (() => {
-    const amt = amount ? parseFloat(amount) : undefined;
-    return (routingCtx?.rules ?? []).find((r: any) => {
-      const cs = (r.currency_match ?? []).map((c: string) => c.toUpperCase());
-      if (cs.length > 0 && !cs.includes(currency)) return false;
-      if (amt != null) {
-        if (r.amount_min != null && amt < Number(r.amount_min)) return false;
-        if (r.amount_max != null && amt > Number(r.amount_max)) return false;
-      }
-      return true;
-    }) as any;
-  })();
-  const routingMismatch = !!serverRouting && (
-    (clientMatchedRule?.id ?? null) !== serverRouting.matched_rule_id ||
-    selectedProvider !== serverRouting.provider
-  );
-
-  const refreshRouting = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['new-payment-routing-context'] }),
-      queryClient.invalidateQueries({ queryKey: ['resolve-routing'] }),
-    ]);
-  };
-
-  const validate = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    if (!amount || parseFloat(amount) <= 0) errors.amount = 'Amount must be greater than 0';
-    if (parseFloat(amount) > 50000) errors.amount = 'Amount cannot exceed 50,000';
-
-    if (paymentMethod === 'card' && cardEntryMode === 'standard') {
-      if (!holderName.trim()) errors.holderName = 'Cardholder name is required';
-      else if (!/^[a-zA-Z\s]+$/.test(holderName.trim())) errors.holderName = 'Name must contain only letters and spaces';
-      if (!cardNumber.replace(/\s/g, '') || cardNumber.replace(/\s/g, '').length < 13) errors.cardNumber = 'Valid card number is required';
-      if (!expMonth || !/^(0[1-9]|1[0-2]|[1-9])$/.test(expMonth)) errors.expMonth = 'Valid month (1-12)';
-      if (!expYear || expYear.length < 2) errors.expYear = 'Valid year required';
-      if (!cvc || cvc.length < 3) errors.cvc = 'Valid CVC required';
-    }
-
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Invalid email format';
-
-    // Billing address validation (required for all processors) — use localized labels
-    const labels = getBillingLabels(billingCountry);
-    if (!billingAddress.trim()) errors.billingAddress = `${labels.addressLabel} is required`;
-    if (!billingCity.trim()) errors.billingCity = `${labels.cityLabel} is required`;
-    if (!billingPostalCode.trim()) errors.billingPostalCode = `${labels.postalLabel} is required`;
-    if (!billingCountry) errors.billingCountry = `${labels.countryLabel} is required`;
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+  const handlePaymentMethodChange = (value: string) => {
+    if (!value) return;
+    setPaymentMethod(value as PaymentMethod);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setResponseMessage(null);
+    if (paymentMethod === 'crypto') return;
 
-    if (!validate()) return;
-
-    // Hard block: never submit while the routing preview disagrees with the
-    // server-resolved route. Operator must refresh and re-confirm.
-    if (routingMismatch) {
-      setResponseMessage({
-        type: 'warning',
-        title: 'Routing preview is stale',
-        detail: 'Refresh routing rules in the preview panel before submitting this payment.',
-      });
-      return;
+    if (paymentMethod === 'card') {
+      const digits = (cardNumber || '').replace(/\s/g, '');
+      const validStandard = cardEntryMode === 'standard' && digits.length >= 13 && expMonth && expYear && cvc && cvc.length >= 3;
+      const validVgs = cardEntryMode === 'vgs' && !!vgsToken;
+      if (!validStandard && !validVgs) {
+        setResultBanner({ tone: 'error', title: 'Card details required', description: 'Enter a valid card number, expiry (MM/YY) and CVV before submitting.' });
+        return;
+      }
     }
 
+    setResultBanner(null);
+    setValidationError(null);
     setIsSubmitting(true);
-    setFieldLevelErrors(null);
-    setFormLevelErrors([]);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        setResponseMessage({ type: 'error', title: 'Authentication required', detail: 'Please sign in to create a payment' });
+        setResultBanner({ tone: 'error', title: 'Not signed in', description: 'Please sign in to create a payment.' });
+        setIsSubmitting(false);
         return;
       }
 
@@ -256,256 +171,116 @@ export default function NewPayment() {
         customerEmail: email,
         description,
         idempotencyKey,
-        billing: {
-          address: billingAddress.trim(),
-          city: billingCity.trim(),
-          state: billingState.trim(),
-          postal_code: billingPostalCode.trim(),
-          country: billingCountry,
+        redirectMode: 'modal',
+        customerDetails: {
+          firstName: firstName || 'Customer',
+          lastName: lastName || 'User',
+          phone: phone || '1234567890',
         },
-        customer: {
-          ip: customerIp || undefined,
+        billingDetails: {
+          address: billingAddress || '123 Main St',
+          postalCode: billingPostalCode || '12345',
+          city: billingCity || 'New York',
+          state: billingState || 'NY',
+          country: billingCountry || 'US',
         },
       };
 
       if (paymentMethod === 'card') {
         if (cardEntryMode === 'vgs' && vgsToken) {
-          // Recurring / card-on-file path: VGS-vaulted token
           payload.vgsToken = vgsToken;
-          payload.saveCard = true;
         } else if (cardNumber) {
-          // One-off payment: PAN goes directly to processor, NOT through VGS
-          payload.cardDetails = { number: cardNumber, expMonth, expYear, cvc, holderName: holderName.trim() };
-          payload.saveCard = false;
+          payload.cardDetails = { number: cardNumber, expMonth, expYear, cvc, holderName: holderName || `${firstName} ${lastName}` };
         }
       }
 
-      const { data, error } = await supabase.functions.invoke('process-payment', {
-        body: payload,
-      });
+      const { data, error } = await supabase.functions.invoke('process-payment', { body: payload });
 
       if (error) {
-        let detail = 'Edge Function returned a non-2xx status code';
-        try {
-          const ctx = (error as any).context;
-          if (ctx && typeof ctx.json === 'function') {
-            const body = await ctx.json();
-            detail = body?.error || detail;
-          } else if (data?.error) {
-            detail = data.error;
-          }
-        } catch {}
-        throw new Error(detail);
+        const errBody = (error as any)?.context?.body || (error as any)?.message || String(error);
+        throw new Error(typeof errBody === 'string' ? errBody : JSON.stringify(errBody));
       }
 
-      // Handle velocity/limit/processor errors returned as 200
-      if (data?.velocityLimit || data?.limitError) {
-        setResponseMessage({ type: 'error', title: 'Transaction blocked', detail: data.error });
+      if (isValidationError(data)) {
+        setValidationError(data as ValidationPayload);
+        setResultBanner({ tone: 'error', title: 'Validation error', description: 'Please correct the highlighted fields.' });
+        setIsSubmitting(false);
         return;
       }
 
-      // Strict server-side validation rejected the payload before any
-      // processor call. Surface field-level reasons so the merchant fixes them.
-      if (data?.error_code === 'processor_validation_error' || data?.code === 'processor_validation_error') {
-        // Normalize fieldErrors: backend may send Record<string,string[]> (Zod)
-        // or Array<{field,message}> (processor). Always coerce to Record.
-        let fErrors: Record<string, string[]> = {};
-        const raw = data?.validation?.fieldErrors;
-        if (Array.isArray(raw)) {
-          for (const e of raw) {
-            const k = e?.field ?? 'unknown';
-            if (!fErrors[k]) fErrors[k] = [];
-            fErrors[k].push(e?.message ?? String(e));
-          }
-        } else if (raw && typeof raw === 'object') {
-          fErrors = raw;
-        }
-        const fmErrors = Array.isArray(data?.validation?.formErrors) ? data.validation.formErrors : [];
-        setFieldLevelErrors(Object.keys(fErrors).length > 0 ? fErrors : null);
-        setFormLevelErrors(fmErrors);
-        notifyError(
-          { code: 'processor_validation_error', message: data.error },
+      if (data && data.success === false && !data.transaction) {
+        const detail = data.decline_message || data.error || data.details || 'Payment could not be processed';
+        setResultBanner({ tone: 'error', title: 'Payment failed', description: detail });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const txStatus = String(data?.transaction?.status || '').toLowerCase();
+      const isTerminal = txStatus === 'completed' || txStatus === 'failed';
+      const threeDSRedirectUrl = !isTerminal ? getThreeDSecureRedirectUrl(data?.providerResponse, paymentMethod) : null;
+
+      if (threeDSRedirectUrl) {
+        setResultBanner(null);
+        setThreeDSUrl(threeDSRedirectUrl);
+        setThreeDSTransactionId(data.transaction?.id || '');
+        setShowThreeDS(true);
+        if (data.transaction?.id) startPolling(data.transaction.id);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (data?.success) {
+        setValidationError(null);
+        idempotencyKeyRef.current = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const desc = `${amount} ${currency} via ${selectedProvider} — ${data.transaction.id.slice(0, 8)}. Verifying ledger...`;
+        setResultBanner({ tone: 'info', title: 'Verifying charge', description: desc, txId: data.transaction.id });
+        if (data.transaction?.id) startPolling(data.transaction.id);
+      } else if (data?.transaction?.status === 'failed') {
+        const declineReason = data.decline_message || data.error || data.providerResponse?.error?.message || 'Transaction declined by processor';
+        const declineCode = data.decline_code || data.providerResponse?.error?.code || '';
+        const is004 = String(declineCode) === '004' || /processor not found/i.test(declineReason);
+        setResultBanner(is004
+          ? { tone: 'error', title: 'Acquirer configuration error', description: 'ShieldHub rejected — no processor enabled for this merchant. Card NOT charged.', code: '004', txId: data.transaction.id }
+          : { tone: 'error', title: 'Payment declined', description: `${declineReason}${declineCode ? ` (code ${declineCode})` : ''}`, code: declineCode || undefined, txId: data.transaction.id }
         );
-        setResponseMessage({
-          type: 'error',
-          title: 'Invalid payment details',
-          detail: data.error || 'Validation failed',
-        });
-        return;
-      }
-
-      // Idempotency replay — backend recognized this key and returned the
-      // cached response. Show "Duplicate request" instead of double-charging.
-      if (data?.duplicate || data?.idempotency_replayed || data?.error_code === 'idempotency_conflict') {
-        notifyError(
-          { code: 'idempotency_conflict', message: 'Duplicate request' },
-          {
-            description:
-              'This payment was already processed. We returned the original result instead of charging twice.',
-          },
-        );
-        setResponseMessage({
-          type: 'warning',
-          title: 'Duplicate request',
-          detail: `Already processed at ${data?.first_seen_at ?? 'a previous attempt'} [code: idempotency_conflict]`,
-        });
-        return;
-      }
-
-      if (data?.processorMisconfigured || data?.error_code === 'processor_misconfigured') {
-        setResponseMessage({
-          type: 'error',
-          title: 'Processor not configured',
-          detail: `${data.error} [code: processor_misconfigured]`,
-        });
-        return;
-      }
-
-      const providerStatus = (data?.providerResponse?.status || '').toLowerCase();
-      const txStatus = (data?.providerResponse?.transaction_status || '').toLowerCase();
-      if (['failed', 'declined', 'rejected', 'error'].includes(providerStatus) || ['failed', 'declined', 'rejected'].includes(txStatus)) {
-        const apiError = data.providerResponse?.error?.message || data.providerResponse?.gateway_message || 'Provider declined the transaction';
-        setResponseMessage({ type: 'warning', title: 'Payment declined by provider', detail: apiError });
-        return;
-      }
-
-      // Handle 3DS redirect (Mondo INITIATED status)
-      if (data?.providerResponse?.transaction_status === 'INITIATED' && data?.providerResponse?.['3d_secure_redirect_url']) {
-        setThreeDSUrl(data.providerResponse['3d_secure_redirect_url']);
-        setThreeDSTxId(data.transaction.id);
-        setShow3DS(true);
-        setResponseMessage({
-          type: 'success',
-          title: 'Payment initiated — 3D Secure required',
-          detail: `${amount} ${currency} via ${selectedProvider} — TX: ${data.transaction.id.slice(0, 8)}. Complete 3DS authentication.`,
-        });
-        queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        return;
-      }
-
-      setResponseMessage({
-        type: 'success',
-        title: 'Payment created successfully',
-        detail: `${amount} ${currency} via ${selectedProvider} — ID: ${data.transaction.id.slice(0, 8)}`,
-      });
-
-      // Customer receipt email — best effort, never blocks the success flow.
-      // Includes the statement descriptor so the customer recognises the
-      // charge on their bank statement.
-      if (email && data.transaction?.id) {
-        try {
-          const { buildReceiptUrls } = await import('@/lib/receipt-urls');
-          const { receiptUrl, pdfUrl } = buildReceiptUrls(data.transaction.id);
-          const { data: proc } = await (supabase.from as any)('payment_processors')
-            .select('acquirer_descriptor')
-            .eq('name', selectedProvider)
-            .maybeSingle();
-          await supabase.functions.invoke('send-transactional-email', {
-            body: {
-              templateName: 'payment-confirmation',
-              recipientEmail: email,
-              idempotencyKey: `payment-confirmation-${data.transaction.id}`,
-              templateData: {
-                amount: parseFloat(amount).toFixed(2),
-                currency,
-                transactionId: data.transaction.id,
-                type: paymentMethod === 'open_banking' ? 'Open Banking' : 'Card payment',
-                method: paymentMethod === 'open_banking' ? 'Open Banking' : 'Card',
-                date: new Date().toISOString().replace('T', ' ').slice(0, 19),
-                status: 'Approved',
-                description,
-                receiptUrl,
-                pdfUrl,
-                descriptor: proc?.acquirer_descriptor ?? undefined,
-              },
-            },
-          });
-        } catch (emailErr) {
-          console.error('Failed to send customer receipt:', emailErr);
-        }
+      } else if (data?.transaction?.status === 'pending') {
+        if (data.transaction?.id) startPolling(data.transaction.id);
+        setResultBanner({ tone: 'info', title: 'Payment processing', description: `Checking status for ${data.transaction.id.slice(0, 8)}...`, txId: data.transaction.id });
+      } else {
+        setResultBanner({ tone: 'warning', title: 'Payment pending', description: `Status: ${data?.transaction?.status || 'unknown'}`, txId: data?.transaction?.id });
       }
 
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      setAmount(''); setEmail(''); setDescription('');
-      setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
-            setBillingAddress(''); setBillingCity(''); setBillingState(''); setBillingPostalCode('');
+
+      if (data && (data.success || data.transaction)) {
+        setAmount(''); setEmail(''); setDescription('');
+        setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc('');
+        setHolderName(''); setFirstName(''); setLastName(''); setPhone('');
+        setBillingAddress(''); setBillingCity(''); setBillingState(''); setBillingPostalCode('');
+        setVgsToken('');
+        setFormResetKey((k) => k + 1);
+        idempotencyKeyRef.current = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      }
     } catch (error) {
       console.error('Payment error:', error);
-      setResponseMessage({
-        type: 'error',
-        title: 'Payment failed',
-        detail: error instanceof Error ? error.message : 'Unknown error occurred',
-      });
+      const msg = error instanceof Error ? error.message : 'Unknown error occurred';
+      setResultBanner({ tone: 'error', title: 'Payment failed', description: msg });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const providerRegionLabel: Record<string, { label: string; badge: string }> = {
-    mondo: { label: 'EU / UK open banking', badge: '🇪🇺 Openbanking EU' },
-    mzzpay: { label: 'Primary 2D card MID', badge: '🌐 US/International' },
-    matrix: { label: 'Gambling / sportsbook (admin-enabled)', badge: '🎰 EU/International' },
-    shieldhub: { label: 'Primary 2D card MID', badge: '🌐 US/International' },
-    stripe: { label: 'Global fallback', badge: '⚡ Stripe' },
-  };
-
-  const providerInfo = providerRegionLabel[selectedProvider] || { label: '', badge: selectedProvider };
-
   return (
     <AppLayout>
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Create Payment</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Route payment through optimal provider</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <ProcessorValidationRulesDrawer provider={selectedProvider} />
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => {
-                setAmount(''); setEmail(''); setDescription('');
-                setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
-            setBillingAddress(''); setBillingCity(''); setBillingState(''); setBillingPostalCode('');
-                setPaymentMethod('card'); setCardEntryMode('standard');
-                setValidationErrors({}); setResponseMessage(null); setVgsToken('');
-              }}
-            >
-              <RotateCcw className="h-4 w-4" />
-              Reset
-            </Button>
-          </div>
-        </div>
+        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Create Payment</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Route payment through optimal provider</p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-5 rounded-xl border border-border bg-card p-6 shadow-card">
-          {/* Response Banner */}
-          {responseMessage && (
-            <div className={`flex items-start gap-3 rounded-lg border p-4 ${
-              responseMessage.type === 'success' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' :
-              responseMessage.type === 'warning' ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400' :
-              'border-destructive/30 bg-destructive/10 text-destructive'
-            }`}>
-              {responseMessage.type === 'success' ? <CheckCircle2 className="h-5 w-5 mt-0.5 shrink-0" /> :
-               responseMessage.type === 'warning' ? <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0" /> :
-               <XCircle className="h-5 w-5 mt-0.5 shrink-0" />}
-              <div>
-                <p className="font-medium text-sm">{responseMessage.title}</p>
-                <p className="text-xs mt-0.5 opacity-90">{responseMessage.detail}</p>
-              </div>
-            </div>
-          )}
-
-          {fieldLevelErrors && (
-            <ValidationErrorBanner
-              title="Field Validation Errors"
-              fieldErrors={fieldLevelErrors}
-              formErrors={formLevelErrors}
-            />
-          )}
+          {validationError && <ValidationErrorBanner data={validationError} />}
+          <PaymentResultBanner banner={resultBanner} onDismiss={() => setResultBanner(null)} />
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -513,17 +288,14 @@ export default function NewPayment() {
               <Input
                 type="number" placeholder="0.00" value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className={`bg-background border-border font-mono text-lg ${validationErrors.amount ? 'border-destructive' : ''}`}
+                className="bg-background border-border font-mono text-lg"
                 required min="0.01" step="0.01"
               />
-              {validationErrors.amount && <p className="text-xs text-destructive">{validationErrors.amount}</p>}
             </div>
             <div className="space-y-2">
               <Label>Currency</Label>
               <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
-                <SelectTrigger className="bg-background border-border">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="USD">🇺🇸 USD</SelectItem>
                   <SelectItem value="EUR">🇪🇺 EUR</SelectItem>
@@ -531,6 +303,7 @@ export default function NewPayment() {
                   <SelectItem value="BRL">🇧🇷 BRL</SelectItem>
                   <SelectItem value="MXN">🇲🇽 MXN</SelectItem>
                   <SelectItem value="COP">🇨🇴 COP</SelectItem>
+                  <SelectItem value="CAD">🇨🇦 CAD</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -538,86 +311,32 @@ export default function NewPayment() {
 
           <div className="space-y-2">
             <Label>Payment Method</Label>
-            <Select value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)}>
-              <SelectTrigger className="bg-background border-border">
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={paymentMethod} onValueChange={handlePaymentMethodChange}>
+              <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="card">💳 Card</SelectItem>
                 <SelectItem value="pix">🇧🇷 PIX</SelectItem>
                 <SelectItem value="boleto">📄 Boleto</SelectItem>
-                <SelectItem value="apple_pay">
-                  <span className="inline-flex items-center gap-2">
-                    <img src="/logos/apple-pay.svg" alt="Apple Pay" className="h-4 w-auto" />
-                    Apple Pay
-                  </span>
-                </SelectItem>
+                <SelectItem value="apple_pay"><span className="inline-flex items-center gap-1.5"><img src="/logos/apple-pay.svg" alt="" className="h-4 w-auto" /> Apple Pay</span></SelectItem>
                 <SelectItem value="open_banking">🏦 Open Banking</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Payment Method Tabs */}
-          <Tabs value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="card">💳 Card</TabsTrigger>
-              <TabsTrigger value="open_banking">🏦 Open Banking</TabsTrigger>
-              <TabsTrigger value="apple_pay" className="gap-1.5">
-                <img src="/logos/apple-pay.svg" alt="" className="h-4 w-auto" />
-                Apple Pay
-              </TabsTrigger>
-              <TabsTrigger value="pix">🇧🇷 PIX</TabsTrigger>
-            </TabsList>
-
+          <Tabs value={paymentMethod} onValueChange={handlePaymentMethodChange} className="w-full">
             <TabsContent value="card" className="mt-4">
-              <Tabs value={cardEntryMode} onValueChange={(v: any) => setCardEntryMode(v)} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="standard">One Time Payment</TabsTrigger>
-                  <TabsTrigger value="vgs">Recurring Payment</TabsTrigger>
-                </TabsList>
-
-              <TabsContent value="standard" className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
-                  <div className="space-y-2">
-                    <Label>Cardholder Name</Label>
-                    <Input
-                      type="text" placeholder="John Doe" value={holderName}
-                      onChange={(e) => setHolderName(e.target.value)}
-                      className={`bg-background border-border ${validationErrors.holderName ? 'border-destructive' : ''}`}
-                    />
-                    {validationErrors.holderName && <p className="text-xs text-destructive">{validationErrors.holderName}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Card Number</Label>
-                    <Input
-                      type="text" placeholder="4242 4242 4242 4242" value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      className={`bg-background border-border font-mono ${validationErrors.cardNumber ? 'border-destructive' : ''}`} maxLength={19}
-                    />
-                    {validationErrors.cardNumber && <p className="text-xs text-destructive">{validationErrors.cardNumber}</p>}
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-2">
-                      <Label>Exp Month</Label>
-                      <Input type="text" placeholder="12" value={expMonth} onChange={(e) => setExpMonth(e.target.value)} className={`bg-background border-border ${validationErrors.expMonth ? 'border-destructive' : ''}`} maxLength={2} />
-                      {validationErrors.expMonth && <p className="text-xs text-destructive">{validationErrors.expMonth}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Exp Year</Label>
-                      <Input type="text" placeholder="2025" value={expYear} onChange={(e) => setExpYear(e.target.value)} className={`bg-background border-border ${validationErrors.expYear ? 'border-destructive' : ''}`} maxLength={4} />
-                      {validationErrors.expYear && <p className="text-xs text-destructive">{validationErrors.expYear}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>CVC</Label>
-                      <Input type="text" placeholder="123" value={cvc} onChange={(e) => setCvc(e.target.value)} className={`bg-background border-border ${validationErrors.cvc ? 'border-destructive' : ''}`} maxLength={4} />
-                      {validationErrors.cvc && <p className="text-xs text-destructive">{validationErrors.cvc}</p>}
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="vgs" className="mt-4">
-                  <VGSCardForm onTokenReceived={setVgsToken} isSubmitting={isSubmitting} />
-                </TabsContent>
-              </Tabs>
+              <SecureCardForm
+                showHolderName
+                disabled={isSubmitting}
+                resetKey={formResetKey}
+                onCardData={(data) => {
+                  setCardNumber(data.cardNumber);
+                  setExpMonth(data.expMonth);
+                  setExpYear(data.expYear);
+                  setCvc(data.cvc);
+                  if (data.holderName) setHolderName(data.holderName);
+                }}
+              />
             </TabsContent>
 
             <TabsContent value="open_banking" className="mt-4 space-y-4 p-4 rounded-lg border border-border bg-muted/30">
@@ -631,39 +350,27 @@ export default function NewPayment() {
                 </div>
               </div>
               <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Select your bank to initiate a secure bank transfer. You'll be redirected to your bank's authentication page.
-                </p>
+                <p className="text-sm text-muted-foreground">Select your bank to initiate a secure bank transfer.</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Badge variant="outline" className="justify-center py-2">🇬🇧 UK Banks</Badge>
                   <Badge variant="outline" className="justify-center py-2">🇪🇺 EU Banks</Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Supported via Openbanking EU. Instant settlement for EUR/GBP.
-                </p>
               </div>
             </TabsContent>
 
             <TabsContent value="apple_pay" className="mt-4 space-y-4 p-4 rounded-lg border border-border bg-muted/30">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-foreground flex items-center justify-center p-1.5">
-                  <img src="/logos/apple-pay.svg" alt="Apple Pay" className="h-full w-auto invert" />
+                  <img src="/logos/apple-pay.svg" alt="Apple Pay" className="h-full w-auto brightness-0 invert" />
                 </div>
                 <div>
                   <h4 className="font-medium text-foreground">Apple Pay</h4>
                   <p className="text-xs text-muted-foreground">Fast checkout with Face ID or Touch ID</p>
                 </div>
               </div>
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Use Apple Pay for a quick and secure checkout. Your card details are never shared.
-                </p>
-                <div className="bg-foreground text-background rounded-lg py-3 text-center font-medium cursor-pointer hover:opacity-90 transition-opacity">
-                   Pay with Apple Pay
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Available on Safari and iOS devices
-                </p>
+              <div className="bg-foreground text-background rounded-lg py-3 text-center font-medium cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => document.querySelector<HTMLFormElement>('form')?.requestSubmit()}>
+                 Pay with Apple Pay
               </div>
             </TabsContent>
 
@@ -677,112 +384,65 @@ export default function NewPayment() {
                   <p className="text-xs text-muted-foreground">Brazil's instant payment system</p>
                 </div>
               </div>
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Scan the QR code with your banking app to complete the payment instantly.
-                </p>
-                <div className="flex justify-center py-4">
-                  <div className="h-32 w-32 bg-muted rounded-lg flex items-center justify-center border border-border">
-                    <span className="text-xs text-muted-foreground">QR Code</span>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Available for BRL transactions only
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground">Scan the QR code with your banking app.</p>
             </TabsContent>
           </Tabs>
 
-          <div className="space-y-2">
-            <Label>Customer Email</Label>
-            <Input
-              type="email" placeholder="customer@example.com" value={email}
-              onChange={(e) => setEmail(e.target.value)} className={`bg-background border-border ${validationErrors.email ? 'border-destructive' : ''}`}
-            />
-            {validationErrors.email && <p className="text-xs text-destructive">{validationErrors.email}</p>}
+          {/* Customer Details */}
+          <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+            <h4 className="text-sm font-medium text-foreground">Customer Details</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>First Name</Label>
+                <Input type="text" placeholder="Joe" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="bg-background border-border" />
+              </div>
+              <div className="space-y-2">
+                <Label>Last Name</Label>
+                <Input type="text" placeholder="Doe" value={lastName} onChange={(e) => setLastName(e.target.value)} className="bg-background border-border" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" placeholder="customer@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-background border-border" />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input type="text" placeholder="(702)486-5000" value={phone} onChange={(e) => setPhone(e.target.value)} className="bg-background border-border" />
+              </div>
+            </div>
           </div>
 
           {/* Billing Address */}
           <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
-            <Label className="text-sm font-semibold">Billing Address</Label>
+            <h4 className="text-sm font-medium text-foreground">Billing Address</h4>
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Street Address</Label>
-              <Input
-                placeholder="123 Main St" value={billingAddress}
-                onChange={(e) => setBillingAddress(e.target.value)}
-                className={`bg-background border-border ${validationErrors.billingAddress ? 'border-destructive' : ''}`}
-              />
-              {validationErrors.billingAddress && <p className="text-xs text-destructive">{validationErrors.billingAddress}</p>}
+              <Label>Street Address</Label>
+              <Input type="text" placeholder="123 Main St" value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} className="bg-background border-border" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">City</Label>
-                <Input
-                  placeholder="New York" value={billingCity}
-                  onChange={(e) => setBillingCity(e.target.value)}
-                  className={`bg-background border-border ${validationErrors.billingCity ? 'border-destructive' : ''}`}
-                />
-                {validationErrors.billingCity && <p className="text-xs text-destructive">{validationErrors.billingCity}</p>}
+                <Label>City</Label>
+                <Input type="text" placeholder="Las Vegas" value={billingCity} onChange={(e) => setBillingCity(e.target.value)} className="bg-background border-border" />
               </div>
               <div className="space-y-2">
-                {(() => {
-                  const subdiv = getSubdivisionsForCountry(billingCountry);
-                  const label = subdiv?.label || 'State / Province';
-                  const items = subdiv?.items || [];
-                  return (
-                    <>
-                      <Label className="text-xs text-muted-foreground">{label}</Label>
-                      {items.length > 0 ? (
-                        <Select value={billingState} onValueChange={setBillingState}>
-                          <SelectTrigger className="bg-background border-border">
-                            <SelectValue placeholder={`Select ${label.toLowerCase()}...`} />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[300px]">
-                            {items.map((s) => (
-                              <SelectItem key={s.code} value={s.code}>{s.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input
-                          placeholder={label} value={billingState}
-                          onChange={(e) => setBillingState(e.target.value)}
-                          className="bg-background border-border"
-                        />
-                      )}
-                    </>
-                  );
-                })()}
+                <Label>State / Province / Region</Label>
+                <StateRegionSelect countryCode={billingCountry} value={billingState} onValueChange={setBillingState} />
+              </div>
+              <div className="space-y-2">
+                <Label>Zip Code</Label>
+                <Input type="text" placeholder="89101" value={billingPostalCode} onChange={(e) => setBillingPostalCode(e.target.value)} className="bg-background border-border" maxLength={10} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">{getPostalCodeLabel(billingCountry)}</Label>
-                <Input
-                  placeholder="10001" value={billingPostalCode}
-                  onChange={(e) => setBillingPostalCode(e.target.value)}
-                  className={`bg-background border-border ${validationErrors.billingPostalCode ? 'border-destructive' : ''}`}
-                />
-                {validationErrors.billingPostalCode && <p className="text-xs text-destructive">{validationErrors.billingPostalCode}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Country</Label>
-                <CountrySelect
-                  value={billingCountry}
-                  onValueChange={(v) => { setBillingCountry(v); setBillingState(''); }}
-                />
-                {validationErrors.billingCountry && <p className="text-xs text-destructive">{validationErrors.billingCountry}</p>}
-              </div>
+            <div className="space-y-2">
+              <Label>Country</Label>
+              <CountrySelect value={billingCountry} onValueChange={(v) => { setBillingCountry(v); setBillingState(''); }} />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Description</Label>
-            <Textarea
-              placeholder="Payment description..." value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="bg-background border-border resize-none" rows={3}
-            />
+            <Textarea placeholder="Payment description..." value={description} onChange={(e) => setDescription(e.target.value)} className="bg-background border-border resize-none" rows={3} />
           </div>
 
           <Button type="submit" className="w-full gap-2" size="lg" disabled={isSubmitting}>
@@ -794,8 +454,8 @@ export default function NewPayment() {
           </Button>
         </form>
 
+        {/* Sidebar */}
         <div className="space-y-4">
-          {/* Region Detection */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-card">
             <div className="flex items-center gap-2 mb-3">
               <MapPin className="h-4 w-4 text-primary" />
@@ -810,7 +470,6 @@ export default function NewPayment() {
             </div>
           </div>
 
-          {/* Routing Preview */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-card">
             <h3 className="font-heading text-sm font-semibold text-foreground mb-3">Routing Preview</h3>
             <div className="space-y-3">
@@ -819,131 +478,13 @@ export default function NewPayment() {
                 <Badge variant="provider">{selectedProvider}</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Route</span>
-                <span className="text-xs text-muted-foreground">{providerInfo.label}</span>
-              </div>
-              <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Currency</span>
                 <span className="text-sm font-medium text-foreground">{currency}</span>
               </div>
-              {/* Surface WHY this provider was picked so admins can spot mismatches.
-                  When an override rule wins, expose the rule id/priority and its
-                  currency/amount filters in a tooltip so we can audit the match
-                  without leaving the page. */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Reason</span>
-                {(() => {
-                  const amt = amount ? parseFloat(amount) : undefined;
-                  const matched = (routingCtx?.rules ?? []).find((r: any) => {
-                    const cs = (r.currency_match ?? []).map((c: string) => c.toUpperCase());
-                    if (cs.length > 0 && !cs.includes(currency)) return false;
-                    if (amt != null) {
-                      if (r.amount_min != null && amt < Number(r.amount_min)) return false;
-                      if (r.amount_max != null && amt > Number(r.amount_max)) return false;
-                    }
-                    return true;
-                  });
-                  if (matched) {
-                    const cs = (matched.currency_match ?? []) as string[];
-                    const currencyLabel = cs.length ? cs.join(', ') : 'any currency';
-                    const min = matched.amount_min;
-                    const max = matched.amount_max;
-                    let amountLabel = 'any amount';
-                    if (min != null && max != null) amountLabel = `${min} – ${max}`;
-                    else if (min != null) amountLabel = `≥ ${min}`;
-                    else if (max != null) amountLabel = `≤ ${max}`;
-                    return (
-                      <TooltipProvider delayDuration={150}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="inline-flex items-center gap-1 text-xs text-foreground text-right cursor-help underline decoration-dotted underline-offset-2">
-                              Override rule (priority {matched.priority})
-                              <Info className="h-3 w-3 text-muted-foreground" aria-hidden />
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent side="left" className="max-w-xs">
-                            <div className="space-y-1 text-xs">
-                              <div className="font-semibold">Matched rule</div>
-                              {matched.name && (
-                                <div><span className="text-muted-foreground">Name:</span> {matched.name}</div>
-                              )}
-                              <div className="font-mono break-all">
-                                <span className="text-muted-foreground">ID:</span> {matched.id}
-                              </div>
-                              <div><span className="text-muted-foreground">Priority:</span> {matched.priority}</div>
-                              <div><span className="text-muted-foreground">Currency:</span> {currencyLabel}</div>
-                              <div><span className="text-muted-foreground">Amount:</span> {amountLabel}</div>
-                              <div><span className="text-muted-foreground">Target:</span> {matched.target_provider}</div>
-                              {matched.fallback_provider && (
-                                <div><span className="text-muted-foreground">Fallback:</span> {matched.fallback_provider}</div>
-                              )}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    );
-                  }
-                  const fallback =
-                    paymentMethod === 'open_banking' ? 'Open Banking → Mondo' :
-                    routingCtx?.gamblingEnabled ? 'Gambling-enabled merchant' :
-                    'Default policy';
-                  return <span className="text-xs text-foreground text-right">{fallback}</span>;
-                })()}
-              </div>
-
-              {/* Server vs client mismatch warning. The tooltip above is built
-                  from the merchant's locally-cached rules; the actual processor
-                  selection happens server-side. If the rule the server picks
-                  doesn't match what we're about to show the operator, surface
-                  it before they submit so they can refresh / re-pull rules. */}
-              {(() => {
-                if (!serverRouting) return null;
-                const amt = amount ? parseFloat(amount) : undefined;
-                const clientMatched = (routingCtx?.rules ?? []).find((r: any) => {
-                  const cs = (r.currency_match ?? []).map((c: string) => c.toUpperCase());
-                  if (cs.length > 0 && !cs.includes(currency)) return false;
-                  if (amt != null) {
-                    if (r.amount_min != null && amt < Number(r.amount_min)) return false;
-                    if (r.amount_max != null && amt > Number(r.amount_max)) return false;
-                  }
-                  return true;
-                });
-                const clientId = clientMatched?.id ?? null;
-                const clientProvider = selectedProvider;
-                const ruleMismatch = clientId !== serverRouting.matched_rule_id;
-                const providerMismatch = clientProvider !== serverRouting.provider;
-                if (!ruleMismatch && !providerMismatch) return null;
-                return (
-                  <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-amber-600" />
-                      <div className="space-y-1 min-w-0">
-                        <div className="font-semibold text-foreground">Routing preview mismatch</div>
-                        <div className="text-muted-foreground">
-                          The server will route this payment differently than what's shown above. Refresh the page before submitting.
-                        </div>
-                        <div className="font-mono text-[11px] mt-1 space-y-0.5 text-foreground break-all">
-                          {providerMismatch && (
-                            <div>
-                              Provider — preview: <strong>{clientProvider}</strong>, server: <strong>{serverRouting.provider}</strong>
-                            </div>
-                          )}
-                          {ruleMismatch && (
-                            <div>
-                              Rule — preview: <strong>{clientId ?? 'none'}</strong>, server: <strong>{serverRouting.matched_rule_id ?? 'none'}</strong>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {['BRL', 'MXN', 'COP'].includes(currency) && (
+              {selectedCountryConfig && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Settlement</span>
-                  <span className="text-sm text-foreground">USD (auto-convert)</span>
+                  <span className="text-sm text-muted-foreground">Country</span>
+                  <span className="text-sm text-foreground">{selectedCountryConfig.flag} {selectedCountryConfig.name}</span>
                 </div>
               )}
               <div className="flex items-center justify-between">
@@ -955,23 +496,35 @@ export default function NewPayment() {
         </div>
       </div>
 
-      <ThreeDSecureModal
-        open={show3DS}
-        onClose={() => setShow3DS(false)}
-        redirectUrl={threeDSUrl}
-        transactionId={threeDSTxId}
-        onComplete={() => {
-          setResponseMessage({
-            type: 'success',
-            title: '3DS Authentication Complete',
-            detail: 'Payment has been verified and is being processed.',
-          });
-          queryClient.invalidateQueries({ queryKey: ['transactions'] });
-          setAmount(''); setEmail(''); setDescription('');
-          setCardNumber(''); setExpMonth(''); setExpYear(''); setCvc(''); setHolderName('');
-            setBillingAddress(''); setBillingCity(''); setBillingState(''); setBillingPostalCode('');
-        }}
-      />
+      {showThreeDS && threeDSUrl && (
+        <ThreeDSecureModal
+          open={showThreeDS}
+          onClose={() => setShowThreeDS(false)}
+          redirectUrl={threeDSUrl}
+          transactionId={threeDSTransactionId}
+          onComplete={async (result) => {
+            setShowThreeDS(false);
+            const { data: confirmData, error: confirmErr } = await supabase.functions.invoke('confirm-3ds-result', {
+              body: { transaction_id: threeDSTransactionId, transaction_reference: result?.transactionReference, status: 'completed', raw_status: result?.rawStatus },
+            });
+            if (confirmErr) {
+              setResultBanner({ tone: 'error', title: 'Payment could not be confirmed', description: confirmErr?.message || 'Could not verify authentication' });
+              return;
+            }
+            setResultBanner({ tone: 'success', title: 'Payment approved', description: 'Authentication completed.' });
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+          }}
+          onFailed={async (result) => {
+            setShowThreeDS(false);
+            const reason = result?.errorMessage || 'Authentication failed';
+            await supabase.functions.invoke('confirm-3ds-result', {
+              body: { transaction_id: threeDSTransactionId, transaction_reference: result?.transactionReference, status: 'failed', error_code: result?.errorCode || '3DS_FAILED', error_message: reason, raw_status: result?.rawStatus },
+            });
+            setResultBanner({ tone: 'error', title: 'Payment declined', description: reason, code: result?.errorCode });
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+          }}
+        />
+      )}
     </AppLayout>
   );
 }
