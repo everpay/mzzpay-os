@@ -1139,7 +1139,7 @@ async function processMzzPayPayment(data: PaymentRequest, req: Request) {
     };
   }
 
-  return { ...parsed, transaction_reference: transactionReference, __three_ds_status: three_ds_status };
+  return { ...parsed, transaction_reference: transactionReference, __three_ds_status: three_ds_status, shieldhub_client_id: clientId, descriptor };
 }
 
 async function processMondoPayment(data: PaymentRequest) {
