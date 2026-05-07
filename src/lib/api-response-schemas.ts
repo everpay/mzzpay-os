@@ -129,12 +129,11 @@ export function parseBalanceResponse(raw: unknown): SafeBalanceResponse {
  * Generic safety net: strip sensitive fields from any object.
  * Use when the response shape is unknown or doesn't match a schema.
  */
-export function stripSensitiveFields<T extends Record<string, any>>(obj: T): T {
+export function stripSensitiveFields(obj: Record<string, any>): Record<string, any> {
   const cleaned = { ...obj };
   for (const key of STRIPPED_FIELDS) {
     delete cleaned[key];
   }
-  // Also strip from nested `transaction` if present
   if (cleaned.transaction && typeof cleaned.transaction === 'object') {
     cleaned.transaction = stripSensitiveFields({ ...cleaned.transaction });
   }
