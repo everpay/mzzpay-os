@@ -83,7 +83,8 @@ interface TransactionTableProps {
 export function TransactionTable({ transactions, compact = false, disableDrawer = false }: TransactionTableProps) {
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const { isAdmin } = useUserRole();
+  const roleQuery = useUserRole();
+  const isAdmin = roleQuery.data?.isAdmin || roleQuery.data?.isSuperAdmin || false;
   const itemsPerPage = compact ? 10 : 20;
   const totalPages = Math.ceil(transactions.length / itemsPerPage);
   const paged = transactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
