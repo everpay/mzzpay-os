@@ -121,14 +121,6 @@ export function buildBannerFromResponse(data: Record<string, any>): PaymentResul
 /**
  * Sanitize a raw API response object, stripping fields that
  * must never reach the frontend.
+ * Uses the centralized strip list from api-response-schemas.
  */
-export function sanitizePaymentResponse(raw: Record<string, any>): Record<string, any> {
-  const cleaned = { ...raw };
-  delete cleaned.providerResponse;
-  if (cleaned.transaction && typeof cleaned.transaction === 'object') {
-    const tx = { ...cleaned.transaction };
-    delete tx.processor_raw_response;
-    cleaned.transaction = tx;
-  }
-  return cleaned;
-}
+export { stripSensitiveFields as sanitizePaymentResponse } from '@/lib/api-response-schemas';
