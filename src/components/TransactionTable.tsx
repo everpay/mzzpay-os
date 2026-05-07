@@ -139,28 +139,20 @@ export function TransactionTable({ transactions, compact = false, disableDrawer 
                       <span className="font-mono text-xs text-primary hover:underline">{tx.id.slice(0, 12)}…</span>
                     </td>
 
-                    {/* Method - card brand icon + provider logo */}
+                    {/* Method - real brand icon + masked card */}
                     <td className="px-3 py-2.5">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center gap-1.5">
-                            <div className="flex items-center justify-center w-10 h-6 rounded bg-card border border-border overflow-hidden">
-                              {pmInfo.logoSrc ? (
-                                <img src={pmInfo.logoSrc} alt={pmInfo.label} className="h-4 w-auto" />
-                              ) : (
-                                <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
-                              )}
-                            </div>
-                            {pmInfo.providerLogo && (
-                              <img src={pmInfo.providerLogo} alt={tx.provider} className="h-4 w-4 rounded-sm opacity-60" />
-                            )}
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <span>{pmInfo.label}</span>
-                          {tx.provider && <span className="text-muted-foreground ml-1">via {tx.provider}</span>}
-                        </TooltipContent>
-                      </Tooltip>
+                      <div className="flex items-center gap-1.5">
+                        <PaymentMethodIcon
+                          brand={pmInfo.label !== 'Card' ? pmInfo.label : (tx.card_brand || null)}
+                          paymentMethodType={tx.payment_method_type || null}
+                          last4={cardLast4 || null}
+                          bin={cardFirst6 || null}
+                          showMask={!!(cardLast4 || cardFirst6)}
+                        />
+                        {pmInfo.providerLogo && (
+                          <img src={pmInfo.providerLogo} alt={tx.provider} className="h-4 w-4 rounded-sm opacity-60" />
+                        )}
+                      </div>
                     </td>
 
                     {/* Amount */}
