@@ -135,7 +135,12 @@ export default function Receipt() {
             </button>
           </div>
 
-          {/* SECURITY: descriptor display removed — never expose in frontend */}
+          {receipt.descriptor && (
+            <p className="text-xs text-muted-foreground bg-muted/60 border border-border rounded-md p-3 text-center leading-relaxed">
+              This charge will appear on your statement as <strong>"{receipt.descriptor}"</strong>.
+            </p>
+          )}
+
           {receipt.merchant.supportEmail && (
             <p className="text-xs text-muted-foreground bg-muted/60 border border-border rounded-md p-3 text-center leading-relaxed">
               Questions about this charge? Email{' '}
