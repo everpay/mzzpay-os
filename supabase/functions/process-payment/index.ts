@@ -1125,7 +1125,7 @@ async function processMzzPayPayment(data: PaymentRequest, req: Request) {
       if (typeof v === 'string' && /^https?:\/\//i.test(v)) { realRedirectUrl = v; break; }
     }
     if (realRedirectUrl) {
-      return { ...parsed, transaction_reference: transactionReference, status: 'Redirect', redirect_url: realRedirectUrl, __three_ds_status: 'step_up_required' };
+      return { ...parsed, transaction_reference: transactionReference, status: 'Redirect', redirect_url: realRedirectUrl, __three_ds_status: 'step_up_required', shieldhub_client_id: clientId, descriptor };
     }
     const rawCode = String(parsed?.error?.code || parsed?.statusCode || '3DS_REDIRECT_MISSING_URL');
     return {
