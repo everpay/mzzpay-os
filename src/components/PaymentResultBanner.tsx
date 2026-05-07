@@ -8,6 +8,8 @@ export interface PaymentResultBannerData {
   description: string;
   code?: string;
   txId?: string;
+  descriptor?: string;
+  clientId?: string;
 }
 
 interface Props {
