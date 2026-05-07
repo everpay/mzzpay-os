@@ -9,7 +9,7 @@ import {
   ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield,
   Wifi, Globe, Monitor, AlertTriangle, MapPin, Phone, ShieldOff, ShieldCheck, Activity, Loader2, Tag,
 } from 'lucide-react';
-import { CardBrandBadge } from '@/components/CardBrandBadge';
+
 import { PaymentMethodIcon } from '@/components/PaymentMethodIcon';
 import { SettlementTimeline } from '@/components/SettlementTimeline';
 
