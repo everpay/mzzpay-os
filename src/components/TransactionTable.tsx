@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { PaymentMethodIcon } from '@/components/PaymentMethodIcon';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getMethodLogo, getProviderLogo, METHOD_LOGOS } from '@/lib/payment-method-logos';
-
+import { useUserRole } from '@/hooks/useUserRole';
 
 const BRAND_LOGOS = METHOD_LOGOS;
 
