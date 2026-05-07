@@ -9,7 +9,7 @@ import {
   ArrowRight, Clock, Zap, CreditCard, Mail, FileText, Hash, RefreshCw, Shield,
   Wifi, Globe, Monitor, AlertTriangle, MapPin, Phone, ShieldOff, ShieldCheck, Activity, Loader2, Tag,
 } from 'lucide-react';
-import { CardBrandBadge } from '@/components/CardBrandBadge';
+
 import { PaymentMethodIcon } from '@/components/PaymentMethodIcon';
 import { SettlementTimeline } from '@/components/SettlementTimeline';
 
@@ -50,10 +50,21 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
 
   const vgsAlias = (vaultEvent?.payload as any)?.vgs_alias || (tapixEvent?.payload as any)?.vgs_alias || null;
   // Prefer columns on the transaction (real data) and fall back to enrichment events
-  const cardBrand = transaction.card_brand || (tapixEvent?.payload as any)?.card_brand || (vaultEvent?.payload as any)?.card_brand || null;
+  const rawCardBrand = transaction.card_brand || (tapixEvent?.payload as any)?.card_brand || (vaultEvent?.payload as any)?.card_brand || null;
   const cardLast4 = transaction.card_last4 || (tapixEvent?.payload as any)?.card_last4 || (vaultEvent?.payload as any)?.card_last4 || null;
   const cardBin = transaction.card_bin || (tapixEvent?.payload as any)?.card_bin || (vaultEvent?.payload as any)?.card_bin || null;
   const paymentMethodType = transaction.payment_method_type || null;
+
+  // BIN-based brand detection (same as Activity and TransactionTable)
+  let cardBrand = rawCardBrand;
+  if (!cardBrand && cardBin) {
+    const b = cardBin;
+    if (b.startsWith('4')) cardBrand = 'visa';
+    else if (b.startsWith('5') || (b.startsWith('2') && parseInt(b.slice(0, 4)) >= 2221 && parseInt(b.slice(0, 4)) <= 2720)) cardBrand = 'mastercard';
+    else if (b.startsWith('34') || b.startsWith('37')) cardBrand = 'amex';
+    else if (b.startsWith('62')) cardBrand = 'unionpay';
+    else if (b.startsWith('6')) cardBrand = 'discover';
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -111,12 +122,13 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
                 Payment Method
               </h4>
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-                {(cardBrand || cardLast4 || cardBin) && (
-                  <CardBrandBadge brand={cardBrand} last4={cardLast4} first4={cardBin?.slice(0, 6)} size="md" />
-                )}
-                {!cardBrand && paymentMethodType && (
-                  <PaymentMethodIcon brand={null} paymentMethodType={paymentMethodType} showMask={false} />
-                )}
+                <PaymentMethodIcon
+                  brand={cardBrand || null}
+                  paymentMethodType={paymentMethodType}
+                  last4={cardLast4 || null}
+                  bin={cardBin || null}
+                  showMask={!!(cardLast4 || cardBin)}
+                />
                 {paymentMethodType && (
                   <DetailRow icon={CreditCard} label="Type" value={
                     <span className="text-xs capitalize">{paymentMethodType.replace(/_/g, ' ')}</span>

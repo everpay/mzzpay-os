@@ -727,7 +727,7 @@ serve(async (req) => {
       await supabase.from('idempotency_keys').upsert({
         merchant_id: merchant.id,
         key: idempotencyKey,
-        response: { transaction, providerResponse },
+        response: { transaction },
       }, { onConflict: 'merchant_id,key' });
     }
 
@@ -779,11 +779,14 @@ serve(async (req) => {
     const declineMessage = procErrorMessage || providerResponse?.error?.message || null;
     const declineCode = procErrorCode || providerResponse?.error?.code || null;
 
+    // Strip internal fields (descriptor, client_id, raw processor data) from frontend response
+    const safeTransaction = { ...transaction };
+    delete (safeTransaction as any).processor_raw_response;
+
     return new Response(
       JSON.stringify({
         success: isApproved,
-        transaction,
-        providerResponse,
+        transaction: safeTransaction,
         ...(txStatus === 'failed' ? {
           decline_message: declineMessage,
           decline_code: declineCode,

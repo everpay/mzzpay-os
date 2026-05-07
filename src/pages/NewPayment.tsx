@@ -18,6 +18,7 @@ import { SecureCardForm } from '@/components/SecureCardForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FormValidationBanner, type FormValidationBannerData } from '@/components/FormValidationBanner';
 import { notifyError } from '@/lib/error-toast';
+import { buildBannerFromResponse, sanitizePaymentResponse } from '@/lib/error-mapping';
 
 import { usePaymentPolling } from '@/hooks/usePaymentPolling';
 import { getThreeDSecureRedirectUrl } from '@/lib/three-d-secure';
@@ -252,28 +253,24 @@ export default function NewPayment() {
         return;
       }
 
+      // Sanitize the response — strip providerResponse, descriptor, client_id
+      const safe = sanitizePaymentResponse(data || {});
+
       // Check for declines FIRST — a failed transaction must show the decline
       // banner immediately, never the "Verifying charge…" spinner + poll.
-      if (txStatus === 'failed' || data?.transaction?.status === 'failed') {
-        const declineReason = data.decline_message || data.error || data.providerResponse?.error?.message || 'Transaction declined by processor';
-        const declineCode = data.decline_code || data.providerResponse?.error?.code || '';
-        const is004 = String(declineCode) === '004' || /processor not found/i.test(declineReason);
-         setResultBanner(is004
-           ? { tone: 'error', title: 'Acquirer configuration error', description: 'ShieldHub rejected — no processor enabled for this merchant. Card NOT charged.', code: '004' }
-           : { tone: 'error', title: 'Payment declined', description: `${declineReason}${declineCode ? ` (code ${declineCode})` : ''}`, code: declineCode || undefined }
-         );
-       } else if (data?.success) {
+      if (txStatus === 'failed' || safe?.transaction?.status === 'failed') {
+        setResultBanner(buildBannerFromResponse(safe));
+      } else if (safe?.success) {
          setFieldErrors(null);
          setFormErrors([]);
          idempotencyKeyRef.current = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-         const desc = `${amount} ${currency} via ${selectedProvider}. Verifying ledger...`;
-         setResultBanner({ tone: 'info', title: 'Verifying charge', description: desc });
-         if (data.transaction?.id) startPolling(data.transaction.id);
-       } else if (data?.transaction?.status === 'pending') {
-         if (data.transaction?.id) startPolling(data.transaction.id);
-         setResultBanner({ tone: 'info', title: 'Payment processing', description: 'Checking status...' });
+         setResultBanner(buildBannerFromResponse(safe));
+         if (safe.transaction?.id) startPolling(safe.transaction.id);
+       } else if (safe?.transaction?.status === 'pending') {
+         if (safe.transaction?.id) startPolling(safe.transaction.id);
+         setResultBanner(buildBannerFromResponse(safe));
        } else {
-         setResultBanner({ tone: 'warning', title: 'Payment pending', description: `Status: ${data?.transaction?.status || 'unknown'}` });
+         setResultBanner(buildBannerFromResponse(safe));
       }
 
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
