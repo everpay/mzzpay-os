@@ -254,37 +254,33 @@ export default function Checkout() {
         return;
       }
 
-      // Processor decline — surface raw provider message
-      const isFailed =
-        provResp.status === 'Failed' ||
-        provResp.transaction_status === 'FAILED' ||
-        data?.transaction?.status === 'failed' ||
-        !data?.success;
+       // Processor decline — use centralized error mapping for consistent messaging
+       const isFailed =
+         provResp.status === 'Failed' ||
+         provResp.transaction_status === 'FAILED' ||
+         data?.transaction?.status === 'failed' ||
+         !data?.success;
 
-      if (isFailed) {
-        const procMsg =
-          provResp?.error?.message ||
-          provResp?.gateway_message ||
-          provResp?.message ||
-          data?.error ||
-          'Payment declined';
-        const procCode = provResp?.error?.code || provResp?.code || '';
+       if (isFailed) {
+         const rawMsg = provResp?.error?.message || provResp?.gateway_message || provResp?.message || data?.error || '';
+         const procCode = provResp?.error?.code || provResp?.code || '';
+         const userMessage = mapProviderError(rawMsg, procCode || null);
 
-        setRetryCount((c) => c + 1);
-        setLastFailedProvider(data?.transaction?.provider || provResp?.provider || '');
-        setLastProcessorError(procCode ? `${procMsg} [${procCode}]` : procMsg);
+         setRetryCount((c) => c + 1);
+         setLastFailedProvider(data?.transaction?.provider || provResp?.provider || '');
+         setLastProcessorError(userMessage);
 
-        if (retryCount < 2) {
-          notifyError(procCode ? `${procMsg} [${procCode}]` : procMsg, {
-            description: 'Try again or use a different payment method.',
-          });
-          setShowRetryPanel(true);
-        } else {
-          notifyError('Payment declined after multiple attempts');
-          redirectToOutcome('failed', data?.transaction?.id);
-        }
-        return;
-      }
+         if (retryCount < 2) {
+           notifyError(userMessage, {
+             description: 'Try again or use a different payment method.',
+           });
+           setShowRetryPanel(true);
+         } else {
+           notifyError('Payment declined after multiple attempts');
+           redirectToOutcome('failed', data?.transaction?.id);
+         }
+         return;
+       }
 
       // Receipt email (best-effort). Only fired for completed payments so the
       // template's "Save as PDF" / "Copy link" buttons always have valid
