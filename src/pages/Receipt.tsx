@@ -14,7 +14,7 @@ interface Receipt {
   orderId: string | null;
   customerEmail: string | null;
   merchant: { name: string; supportEmail: string | null; logoUrl: string | null; primaryColor: string | null };
-  descriptor: string | null;
+  // SECURITY: descriptor removed — never expose in frontend
 }
 
 const PROJECT_ID =
@@ -94,7 +94,7 @@ export default function Receipt() {
     ['Status', receipt.status],
     ['Method', receipt.method],
     ['Description', receipt.description],
-    ['Statement descriptor', receipt.descriptor],
+    // SECURITY: Statement descriptor removed — never expose in frontend
   ];
 
   return (
@@ -135,16 +135,13 @@ export default function Receipt() {
             </button>
           </div>
 
-          {receipt.descriptor && (
+          {/* SECURITY: descriptor display removed — never expose in frontend */}
+          {receipt.merchant.supportEmail && (
             <p className="text-xs text-muted-foreground bg-muted/60 border border-border rounded-md p-3 text-center leading-relaxed">
-              This charge will appear on your statement as{' '}
-              <strong className="font-mono text-foreground">{receipt.descriptor}</strong>
-              {receipt.merchant.supportEmail && (
-                <> . If you don't recognise it, email{' '}
-                  <a className="underline" href={`mailto:${receipt.merchant.supportEmail}`}>
-                    {receipt.merchant.supportEmail}
-                  </a>{' '}before disputing.</>
-              )}
+              Questions about this charge? Email{' '}
+              <a className="underline" href={`mailto:${receipt.merchant.supportEmail}`}>
+                {receipt.merchant.supportEmail}
+              </a>{' '}before disputing.
             </p>
           )}
         </article>
