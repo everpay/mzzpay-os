@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, Bitcoin, AlertTriangle, RefreshCw, HelpCircle } from 'lucide-react';
+import { DeclineRetryOverlay } from '@/components/DeclineBanner';
+import { mapProviderError } from '@/lib/error-mapping';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -252,37 +254,33 @@ export default function Checkout() {
         return;
       }
 
-      // Processor decline — surface raw provider message
-      const isFailed =
-        provResp.status === 'Failed' ||
-        provResp.transaction_status === 'FAILED' ||
-        data?.transaction?.status === 'failed' ||
-        !data?.success;
+       // Processor decline — use centralized error mapping for consistent messaging
+       const isFailed =
+         provResp.status === 'Failed' ||
+         provResp.transaction_status === 'FAILED' ||
+         data?.transaction?.status === 'failed' ||
+         !data?.success;
 
-      if (isFailed) {
-        const procMsg =
-          provResp?.error?.message ||
-          provResp?.gateway_message ||
-          provResp?.message ||
-          data?.error ||
-          'Payment declined';
-        const procCode = provResp?.error?.code || provResp?.code || '';
+       if (isFailed) {
+         const rawMsg = provResp?.error?.message || provResp?.gateway_message || provResp?.message || data?.error || '';
+         const procCode = provResp?.error?.code || provResp?.code || '';
+         const userMessage = mapProviderError(rawMsg, procCode || null);
 
-        setRetryCount((c) => c + 1);
-        setLastFailedProvider(data?.transaction?.provider || provResp?.provider || '');
-        setLastProcessorError(procCode ? `${procMsg} [${procCode}]` : procMsg);
+         setRetryCount((c) => c + 1);
+         setLastFailedProvider(data?.transaction?.provider || provResp?.provider || '');
+         setLastProcessorError(userMessage);
 
-        if (retryCount < 2) {
-          notifyError(procCode ? `${procMsg} [${procCode}]` : procMsg, {
-            description: 'Try again or use a different payment method.',
-          });
-          setShowRetryPanel(true);
-        } else {
-          notifyError('Payment declined after multiple attempts');
-          redirectToOutcome('failed', data?.transaction?.id);
-        }
-        return;
-      }
+         if (retryCount < 2) {
+           notifyError(userMessage, {
+             description: 'Try again or use a different payment method.',
+           });
+           setShowRetryPanel(true);
+         } else {
+           notifyError('Payment declined after multiple attempts');
+           redirectToOutcome('failed', data?.transaction?.id);
+         }
+         return;
+       }
 
       // Receipt email (best-effort). Only fired for completed payments so the
       // template's "Save as PDF" / "Copy link" buttons always have valid
@@ -652,46 +650,26 @@ export default function Checkout() {
       </div>
 
       {/* Processor-error retry overlay */}
-      {showRetryPanel && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl space-y-5">
-            <div className="mx-auto h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground text-center">Payment Failed</h2>
-            <p className="text-sm text-muted-foreground text-center">
-              {lastProcessorError || `Your payment couldn't be processed${lastFailedProvider ? ` via ${lastFailedProvider}` : ''}.`}
-            </p>
-            <div className="space-y-3">
-              <Button className="w-full gap-2" disabled={isSubmitting} onClick={() => { setShowRetryPanel(false); toast.info('Retrying payment…', { description: `Attempt ${retryCount + 1} with same idempotency key` }); handleSubmit(undefined, { isRetry: true }); }}>
-                <RefreshCw className="h-4 w-4" /> Retry Payment (same idempotency key)
-              </Button>
-              <Button
-                variant="outline" className="w-full gap-2"
-                onClick={() => {
-                  setShowRetryPanel(false);
-                  setPaymentMethod(paymentMethod === 'card' ? 'openbanking' : 'card');
-                }}
-              >
-                <Building2 className="h-4 w-4" /> Try {paymentMethod === 'card' ? 'Bank Transfer' : 'Card'} Instead
-              </Button>
-              {cancelUrl && (
-                <Button variant="ghost" className="w-full text-muted-foreground" asChild>
-                  <a href={cancelUrl}>Cancel and return</a>
-                </Button>
-              )}
-            </div>
-            <div className="space-y-1 text-center">
-              <p className="text-xs text-muted-foreground">
-                Attempt {retryCount} of 3 · Secured by MZZPay
-              </p>
-              <p className="text-[10px] font-mono text-muted-foreground/70 break-all">
-                key: {idempotencyKey}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeclineRetryOverlay
+        visible={showRetryPanel}
+        errorMessage={lastProcessorError || `Your payment couldn't be processed${lastFailedProvider ? ` via ${lastFailedProvider}` : ''}.`}
+        retryCount={retryCount}
+        maxRetries={3}
+        isSubmitting={isSubmitting}
+        currentMethod={paymentMethod}
+        cancelUrl={cancelUrl}
+        idempotencyKey={idempotencyKey}
+        onRetry={() => {
+          setShowRetryPanel(false);
+          toast.info('Retrying payment…', { description: `Attempt ${retryCount + 1} with same idempotency key` });
+          handleSubmit(undefined, { isRetry: true });
+        }}
+        onSwitchMethod={(m) => {
+          setShowRetryPanel(false);
+          setPaymentMethod(m as any);
+        }}
+        onDismiss={() => setShowRetryPanel(false)}
+      />
 
     </div>
   );

@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText, Download, Bitcoin, RefreshCw, AlertTriangle } from 'lucide-react';
+import { CreditCard, ArrowRight, Loader2, Shield, Lock, CheckCircle, Globe, Building2, FileText, Download, Bitcoin } from 'lucide-react';
+import { DeclineRetryOverlay } from '@/components/DeclineBanner';
+import { mapProviderError } from '@/lib/error-mapping';
 
 import { supabase } from '@/integrations/supabase/client';
 import { getThreeDSecureRedirectUrl } from '@/lib/three-d-secure';
@@ -169,25 +171,27 @@ export default function PayInvoice() {
         return;
       }
 
-      // Check for failure — handle all decline shapes
-      const isFailed =
-        provResp.status === 'Failed' || provResp.status === 'Declined' ||
-        provResp.transaction_status === 'FAILED' ||
-        data?.transaction?.status === 'failed' ||
-        (data?.success === false && !data?.transaction);
-      if (isFailed) {
-        const msg = provResp?.error?.message || provResp?.gateway_message || provResp?.message || data?.error || 'Payment declined';
-        setRetryCount((c) => c + 1);
-        setLastProcessorError(msg);
+       // Check for failure — handle all decline shapes with centralized error mapping
+       const isFailed =
+         provResp.status === 'Failed' || provResp.status === 'Declined' ||
+         provResp.transaction_status === 'FAILED' ||
+         data?.transaction?.status === 'failed' ||
+         (data?.success === false && !data?.transaction);
+       if (isFailed) {
+         const rawMsg = provResp?.error?.message || provResp?.gateway_message || provResp?.message || data?.error || '';
+         const procCode = provResp?.error?.code || provResp?.code || '';
+         const userMessage = mapProviderError(rawMsg, procCode || null);
+         setRetryCount((c) => c + 1);
+         setLastProcessorError(userMessage);
 
-        if (retryCount < 2) {
-          notifyError(msg, { description: 'Try again or use a different payment method.' });
-          setShowRetryPanel(true);
-        } else {
-          notifyError('Payment declined after multiple attempts');
-        }
-        return;
-      }
+         if (retryCount < 2) {
+           notifyError(userMessage, { description: 'Try again or use a different payment method.' });
+           setShowRetryPanel(true);
+         } else {
+           notifyError('Payment declined after multiple attempts');
+         }
+         return;
+       }
 
       // Mark invoice as paid
       await supabase.from('invoices').update({
@@ -443,36 +447,23 @@ export default function PayInvoice() {
       </div>
 
       {/* Retry overlay */}
-      {showRetryPanel && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl space-y-5">
-            <div className="mx-auto h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground text-center">Payment Failed</h2>
-            <p className="text-sm text-muted-foreground text-center">
-              {lastProcessorError || "Your payment couldn't be processed."}
-            </p>
-            <div className="space-y-3">
-              <Button className="w-full gap-2" disabled={isSubmitting} onClick={() => { setShowRetryPanel(false); handleSubmit(undefined, { isRetry: true }); }}>
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Retry Payment
-              </Button>
-              <Button
-                variant="outline" className="w-full gap-2"
-                onClick={() => {
-                  setShowRetryPanel(false);
-                  setPaymentMethod(paymentMethod === 'card' ? 'openbanking' : 'card');
-                }}
-              >
-                Try {paymentMethod === 'card' ? 'Bank Transfer' : 'Card'} Instead
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center">
-              Attempt {retryCount} of 3 · Secured by MZZPay
-            </p>
-          </div>
-        </div>
-      )}
+      <DeclineRetryOverlay
+        visible={showRetryPanel}
+        errorMessage={lastProcessorError || "Your payment couldn't be processed."}
+        retryCount={retryCount}
+        maxRetries={3}
+        isSubmitting={isSubmitting}
+        currentMethod={paymentMethod}
+        onRetry={() => {
+          setShowRetryPanel(false);
+          handleSubmit(undefined, { isRetry: true });
+        }}
+        onSwitchMethod={(m) => {
+          setShowRetryPanel(false);
+          setPaymentMethod(m as any);
+        }}
+        onDismiss={() => setShowRetryPanel(false)}
+      />
 
     </div>
   );

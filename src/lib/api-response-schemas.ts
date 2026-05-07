@@ -5,12 +5,21 @@
  * shieldhub_client_id, processor_raw_response, providerResponse) are
  * NEVER present in parsed responses. Use `.parse()` or `.safeParse()`
  * on every API response before the data reaches the UI.
+ *
+ * Field policy:
+ * - `descriptor` / `descriptor_text`: ALLOWED — shown on admin TransactionTable,
+ *   Receipt page, and transactional emails.
+ * - `client_id` / `shieldhub_client_id`: ALLOWED in data (not stripped) but
+ *   NEVER rendered on any frontend surface.
+ * - `providerResponse` / `processor_raw_response`: ALWAYS STRIPPED — may contain
+ *   raw processor payloads with sensitive details.
  */
 
 import { z } from 'zod';
 
 // ── Shared field strips ─────────────────────────────────────────────
-// Fields that must never appear in any frontend response
+// Fields that must never appear in any frontend response.
+// descriptor and client_id are intentionally NOT in this list.
 const STRIPPED_FIELDS = [
   'providerResponse',
   'processor_raw_response',
@@ -58,6 +67,12 @@ const transactionBaseSchema = z.object({
   processor_error_message: z.string().optional().nullable(),
   surcharge_amount: z.number().optional().nullable(),
   total_amount: z.number().optional().nullable(),
+  // Explicitly allowed — shown on admin surfaces and receipts
+  descriptor: z.string().optional().nullable(),
+  descriptor_text: z.string().optional().nullable(),
+  // Explicitly allowed in data — NEVER rendered in UI
+  client_id: z.string().optional().nullable(),
+  shieldhub_client_id: z.string().optional().nullable(),
   created_at: z.string(),
   updated_at: z.string().optional(),
 }).passthrough().transform(stripSensitive);
