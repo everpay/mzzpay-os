@@ -207,8 +207,14 @@ export function TransactionTable({ transactions, compact = false, disableDrawer 
                       {formatDate(tx.created_at)}
                     </td>
 
-                    {/* SECURITY: Descriptor cell removed — never expose in frontend */}
-
+                    {/* Descriptor (admin only) */}
+                    {isAdmin && (
+                      <td className="px-3 py-2.5 hidden lg:table-cell">
+                        <span className="text-xs text-muted-foreground font-mono truncate max-w-[160px] block">
+                          {(tx as any).descriptor || '—'}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Status */}
                     <td className="px-3 py-2.5">
