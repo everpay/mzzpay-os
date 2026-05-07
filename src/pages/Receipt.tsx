@@ -94,7 +94,7 @@ export default function Receipt() {
     ['Status', receipt.status],
     ['Method', receipt.method],
     ['Description', receipt.description],
-    // SECURITY: Statement descriptor removed — never expose in frontend
+    ['Statement Descriptor', receipt.descriptor],
   ];
 
   return (
