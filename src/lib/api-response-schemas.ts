@@ -12,8 +12,6 @@ import { z } from 'zod';
 // ── Shared field strips ─────────────────────────────────────────────
 // Fields that must never appear in any frontend response
 const STRIPPED_FIELDS = [
-  'descriptor',
-  'descriptor_text',
   'client_id',
   'shieldhub_client_id',
   'providerResponse',
