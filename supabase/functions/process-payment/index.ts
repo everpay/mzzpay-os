@@ -727,7 +727,7 @@ serve(async (req) => {
       await supabase.from('idempotency_keys').upsert({
         merchant_id: merchant.id,
         key: idempotencyKey,
-        response: { transaction, providerResponse },
+        response: { transaction },
       }, { onConflict: 'merchant_id,key' });
     }
 
