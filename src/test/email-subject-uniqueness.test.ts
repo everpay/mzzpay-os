@@ -11,10 +11,13 @@ import { describe, it, expect } from 'vitest';
 // Mirror every template's subject function exactly as defined in the .tsx files.
 // When adding a new template, you MUST add its subject function here too.
 const TEMPLATE_SUBJECTS: Record<string, (data: Record<string, any>) => string> = {
-  'payment-confirmation': (d) =>
-    d.status === 'Declined'
-      ? `Payment Declined — ${d.amount || '0.00'} ${d.currency || 'USD'} — ${d.errorCode || 'Error'}`
-      : `Payment Approved — ${d.amount || '0.00'} ${d.currency || 'USD'} — Receipt #${d.transactionId ? d.transactionId.slice(-8).toUpperCase() : 'N/A'}`,
+  'payment-confirmation': (d) => {
+    const isDeclined = d.status?.toLowerCase() === 'declined' || d.status?.toLowerCase() === 'failed';
+    if (isDeclined) {
+      return `Payment Declined — ${d.amount || '0.00'} ${d.currency || 'USD'}${d.errorCode ? ` — ${d.errorCode}` : ' — Error'}`;
+    }
+    return `Payment Approved — ${d.amount || '0.00'} ${d.currency || 'USD'} — Receipt #${d.transactionId ? d.transactionId.slice(-8).toUpperCase() : 'N/A'}`;
+  },
   'payment-declined': (d) =>
     `Payment Declined — ${d.amount || '0.00'} ${d.currency || 'USD'}${d.reason ? ` — ${d.reason}` : ''}`,
   'charge-succeeded': (d) =>
