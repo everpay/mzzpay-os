@@ -11,10 +11,13 @@ import { describe, it, expect } from 'vitest';
 // Mirror every template's subject function exactly as defined in the .tsx files.
 // When adding a new template, you MUST add its subject function here too.
 const TEMPLATE_SUBJECTS: Record<string, (data: Record<string, any>) => string> = {
-  'payment-confirmation': (d) =>
-    d.status === 'Declined'
-      ? `Payment Declined — ${d.amount || '0.00'} ${d.currency || 'USD'} — ${d.errorCode || 'Error'}`
-      : `Payment Approved — ${d.amount || '0.00'} ${d.currency || 'USD'} — Receipt #${d.transactionId ? d.transactionId.slice(-8).toUpperCase() : 'N/A'}`,
+  'payment-confirmation': (d) => {
+    const isDeclined = d.status?.toLowerCase() === 'declined' || d.status?.toLowerCase() === 'failed';
+    if (isDeclined) {
+      return `Payment Declined — ${d.amount || '0.00'} ${d.currency || 'USD'}${d.errorCode ? ` — ${d.errorCode}` : ' — Error'}`;
+    }
+    return `Payment Approved — ${d.amount || '0.00'} ${d.currency || 'USD'} — Receipt #${d.transactionId ? d.transactionId.slice(-8).toUpperCase() : 'N/A'}`;
+  },
   'payment-declined': (d) =>
     `Payment Declined — ${d.amount || '0.00'} ${d.currency || 'USD'}${d.reason ? ` — ${d.reason}` : ''}`,
   'charge-succeeded': (d) =>
@@ -100,5 +103,43 @@ describe('Email subject line uniqueness (all templates)', () => {
       const subject = fn(SAMPLE_DATA);
       expect(subject.length, `${name} subject too long: "${subject}"`).toBeLessThanOrEqual(120);
     }
+  });
+
+  it('payment-confirmation approved subject starts with "Payment Approved"', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'Approved' });
+    expect(subject).toMatch(/^Payment Approved/);
+    expect(subject).not.toMatch(/Declined/);
+  });
+
+  it('payment-confirmation declined subject starts with "Payment Declined"', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'Declined' });
+    expect(subject).toMatch(/^Payment Declined/);
+    expect(subject).not.toMatch(/Approved/);
+  });
+
+  it('payment-confirmation failed subject starts with "Payment Declined"', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'failed' });
+    expect(subject).toMatch(/^Payment Declined/);
+  });
+
+  it('declined subject includes errorCode when present', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'Declined', errorCode: 'E51' });
+    expect(subject).toContain('E51');
+    expect(subject).toMatch(/— E51$/);
+  });
+
+  it('failed subject includes errorCode when present', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'failed', errorCode: 'DO_NOT_HONOR' });
+    expect(subject).toContain('DO_NOT_HONOR');
+  });
+
+  it('declined subject without errorCode falls back to "Error"', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'Declined', errorCode: undefined });
+    expect(subject).toMatch(/— Error$/);
+  });
+
+  it('payment-declined template includes reason when provided', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-declined']({ ...SAMPLE_DATA, reason: 'Insufficient funds' });
+    expect(subject).toContain('Insufficient funds');
   });
 });
