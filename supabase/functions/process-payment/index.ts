@@ -974,6 +974,8 @@ async function processMzzPayPayment(data: PaymentRequest, req: Request) {
     // Omitting `descriptor` causes "004 Processor not found".
     descriptor: descriptor,
     descriptor_text: descriptor,
+    // client_id in the body ensures ShieldHub can match the processor for routing.
+    client_id: clientId,
     redirect_mode: 'modal',
     redirectback_url: threeDSReturnUrl,
     return_url: threeDSReturnUrl,
