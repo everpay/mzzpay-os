@@ -122,12 +122,13 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
                 Payment Method
               </h4>
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-                {(cardBrand || cardLast4 || cardBin) && (
-                  <CardBrandBadge brand={cardBrand} last4={cardLast4} first4={cardBin?.slice(0, 6)} size="md" />
-                )}
-                {!cardBrand && paymentMethodType && (
-                  <PaymentMethodIcon brand={null} paymentMethodType={paymentMethodType} showMask={false} />
-                )}
+                <PaymentMethodIcon
+                  brand={cardBrand || null}
+                  paymentMethodType={paymentMethodType}
+                  last4={cardLast4 || null}
+                  bin={cardBin || null}
+                  showMask={!!(cardLast4 || cardBin)}
+                />
                 {paymentMethodType && (
                   <DetailRow icon={CreditCard} label="Type" value={
                     <span className="text-xs capitalize">{paymentMethodType.replace(/_/g, ' ')}</span>
