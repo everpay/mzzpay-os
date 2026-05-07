@@ -268,8 +268,10 @@ export default function NewPayment() {
         setFieldErrors(null);
         setFormErrors([]);
         idempotencyKeyRef.current = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const resolvedDescriptor = data.providerResponse?.descriptor || undefined;
+        const resolvedClientId = data.providerResponse?.shieldhub_client_id || undefined;
         const desc = `${amount} ${currency} via ${selectedProvider} — ${data.transaction.id.slice(0, 8)}. Verifying ledger...`;
-        setResultBanner({ tone: 'info', title: 'Verifying charge', description: desc, txId: data.transaction.id });
+        setResultBanner({ tone: 'info', title: 'Verifying charge', description: desc, txId: data.transaction.id, descriptor: resolvedDescriptor, clientId: resolvedClientId });
         if (data.transaction?.id) startPolling(data.transaction.id);
       } else if (data?.transaction?.status === 'pending') {
         if (data.transaction?.id) startPolling(data.transaction.id);
