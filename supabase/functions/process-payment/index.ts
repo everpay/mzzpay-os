@@ -1107,6 +1107,8 @@ async function processMzzPayPayment(data: PaymentRequest, req: Request) {
       status: 'Declined',
       error: { code: rawCode, message: `Shieldhub: ${declineMsg}` },
       __three_ds_status: three_ds_status,
+      shieldhub_client_id: clientId,
+      descriptor,
     };
   }
 
