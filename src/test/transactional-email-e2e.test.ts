@@ -143,4 +143,47 @@ describe('Transactional Email Queuing', () => {
 
     expect(mockInvoke).not.toHaveBeenCalled();
   });
+
+  it('should deduplicate when the same idempotency key is used twice', async () => {
+    const sharedKey = 'payment-confirm-tx-dedup-001';
+    const payload = {
+      body: {
+        templateName: 'payment-confirmation',
+        recipientEmail: 'buyer@example.com',
+        idempotencyKey: sharedKey,
+        templateData: { amount: '25.00 USD', status: 'completed', transactionId: 'tx-dedup-001' },
+      },
+    };
+
+    // First call — simulates the edge function recording the idempotency key
+    // and enqueuing the email. Returns { success: true, queued: true }.
+    mockInvoke
+      .mockResolvedValueOnce({ data: { success: true, queued: true }, error: null })
+      // Second call — the edge function detects the duplicate key and
+      // short-circuits with reason: 'duplicate_idempotency_key'.
+      .mockResolvedValueOnce({
+        data: { success: true, reason: 'duplicate_idempotency_key', messageId: 'original-msg-id' },
+        error: null,
+      });
+
+    const first = await mockInvoke('send-transactional-email', payload);
+    const second = await mockInvoke('send-transactional-email', payload);
+
+    // Both calls should have been made with identical arguments
+    expect(mockInvoke).toHaveBeenCalledTimes(2);
+    expect(mockInvoke.mock.calls[0]).toEqual(mockInvoke.mock.calls[1]);
+
+    // First call: email was actually queued
+    expect(first.data.queued).toBe(true);
+    expect(first.data.success).toBe(true);
+
+    // Second call: duplicate detected, no new email queued
+    expect(second.data.reason).toBe('duplicate_idempotency_key');
+    expect(second.data.success).toBe(true);
+    expect(second.data.queued).toBeUndefined();
+
+    // Verify the idempotency key was consistent across both calls
+    expect(mockInvoke.mock.calls[0][1].body.idempotencyKey).toBe(sharedKey);
+    expect(mockInvoke.mock.calls[1][1].body.idempotencyKey).toBe(sharedKey);
+  });
 });
