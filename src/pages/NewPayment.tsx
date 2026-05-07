@@ -18,6 +18,7 @@ import { SecureCardForm } from '@/components/SecureCardForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FormValidationBanner, type FormValidationBannerData } from '@/components/FormValidationBanner';
 import { notifyError } from '@/lib/error-toast';
+import { buildBannerFromResponse, sanitizePaymentResponse } from '@/lib/error-mapping';
 
 import { usePaymentPolling } from '@/hooks/usePaymentPolling';
 import { getThreeDSecureRedirectUrl } from '@/lib/three-d-secure';
