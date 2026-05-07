@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Account } from '@/lib/types';
+import { stripSensitiveFields } from '@/lib/api-response-schemas';
 
 export function useAccounts() {
   return useQuery({
@@ -24,7 +25,8 @@ export function useAccounts() {
 
       if (error) throw error;
 
-      return data as unknown as Account[];
+      const sanitized = (data ?? []).map((row: any) => stripSensitiveFields(row));
+      return sanitized as unknown as Account[];
     },
   });
 }
