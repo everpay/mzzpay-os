@@ -8,6 +8,8 @@ export interface PaymentResultBannerData {
   description: string;
   code?: string;
   txId?: string;
+  descriptor?: string;
+  clientId?: string;
 }
 
 interface Props {
@@ -52,6 +54,12 @@ export function PaymentResultBanner({ banner, onDismiss }: Props) {
           )}
         </div>
         <p className="mt-1 text-sm leading-relaxed text-white/95">{banner.description}</p>
+        {(banner.descriptor || banner.clientId) && (
+          <div className="mt-1.5 flex flex-wrap gap-2 text-[11px] font-mono text-white/80">
+            {banner.descriptor && <span>descriptor: {banner.descriptor}</span>}
+            {banner.clientId && <span>client-id: {banner.clientId}</span>}
+          </div>
+        )}
         {banner.txId && (
           <p className="mt-1 font-mono text-[11px] text-white/75">tx {banner.txId.slice(0, 8)}…</p>
         )}

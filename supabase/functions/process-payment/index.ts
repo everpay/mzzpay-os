@@ -974,6 +974,8 @@ async function processMzzPayPayment(data: PaymentRequest, req: Request) {
     // Omitting `descriptor` causes "004 Processor not found".
     descriptor: descriptor,
     descriptor_text: descriptor,
+    // client_id in the body ensures ShieldHub can match the processor for routing.
+    client_id: clientId,
     redirect_mode: 'modal',
     redirectback_url: threeDSReturnUrl,
     return_url: threeDSReturnUrl,
@@ -1105,6 +1107,8 @@ async function processMzzPayPayment(data: PaymentRequest, req: Request) {
       status: 'Declined',
       error: { code: rawCode, message: `Shieldhub: ${declineMsg}` },
       __three_ds_status: three_ds_status,
+      shieldhub_client_id: clientId,
+      descriptor,
     };
   }
 
@@ -1121,7 +1125,7 @@ async function processMzzPayPayment(data: PaymentRequest, req: Request) {
       if (typeof v === 'string' && /^https?:\/\//i.test(v)) { realRedirectUrl = v; break; }
     }
     if (realRedirectUrl) {
-      return { ...parsed, transaction_reference: transactionReference, status: 'Redirect', redirect_url: realRedirectUrl, __three_ds_status: 'step_up_required' };
+      return { ...parsed, transaction_reference: transactionReference, status: 'Redirect', redirect_url: realRedirectUrl, __three_ds_status: 'step_up_required', shieldhub_client_id: clientId, descriptor };
     }
     const rawCode = String(parsed?.error?.code || parsed?.statusCode || '3DS_REDIRECT_MISSING_URL');
     return {
@@ -1135,7 +1139,7 @@ async function processMzzPayPayment(data: PaymentRequest, req: Request) {
     };
   }
 
-  return { ...parsed, transaction_reference: transactionReference, __three_ds_status: three_ds_status };
+  return { ...parsed, transaction_reference: transactionReference, __three_ds_status: three_ds_status, shieldhub_client_id: clientId, descriptor };
 }
 
 async function processMondoPayment(data: PaymentRequest) {
