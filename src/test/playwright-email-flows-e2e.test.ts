@@ -102,12 +102,128 @@ describe('Transactions page → Refund flow', () => {
     expect(subject).toBe('Refund Processed — 150.00 USD');
   });
 
-  it('failed refund includes errorCode in templateData', async () => {
+  it('failed refund includes errorCode and subject matches exact string', async () => {
     await simulateRefundFromUI('failed');
     const e = emailCalls[0];
     expect(e.templateData.status).toBe('failed');
     expect(e.templateData.errorCode).toBe('R05');
     expect(e.templateData.reason).toBe('Account frozen');
+
+    // Subject must still match the formatter — refund subject does not vary by status
+    const subject = subjectFormatters['refund-confirmation'](e.templateData);
+    expect(subject).toBe('Refund Processed — 150.00 USD');
+  });
+
+  it('approved refund subject exactly equals "Refund Processed — 150.00 USD"', async () => {
+    await simulateRefundFromUI('completed');
+    const subject = subjectFormatters['refund-confirmation'](emailCalls[0].templateData);
+    expect(subject).toStrictEqual('Refund Processed — 150.00 USD');
+    // Verify em-dash, not en-dash or hyphen
+    expect(subject).toContain('—');
+    expect(subject).not.toMatch(/ - /);
+    expect(subject).not.toContain('–');
+  });
+
+  it('failed refund subject exactly equals "Refund Processed — 150.00 USD" (status-independent)', async () => {
+    await simulateRefundFromUI('failed');
+    const subject = subjectFormatters['refund-confirmation'](emailCalls[0].templateData);
+    expect(subject).toStrictEqual('Refund Processed — 150.00 USD');
+  });
+
+  it('refund subject with EUR currency formats correctly', async () => {
+    await mockInvoke('send-transactional-email', {
+      body: {
+        templateName: 'refund-confirmation',
+        recipientEmail: 'buyer@example.com',
+        idempotencyKey: 'refund-confirm-ref-eur-001',
+        templateData: { amount: '89.50', currency: 'EUR', status: 'completed', transactionId: txnId, refundId: 'ref-eur-001' },
+      },
+    });
+    const subject = subjectFormatters['refund-confirmation'](emailCalls[0].templateData);
+    expect(subject).toStrictEqual('Refund Processed — 89.50 EUR');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// 1b. Payment-confirmation: Approved vs Declined errorCode contract
+// ═══════════════════════════════════════════════════════════════════════
+describe('Payment-confirmation: Approved vs Declined errorCode contract', () => {
+  async function simulatePaymentEmail(status: string, extra: Record<string, any> = {}) {
+    const payload = {
+      templateName: 'payment-confirmation',
+      recipientEmail: 'customer@example.com',
+      idempotencyKey: `payment-confirm-tx-contract-${status}`,
+      templateData: {
+        amount: '75.00',
+        currency: 'USD',
+        transactionId: 'tx-contract-abcd12345678',
+        cardBrand: 'Visa',
+        cardLast4: '4242',
+        status,
+        ...extra,
+      },
+    };
+    await mockInvoke('send-transactional-email', { body: payload });
+  }
+
+  it('Approved: templateData has NO errorCode, subject starts with "Payment Approved"', async () => {
+    await simulatePaymentEmail('Approved');
+    const e = emailCalls[0];
+    expect(e.templateData.errorCode).toBeUndefined();
+    const subject = subjectFormatters['payment-confirmation'](e.templateData);
+    expect(subject).toBe('Payment Approved — 75.00 USD — Receipt #12345678');
+    expect(subject).not.toContain('Declined');
+    expect(subject).not.toContain('Error');
+  });
+
+  it('Declined with errorCode: subject includes code after em-dash', async () => {
+    await simulatePaymentEmail('Declined', { errorCode: 'E51' });
+    const e = emailCalls[0];
+    expect(e.templateData.errorCode).toBe('E51');
+    const subject = subjectFormatters['payment-confirmation'](e.templateData);
+    expect(subject).toBe('Payment Declined — 75.00 USD — E51');
+    expect(subject).toMatch(/— E51$/);
+  });
+
+  it('Declined without errorCode: subject falls back to "Error"', async () => {
+    await simulatePaymentEmail('Declined');
+    const e = emailCalls[0];
+    expect(e.templateData.errorCode).toBeUndefined();
+    const subject = subjectFormatters['payment-confirmation'](e.templateData);
+    expect(subject).toBe('Payment Declined — 75.00 USD — Error');
+  });
+
+  it('failed status: subject also uses Declined format', async () => {
+    await simulatePaymentEmail('failed', { errorCode: 'CARD_STOLEN' });
+    const subject = subjectFormatters['payment-confirmation'](emailCalls[0].templateData);
+    expect(subject).toBe('Payment Declined — 75.00 USD — CARD_STOLEN');
+    expect(subject).toMatch(/^Payment Declined/);
+  });
+
+  it('errorCode presence/absence is mutually exclusive with Approved/Declined', async () => {
+    // Approved must never have errorCode
+    await simulatePaymentEmail('Approved');
+    expect(emailCalls[0].templateData.errorCode).toBeUndefined();
+    const approvedSubject = subjectFormatters['payment-confirmation'](emailCalls[0].templateData);
+    expect(approvedSubject).toMatch(/^Payment Approved/);
+
+    emailCalls.length = 0;
+
+    // Declined with errorCode must include it
+    await simulatePaymentEmail('Declined', { errorCode: 'DO_NOT_HONOR' });
+    expect(emailCalls[0].templateData.errorCode).toBe('DO_NOT_HONOR');
+    const declinedSubject = subjectFormatters['payment-confirmation'](emailCalls[0].templateData);
+    expect(declinedSubject).toContain('DO_NOT_HONOR');
+    expect(declinedSubject).not.toContain('Approved');
+  });
+
+  it('em-dash delimiter is consistent (never hyphen or en-dash)', async () => {
+    await simulatePaymentEmail('Declined', { errorCode: 'INSUFFICIENT_FUNDS' });
+    const subject = subjectFormatters['payment-confirmation'](emailCalls[0].templateData);
+    const dashes = subject.match(/—/g) || [];
+    expect(dashes.length).toBe(2); // amount separator + errorCode separator
+    expect(subject).not.toMatch(/ - /);
+    expect(subject).not.toContain('–');
   });
 });
 
