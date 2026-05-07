@@ -143,7 +143,7 @@ export function TransactionTable({ transactions, compact = false, disableDrawer 
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-1.5">
                         <PaymentMethodIcon
-                          brand={pmInfo.label !== 'Card' ? pmInfo.label : (tx.card_brand || null)}
+                          brand={pmInfo.label !== 'Card' ? pmInfo.label : (tx.card_brand || (cardFirst6 ? getCardBrand(cardFirst6) : null) || null)}
                           paymentMethodType={tx.payment_method_type || null}
                           last4={cardLast4 || null}
                           bin={cardFirst6 || null}
