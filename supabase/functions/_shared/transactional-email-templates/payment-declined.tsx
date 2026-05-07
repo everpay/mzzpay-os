@@ -40,6 +40,7 @@ const PaymentDeclinedEmail = ({
     ['Reference Number', displayId],
     ['Amount', `${amount} ${currency}`],
     ['Status', 'Declined'],
+    ['Error Code', errorCode],
     ['Reason', reason],
     ['Payment Method', cardBrand && cardLast4 ? `${cardLast4} - ${cardBrand.toUpperCase()}` : undefined],
     ['Merchant', merchantName],
