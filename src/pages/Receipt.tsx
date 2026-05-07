@@ -10,11 +10,11 @@ interface Receipt {
   type: string;
   method: string;
   description: string | null;
+  descriptor: string | null;
   date: string;
   orderId: string | null;
   customerEmail: string | null;
   merchant: { name: string; supportEmail: string | null; logoUrl: string | null; primaryColor: string | null };
-  // SECURITY: descriptor removed — never expose in frontend
 }
 
 const PROJECT_ID =
