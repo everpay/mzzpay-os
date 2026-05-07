@@ -8,7 +8,7 @@ import {
   SITE_NAME, LOGO_URL, shortId,
   main, container, heroBanner, heroLogoImg, heroLogoText, heroHeading, heroSubtext,
   bodySection, detailsTable, detailRow, detailLabelCol, detailValueCol,
-  detailLabel, detailValue, detailValueMono, footer,
+  detailLabel, detailValue, detailValueMono, detailValueRed, detailValueGreen, footer,
 } from './_shared-styles.ts'
 
 interface Props {
@@ -30,7 +30,15 @@ interface Props {
   cardLast4?: string
   cardBrand?: string
   customerName?: string
+  errorCode?: string
+  errorMessage?: string
 }
+
+const declinedBanner = {
+  background: 'linear-gradient(135deg, #991b1b 0%, #dc2626 50%, #ef4444 100%)',
+  padding: '36px 28px 32px',
+  textAlign: 'center' as const,
+} as const
 
 const PaymentConfirmationEmail = ({
   amount = '0.00',
@@ -51,6 +59,8 @@ const PaymentConfirmationEmail = ({
   cardLast4,
   cardBrand,
   customerName,
+  errorCode,
+  errorMessage,
 }: Props) => {
   const resolvedMethod = method || paymentMethod
   const resolvedDate = date || new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -58,61 +68,80 @@ const PaymentConfirmationEmail = ({
   const greeting = customerName ? `Hi ${customerName},` : 'Hi there,'
   const cardDisplay = cardBrand && cardLast4 ? `${cardLast4} - ${cardBrand.toUpperCase()}` : resolvedMethod
 
-  const rows: Array<[string, string | undefined]> = [
-    ['Reference Number', displayId],
-    ['Card Number ending', cardLast4],
-    ['Payment Method', cardDisplay],
-    ['Amount', `${amount} ${currency}`],
-    ['Date', resolvedDate],
-    ['Status', status],
-    ['Type', type],
-    ['Description', description],
+  const isDeclined = status?.toLowerCase() === 'declined' || status?.toLowerCase() === 'failed'
+  const heroTitle = isDeclined ? 'Transaction\nDeclined' : 'Transaction\nSuccessful'
+  const bannerStyle = isDeclined ? declinedBanner : heroBanner
+
+  const heroBody = isDeclined
+    ? `We were unable to process your ${type} of ${amount} ${currency}.${errorMessage ? ` Reason: ${errorMessage}` : ''}${errorCode ? ` (Code: ${errorCode})` : ''}`
+    : `You've successfully completed a ${type} of ${amount} ${currency}.`
+
+  const rows: Array<[string, string | undefined, 'mono' | 'red' | 'green' | 'default']> = [
+    ['Reference Number', displayId, 'mono'],
+    ['Card Number ending', cardLast4, 'default'],
+    ['Payment Method', cardDisplay, 'default'],
+    ['Amount', `${amount} ${currency}`, 'default'],
+    ['Date', resolvedDate, 'default'],
+    ['Status', status, isDeclined ? 'red' : 'green'],
+    ['Type', type, 'default'],
+    ['Description', description, 'default'],
   ]
+
+  if (isDeclined && errorCode) {
+    rows.push(['Error Code', errorCode, 'red'])
+  }
+  if (isDeclined && errorMessage) {
+    rows.push(['Reason', errorMessage, 'red'])
+  }
+
+  const styleMap = { mono: detailValueMono, red: detailValueRed, green: detailValueGreen, default: detailValue }
 
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>Payment of {amount} {currency} completed</Preview>
+      <Preview>{isDeclined ? `Payment Declined — ${amount} ${currency}` : `Payment of ${amount} ${currency} completed`}</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Hero gradient banner */}
-          <Section style={heroBanner}>
+          <Section style={bannerStyle}>
             <Img src={LOGO_URL} width="36" height="36" alt={SITE_NAME} style={heroLogoImg} />
             <span style={heroLogoText}>{SITE_NAME}</span>
 
             <Heading as="h1" style={heroHeading}>
-              Transaction{'\n'}Successful
+              {heroTitle}
             </Heading>
 
             <Text style={heroSubtext}>
               {greeting}
             </Text>
             <Text style={{ ...heroSubtext, marginTop: '12px' }}>
-              You've successfully completed a {type} of {amount} {currency}.
+              {heroBody}
             </Text>
-            <Text style={{ ...heroSubtext, marginTop: '12px' }}>
-              See details of your transaction below.
-            </Text>
+            {!isDeclined && (
+              <Text style={{ ...heroSubtext, marginTop: '12px' }}>
+                See details of your transaction below.
+              </Text>
+            )}
           </Section>
 
           {/* Detail rows */}
           <Section style={bodySection}>
             <Section style={detailsTable}>
-              {rows.map(([label, value]) =>
+              {rows.map(([label, value, variant]) =>
                 value ? (
                   <Row key={label} style={detailRow}>
                     <Column style={detailLabelCol}>
                       <span style={detailLabel}>{label}</span>
                     </Column>
                     <Column style={detailValueCol}>
-                      <span style={label === 'Reference Number' ? detailValueMono : detailValue}>{value}</span>
+                      <span style={styleMap[variant]}>{value}</span>
                     </Column>
                   </Row>
                 ) : null,
               )}
             </Section>
 
-            {descriptor && (
+            {descriptor && !isDeclined && (
               <Text style={descriptorNote}>
                 This charge will appear on your statement as{' '}
                 <strong style={descriptorMark}>{descriptor}</strong>
@@ -125,7 +154,7 @@ const PaymentConfirmationEmail = ({
               </Text>
             )}
 
-            {(pdfUrl || receiptUrl) && (
+            {!isDeclined && (pdfUrl || receiptUrl) && (
               <Row style={{ marginTop: '20px', textAlign: 'center' as const }}>
                 {pdfUrl && (
                   <Column align="center" style={{ paddingRight: receiptUrl ? '6px' : 0 }}>
@@ -199,8 +228,13 @@ const descriptorLink = {
 
 export const template = {
   component: PaymentConfirmationEmail,
-  subject: (data: Record<string, any>) =>
-    `Payment of ${data.amount || '0.00'} ${data.currency || 'USD'} — Receipt #${data.transactionId ? data.transactionId.slice(-8).toUpperCase() : 'N/A'}`,
+  subject: (data: Record<string, any>) => {
+    const isDeclined = data.status?.toLowerCase() === 'declined' || data.status?.toLowerCase() === 'failed'
+    if (isDeclined) {
+      return `Payment Declined — ${data.amount || '0.00'} ${data.currency || 'USD'}${data.errorCode ? ` — ${data.errorCode}` : ''}`
+    }
+    return `Payment Approved — ${data.amount || '0.00'} ${data.currency || 'USD'} — Receipt #${data.transactionId ? data.transactionId.slice(-8).toUpperCase() : 'N/A'}`
+  },
   displayName: 'Payment confirmation',
   previewData: {
     amount: '500.00',
