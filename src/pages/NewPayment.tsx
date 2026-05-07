@@ -252,21 +252,23 @@ export default function NewPayment() {
         return;
       }
 
-      if (data?.success) {
+      // Check for declines FIRST — a failed transaction must show the decline
+      // banner immediately, never the "Verifying charge…" spinner + poll.
+      if (txStatus === 'failed' || data?.transaction?.status === 'failed') {
+        const declineReason = data.decline_message || data.error || data.providerResponse?.error?.message || 'Transaction declined by processor';
+        const declineCode = data.decline_code || data.providerResponse?.error?.code || '';
+        const is004 = String(declineCode) === '004' || /processor not found/i.test(declineReason);
+        setResultBanner(is004
+          ? { tone: 'error', title: 'Acquirer configuration error', description: 'ShieldHub rejected — no processor enabled for this merchant. Card NOT charged.', code: '004', txId: data.transaction?.id }
+          : { tone: 'error', title: 'Payment declined', description: `${declineReason}${declineCode ? ` (code ${declineCode})` : ''}`, code: declineCode || undefined, txId: data.transaction?.id }
+        );
+      } else if (data?.success) {
         setFieldErrors(null);
         setFormErrors([]);
         idempotencyKeyRef.current = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const desc = `${amount} ${currency} via ${selectedProvider} — ${data.transaction.id.slice(0, 8)}. Verifying ledger...`;
         setResultBanner({ tone: 'info', title: 'Verifying charge', description: desc, txId: data.transaction.id });
         if (data.transaction?.id) startPolling(data.transaction.id);
-      } else if (data?.transaction?.status === 'failed') {
-        const declineReason = data.decline_message || data.error || data.providerResponse?.error?.message || 'Transaction declined by processor';
-        const declineCode = data.decline_code || data.providerResponse?.error?.code || '';
-        const is004 = String(declineCode) === '004' || /processor not found/i.test(declineReason);
-        setResultBanner(is004
-          ? { tone: 'error', title: 'Acquirer configuration error', description: 'ShieldHub rejected — no processor enabled for this merchant. Card NOT charged.', code: '004', txId: data.transaction.id }
-          : { tone: 'error', title: 'Payment declined', description: `${declineReason}${declineCode ? ` (code ${declineCode})` : ''}`, code: declineCode || undefined, txId: data.transaction.id }
-        );
       } else if (data?.transaction?.status === 'pending') {
         if (data.transaction?.id) startPolling(data.transaction.id);
         setResultBanner({ tone: 'info', title: 'Payment processing', description: `Checking status for ${data.transaction.id.slice(0, 8)}...`, txId: data.transaction.id });
