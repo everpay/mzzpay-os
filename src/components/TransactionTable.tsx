@@ -8,6 +8,7 @@ import { TransactionDetailDrawer } from './TransactionDetailDrawer';
 import { ChevronLeft, ChevronRight, Eye, CreditCard } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getMethodLogo, getProviderLogo, METHOD_LOGOS } from '@/lib/payment-method-logos';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const BRAND_LOGOS = METHOD_LOGOS;
 
