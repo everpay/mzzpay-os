@@ -212,6 +212,24 @@ export function TransactionTable({ transactions, compact = false, disableDrawer 
                       {formatDate(tx.created_at)}
                     </td>
 
+                    {/* Descriptor (admin only) */}
+                    {isAdmin && (
+                      <td className="px-3 py-2.5 hidden lg:table-cell">
+                        <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[120px] inline-block">
+                          {(tx.processor_raw_response as any)?.descriptor || '—'}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* Client ID (admin only) */}
+                    {isAdmin && (
+                      <td className="px-3 py-2.5 hidden lg:table-cell">
+                        <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[100px] inline-block">
+                          {(tx.processor_raw_response as any)?.shieldhub_client_id || '—'}
+                        </span>
+                      </td>
+                    )}
+
                     {/* Status */}
                     <td className="px-3 py-2.5">
                       <Tooltip>
