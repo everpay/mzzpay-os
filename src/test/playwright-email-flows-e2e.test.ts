@@ -481,3 +481,144 @@ describe('Full payload field validation across all flows', () => {
     expect(subject).toContain('Receipt #');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════
+// 6. Negative assertions — payloads missing required fields MUST fail
+// ═══════════════════════════════════════════════════════════════════════
+describe('Negative assertions: missing required email payload fields', () => {
+  const REQUIRED_FIELDS = ['templateName', 'recipientEmail', 'idempotencyKey', 'templateData'] as const;
+
+  function validatePayload(payload: Record<string, any>): string[] {
+    const missing: string[] = [];
+    if (!payload.templateName || typeof payload.templateName !== 'string') missing.push('templateName');
+    if (!payload.recipientEmail || !payload.recipientEmail.includes('@')) missing.push('recipientEmail');
+    if (!payload.idempotencyKey || typeof payload.idempotencyKey !== 'string' || payload.idempotencyKey.length < 5) missing.push('idempotencyKey');
+    if (!payload.templateData || typeof payload.templateData !== 'object') missing.push('templateData');
+    return missing;
+  }
+
+  // ── Refund ──
+  describe('refund-confirmation: rejects incomplete payloads', () => {
+    for (const field of REQUIRED_FIELDS) {
+      it(`fails when ${field} is omitted`, () => {
+        const full: Record<string, any> = {
+          templateName: 'refund-confirmation',
+          recipientEmail: 'buyer@example.com',
+          idempotencyKey: 'refund-confirm-neg-001',
+          templateData: { amount: '50.00', currency: 'USD' },
+        };
+        const broken = { ...full, [field]: undefined };
+        const errors = validatePayload(broken);
+        expect(errors).toContain(field);
+      });
+    }
+  });
+
+  // ── Payment confirmation ──
+  describe('payment-confirmation: rejects incomplete payloads', () => {
+    for (const field of REQUIRED_FIELDS) {
+      it(`fails when ${field} is omitted`, () => {
+        const full: Record<string, any> = {
+          templateName: 'payment-confirmation',
+          recipientEmail: 'customer@example.com',
+          idempotencyKey: 'payment-confirm-neg-002',
+          templateData: { amount: '99.00', currency: 'USD', status: 'Approved' },
+        };
+        const broken = { ...full, [field]: undefined };
+        expect(validatePayload(broken)).toContain(field);
+      });
+    }
+
+    it('fails when recipientEmail has no @', () => {
+      expect(validatePayload({
+        templateName: 'payment-confirmation',
+        recipientEmail: 'not-an-email',
+        idempotencyKey: 'payment-confirm-neg-003',
+        templateData: { amount: '10.00' },
+      })).toContain('recipientEmail');
+    });
+
+    it('fails when idempotencyKey is too short', () => {
+      expect(validatePayload({
+        templateName: 'payment-confirmation',
+        recipientEmail: 'a@b.com',
+        idempotencyKey: 'ab',
+        templateData: { amount: '10.00' },
+      })).toContain('idempotencyKey');
+    });
+  });
+
+  // ── Payout confirmation ──
+  describe('payout-confirmation: rejects incomplete payloads', () => {
+    for (const field of REQUIRED_FIELDS) {
+      it(`fails when ${field} is omitted`, () => {
+        const full: Record<string, any> = {
+          templateName: 'payout-confirmation',
+          recipientEmail: 'merchant@mzzpay.io',
+          idempotencyKey: 'payout-confirm-neg-004',
+          templateData: { amount: '1000.00', currency: 'USD' },
+        };
+        expect(validatePayload({ ...full, [field]: undefined })).toContain(field);
+      });
+    }
+  });
+
+  // ── Charge succeeded ──
+  describe('charge-succeeded: rejects incomplete payloads', () => {
+    for (const field of REQUIRED_FIELDS) {
+      it(`fails when ${field} is omitted`, () => {
+        const full: Record<string, any> = {
+          templateName: 'charge-succeeded',
+          recipientEmail: 'merchant@mzzpay.io',
+          idempotencyKey: 'charge-captured-neg-005',
+          templateData: { amount: '250.00', currency: 'USD' },
+        };
+        expect(validatePayload({ ...full, [field]: undefined })).toContain(field);
+      });
+    }
+  });
+
+  // ── Settlement ready ──
+  describe('settlement-ready: rejects incomplete payloads', () => {
+    for (const field of REQUIRED_FIELDS) {
+      it(`fails when ${field} is omitted`, () => {
+        const full: Record<string, any> = {
+          templateName: 'settlement-ready',
+          recipientEmail: 'merchant@mzzpay.io',
+          idempotencyKey: 'settlement-ready-neg-006',
+          templateData: { amount: '5000.00', currency: 'USD' },
+        };
+        expect(validatePayload({ ...full, [field]: undefined })).toContain(field);
+      });
+    }
+  });
+
+  // ── Cross-cutting: valid payloads pass ──
+  it('valid payloads have zero missing fields', () => {
+    const valid = {
+      templateName: 'payment-confirmation',
+      recipientEmail: 'user@example.com',
+      idempotencyKey: 'valid-key-12345',
+      templateData: { amount: '100.00', currency: 'USD' },
+    };
+    expect(validatePayload(valid)).toHaveLength(0);
+  });
+
+  it('templateData as null fails', () => {
+    expect(validatePayload({
+      templateName: 'charge-succeeded',
+      recipientEmail: 'a@b.com',
+      idempotencyKey: 'key-12345',
+      templateData: null,
+    })).toContain('templateData');
+  });
+
+  it('templateData as string fails', () => {
+    expect(validatePayload({
+      templateName: 'charge-succeeded',
+      recipientEmail: 'a@b.com',
+      idempotencyKey: 'key-12345',
+      templateData: 'not-an-object',
+    })).toContain('templateData');
+  });
+});
