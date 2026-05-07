@@ -101,4 +101,42 @@ describe('Email subject line uniqueness (all templates)', () => {
       expect(subject.length, `${name} subject too long: "${subject}"`).toBeLessThanOrEqual(120);
     }
   });
+
+  it('payment-confirmation approved subject starts with "Payment Approved"', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'Approved' });
+    expect(subject).toMatch(/^Payment Approved/);
+    expect(subject).not.toMatch(/Declined/);
+  });
+
+  it('payment-confirmation declined subject starts with "Payment Declined"', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'Declined' });
+    expect(subject).toMatch(/^Payment Declined/);
+    expect(subject).not.toMatch(/Approved/);
+  });
+
+  it('payment-confirmation failed subject starts with "Payment Declined"', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'failed' });
+    expect(subject).toMatch(/^Payment Declined/);
+  });
+
+  it('declined subject includes errorCode when present', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'Declined', errorCode: 'E51' });
+    expect(subject).toContain('E51');
+    expect(subject).toMatch(/— E51$/);
+  });
+
+  it('failed subject includes errorCode when present', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'failed', errorCode: 'DO_NOT_HONOR' });
+    expect(subject).toContain('DO_NOT_HONOR');
+  });
+
+  it('declined subject without errorCode falls back to "Error"', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-confirmation']({ ...SAMPLE_DATA, status: 'Declined', errorCode: undefined });
+    expect(subject).toMatch(/— Error$/);
+  });
+
+  it('payment-declined template includes reason when provided', () => {
+    const subject = TEMPLATE_SUBJECTS['payment-declined']({ ...SAMPLE_DATA, reason: 'Insufficient funds' });
+    expect(subject).toContain('Insufficient funds');
+  });
 });
