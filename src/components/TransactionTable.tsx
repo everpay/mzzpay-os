@@ -109,7 +109,7 @@ export function TransactionTable({ transactions, compact = false, disableDrawer 
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cards & APM IDs</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Customer IP</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Created</th>
-                {isAdmin && <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Descriptor</th>}
+                {/* SECURITY: Descriptor column removed — never expose descriptor in frontend */}
                 
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                 <th className="px-3 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider w-10"></th>
@@ -206,14 +206,7 @@ export function TransactionTable({ transactions, compact = false, disableDrawer 
                       {formatDate(tx.created_at)}
                     </td>
 
-                    {/* Descriptor (admin only) */}
-                    {isAdmin && (
-                      <td className="px-3 py-2.5 hidden lg:table-cell">
-                        <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[120px] inline-block">
-                          {(tx.processor_raw_response as any)?.descriptor || '—'}
-                        </span>
-                      </td>
-                    )}
+                    {/* SECURITY: Descriptor cell removed — never expose in frontend */}
 
 
                     {/* Status */}
