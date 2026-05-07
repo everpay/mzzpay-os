@@ -171,25 +171,27 @@ export default function PayInvoice() {
         return;
       }
 
-      // Check for failure — handle all decline shapes
-      const isFailed =
-        provResp.status === 'Failed' || provResp.status === 'Declined' ||
-        provResp.transaction_status === 'FAILED' ||
-        data?.transaction?.status === 'failed' ||
-        (data?.success === false && !data?.transaction);
-      if (isFailed) {
-        const msg = provResp?.error?.message || provResp?.gateway_message || provResp?.message || data?.error || 'Payment declined';
-        setRetryCount((c) => c + 1);
-        setLastProcessorError(msg);
+       // Check for failure — handle all decline shapes with centralized error mapping
+       const isFailed =
+         provResp.status === 'Failed' || provResp.status === 'Declined' ||
+         provResp.transaction_status === 'FAILED' ||
+         data?.transaction?.status === 'failed' ||
+         (data?.success === false && !data?.transaction);
+       if (isFailed) {
+         const rawMsg = provResp?.error?.message || provResp?.gateway_message || provResp?.message || data?.error || '';
+         const procCode = provResp?.error?.code || provResp?.code || '';
+         const userMessage = mapProviderError(rawMsg, procCode || null);
+         setRetryCount((c) => c + 1);
+         setLastProcessorError(userMessage);
 
-        if (retryCount < 2) {
-          notifyError(msg, { description: 'Try again or use a different payment method.' });
-          setShowRetryPanel(true);
-        } else {
-          notifyError('Payment declined after multiple attempts');
-        }
-        return;
-      }
+         if (retryCount < 2) {
+           notifyError(userMessage, { description: 'Try again or use a different payment method.' });
+           setShowRetryPanel(true);
+         } else {
+           notifyError('Payment declined after multiple attempts');
+         }
+         return;
+       }
 
       // Mark invoice as paid
       await supabase.from('invoices').update({
