@@ -31,7 +31,7 @@ const declinedBanner = {
 
 const PaymentDeclinedEmail = ({
   amount = '0.00', currency = 'USD', transactionId = 'N/A',
-  reason, merchantName, customerName, cardLast4, cardBrand,
+  reason, merchantName, customerName, cardLast4, cardBrand, errorCode,
 }: Props) => {
   const displayId = shortId(transactionId)
   const greeting = customerName ? `Hi ${customerName},` : 'Hi there,'
