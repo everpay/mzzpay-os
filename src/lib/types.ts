@@ -48,6 +48,7 @@ export interface Transaction {
   billing_address?: Record<string, any> | null;
   processor_error_code?: string | null;
   processor_error_message?: string | null;
+  descriptor?: string | null;
   processor_raw_response?: Record<string, any> | null;
   surcharge_amount?: number | null;
   total_amount?: number | null;
