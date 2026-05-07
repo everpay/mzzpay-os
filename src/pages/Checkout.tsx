@@ -650,46 +650,26 @@ export default function Checkout() {
       </div>
 
       {/* Processor-error retry overlay */}
-      {showRetryPanel && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl space-y-5">
-            <div className="mx-auto h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground text-center">Payment Failed</h2>
-            <p className="text-sm text-muted-foreground text-center">
-              {lastProcessorError || `Your payment couldn't be processed${lastFailedProvider ? ` via ${lastFailedProvider}` : ''}.`}
-            </p>
-            <div className="space-y-3">
-              <Button className="w-full gap-2" disabled={isSubmitting} onClick={() => { setShowRetryPanel(false); toast.info('Retrying payment…', { description: `Attempt ${retryCount + 1} with same idempotency key` }); handleSubmit(undefined, { isRetry: true }); }}>
-                <RefreshCw className="h-4 w-4" /> Retry Payment (same idempotency key)
-              </Button>
-              <Button
-                variant="outline" className="w-full gap-2"
-                onClick={() => {
-                  setShowRetryPanel(false);
-                  setPaymentMethod(paymentMethod === 'card' ? 'openbanking' : 'card');
-                }}
-              >
-                <Building2 className="h-4 w-4" /> Try {paymentMethod === 'card' ? 'Bank Transfer' : 'Card'} Instead
-              </Button>
-              {cancelUrl && (
-                <Button variant="ghost" className="w-full text-muted-foreground" asChild>
-                  <a href={cancelUrl}>Cancel and return</a>
-                </Button>
-              )}
-            </div>
-            <div className="space-y-1 text-center">
-              <p className="text-xs text-muted-foreground">
-                Attempt {retryCount} of 3 · Secured by MZZPay
-              </p>
-              <p className="text-[10px] font-mono text-muted-foreground/70 break-all">
-                key: {idempotencyKey}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeclineRetryOverlay
+        visible={showRetryPanel}
+        errorMessage={lastProcessorError || `Your payment couldn't be processed${lastFailedProvider ? ` via ${lastFailedProvider}` : ''}.`}
+        retryCount={retryCount}
+        maxRetries={3}
+        isSubmitting={isSubmitting}
+        currentMethod={paymentMethod}
+        cancelUrl={cancelUrl}
+        idempotencyKey={idempotencyKey}
+        onRetry={() => {
+          setShowRetryPanel(false);
+          toast.info('Retrying payment…', { description: `Attempt ${retryCount + 1} with same idempotency key` });
+          handleSubmit(undefined, { isRetry: true });
+        }}
+        onSwitchMethod={(m) => {
+          setShowRetryPanel(false);
+          setPaymentMethod(m as any);
+        }}
+        onDismiss={() => setShowRetryPanel(false)}
+      />
 
     </div>
   );
