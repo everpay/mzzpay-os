@@ -16,6 +16,7 @@ interface Props {
   currency?: string
   transactionId?: string
   reason?: string
+  errorCode?: string
   merchantName?: string
   customerName?: string
   cardLast4?: string
@@ -30,7 +31,7 @@ const declinedBanner = {
 
 const PaymentDeclinedEmail = ({
   amount = '0.00', currency = 'USD', transactionId = 'N/A',
-  reason, merchantName, customerName, cardLast4, cardBrand,
+  reason, merchantName, customerName, cardLast4, cardBrand, errorCode,
 }: Props) => {
   const displayId = shortId(transactionId)
   const greeting = customerName ? `Hi ${customerName},` : 'Hi there,'
@@ -39,6 +40,7 @@ const PaymentDeclinedEmail = ({
     ['Reference Number', displayId],
     ['Amount', `${amount} ${currency}`],
     ['Status', 'Declined'],
+    ['Error Code', errorCode],
     ['Reason', reason],
     ['Payment Method', cardBrand && cardLast4 ? `${cardLast4} - ${cardBrand.toUpperCase()}` : undefined],
     ['Merchant', merchantName],
@@ -85,7 +87,7 @@ const PaymentDeclinedEmail = ({
 export const template = {
   component: PaymentDeclinedEmail,
   subject: (data: Record<string, any>) =>
-    `Payment Declined — ${data.amount || '0.00'} ${data.currency || 'USD'}`,
+    `Payment Declined — ${data.amount || '0.00'} ${data.currency || 'USD'}${data.reason ? ` — ${data.reason}` : ''}`,
   displayName: 'Payment declined',
-  previewData: { amount: '150.00', currency: 'USD', transactionId: 'txn_abc123def456', reason: 'Insufficient funds', cardLast4: '4242', cardBrand: 'Visa' },
+  previewData: { amount: '150.00', currency: 'USD', transactionId: 'txn_abc123def456', reason: 'Insufficient funds', errorCode: 'E51', cardLast4: '4242', cardBrand: 'Visa' },
 } satisfies TemplateEntry
