@@ -16,6 +16,7 @@ interface Props {
   currency?: string
   transactionId?: string
   reason?: string
+  errorCode?: string
   merchantName?: string
   customerName?: string
   cardLast4?: string
