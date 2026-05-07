@@ -122,11 +122,9 @@ export function buildBannerFromResponse(data: Record<string, any>): PaymentResul
  * Sanitize a raw API response object, stripping fields that
  * must never reach the frontend.
  */
-export function sanitizePaymentResponse<T extends Record<string, any>>(raw: T): T {
+export function sanitizePaymentResponse(raw: Record<string, any>): Record<string, any> {
   const cleaned = { ...raw };
-  // Remove the full providerResponse — it contains descriptor, client_id, raw processor data
   delete cleaned.providerResponse;
-  // Strip from nested transaction
   if (cleaned.transaction && typeof cleaned.transaction === 'object') {
     const tx = { ...cleaned.transaction };
     delete tx.processor_raw_response;
