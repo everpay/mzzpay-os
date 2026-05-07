@@ -230,11 +230,6 @@ export function TransactionDetailDrawer({ transaction, open, onOpenChange }: Tra
                   <span className="font-mono text-xs">{(transaction.processor_raw_response as any).descriptor}</span>
                 } />
               )}
-              {(transaction.processor_raw_response as any)?.shieldhub_client_id && (
-                <DetailRow icon={Shield} label="ShieldHub Client ID" value={
-                  <span className="font-mono text-xs">{(transaction.processor_raw_response as any).shieldhub_client_id}</span>
-                } />
-              )}
               {transaction.idempotency_key && (
                 <DetailRow icon={RefreshCw} label="Idempotency Key" value={
                   <span className="font-mono text-xs break-all">{transaction.idempotency_key}</span>
