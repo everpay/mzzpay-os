@@ -8,6 +8,7 @@ import { TransactionDetailDrawer } from './TransactionDetailDrawer';
 import { ChevronLeft, ChevronRight, Eye, CreditCard } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getMethodLogo, getProviderLogo, METHOD_LOGOS } from '@/lib/payment-method-logos';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const BRAND_LOGOS = METHOD_LOGOS;
 
@@ -82,6 +83,8 @@ interface TransactionTableProps {
 export function TransactionTable({ transactions, compact = false, disableDrawer = false }: TransactionTableProps) {
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const roleQuery = useUserRole();
+  const isAdmin = roleQuery.data?.isAdmin || roleQuery.data?.isSuperAdmin || false;
   const itemsPerPage = compact ? 10 : 20;
   const totalPages = Math.ceil(transactions.length / itemsPerPage);
   const paged = transactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -104,6 +107,8 @@ export function TransactionTable({ transactions, compact = false, disableDrawer 
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cards & APM IDs</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Customer IP</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Created</th>
+                {isAdmin && <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Descriptor</th>}
+                {isAdmin && <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Client ID</th>}
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                 <th className="px-3 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider w-10"></th>
               </tr>
@@ -206,6 +211,24 @@ export function TransactionTable({ transactions, compact = false, disableDrawer 
                     <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap hidden md:table-cell">
                       {formatDate(tx.created_at)}
                     </td>
+
+                    {/* Descriptor (admin only) */}
+                    {isAdmin && (
+                      <td className="px-3 py-2.5 hidden lg:table-cell">
+                        <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[120px] inline-block">
+                          {(tx.processor_raw_response as any)?.descriptor || '—'}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* Client ID (admin only) */}
+                    {isAdmin && (
+                      <td className="px-3 py-2.5 hidden lg:table-cell">
+                        <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[100px] inline-block">
+                          {(tx.processor_raw_response as any)?.shieldhub_client_id || '—'}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Status */}
                     <td className="px-3 py-2.5">
