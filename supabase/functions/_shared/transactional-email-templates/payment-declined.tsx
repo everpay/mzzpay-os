@@ -87,7 +87,7 @@ const PaymentDeclinedEmail = ({
 export const template = {
   component: PaymentDeclinedEmail,
   subject: (data: Record<string, any>) =>
-    `Payment Declined — ${data.amount || '0.00'} ${data.currency || 'USD'}`,
+    `Payment Declined — ${data.amount || '0.00'} ${data.currency || 'USD'}${data.reason ? ` — ${data.reason}` : ''}`,
   displayName: 'Payment declined',
-  previewData: { amount: '150.00', currency: 'USD', transactionId: 'txn_abc123def456', reason: 'Insufficient funds', cardLast4: '4242', cardBrand: 'Visa' },
+  previewData: { amount: '150.00', currency: 'USD', transactionId: 'txn_abc123def456', reason: 'Insufficient funds', errorCode: 'E51', cardLast4: '4242', cardBrand: 'Visa' },
 } satisfies TemplateEntry
