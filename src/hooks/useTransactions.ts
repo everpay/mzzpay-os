@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/lib/types';
+import { stripSensitiveFields } from '@/lib/api-response-schemas';
 
 export function useTransactions() {
   return useQuery({
@@ -25,7 +26,9 @@ export function useTransactions() {
 
       if (error) throw error;
 
-      return data as unknown as Transaction[];
+      // Runtime-strip sensitive fields (client_id, providerResponse, etc.)
+      const sanitized = (data ?? []).map((row: any) => stripSensitiveFields(row));
+      return sanitized as unknown as Transaction[];
     },
   });
 }

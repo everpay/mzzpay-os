@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { PaymentMethodIcon } from '@/components/PaymentMethodIcon';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getMethodLogo, getProviderLogo, METHOD_LOGOS } from '@/lib/payment-method-logos';
-
+import { useUserRole } from '@/hooks/useUserRole';
 
 const BRAND_LOGOS = METHOD_LOGOS;
 
@@ -84,6 +84,8 @@ interface TransactionTableProps {
 export function TransactionTable({ transactions, compact = false, disableDrawer = false }: TransactionTableProps) {
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const { data: roleData } = useUserRole();
+  const isAdmin = roleData?.isAdmin ?? false;
   
   const itemsPerPage = compact ? 10 : 20;
   const totalPages = Math.ceil(transactions.length / itemsPerPage);
@@ -107,8 +109,9 @@ export function TransactionTable({ transactions, compact = false, disableDrawer 
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cards & APM IDs</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Customer IP</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Created</th>
-                {/* SECURITY: Descriptor column removed — never expose descriptor in frontend */}
-                
+                {isAdmin && (
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Descriptor</th>
+                )}
                 <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                 <th className="px-3 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider w-10"></th>
               </tr>
@@ -204,8 +207,14 @@ export function TransactionTable({ transactions, compact = false, disableDrawer 
                       {formatDate(tx.created_at)}
                     </td>
 
-                    {/* SECURITY: Descriptor cell removed — never expose in frontend */}
-
+                    {/* Descriptor (admin only) */}
+                    {isAdmin && (
+                      <td className="px-3 py-2.5 hidden lg:table-cell">
+                        <span className="text-xs text-muted-foreground font-mono truncate max-w-[160px] block">
+                          {(tx as any).descriptor || '—'}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Status */}
                     <td className="px-3 py-2.5">

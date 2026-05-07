@@ -10,11 +10,11 @@ interface Receipt {
   type: string;
   method: string;
   description: string | null;
+  descriptor: string | null;
   date: string;
   orderId: string | null;
   customerEmail: string | null;
   merchant: { name: string; supportEmail: string | null; logoUrl: string | null; primaryColor: string | null };
-  // SECURITY: descriptor removed — never expose in frontend
 }
 
 const PROJECT_ID =
@@ -94,7 +94,7 @@ export default function Receipt() {
     ['Status', receipt.status],
     ['Method', receipt.method],
     ['Description', receipt.description],
-    // SECURITY: Statement descriptor removed — never expose in frontend
+    ['Statement Descriptor', receipt.descriptor],
   ];
 
   return (
@@ -135,7 +135,12 @@ export default function Receipt() {
             </button>
           </div>
 
-          {/* SECURITY: descriptor display removed — never expose in frontend */}
+          {receipt.descriptor && (
+            <p className="text-xs text-muted-foreground bg-muted/60 border border-border rounded-md p-3 text-center leading-relaxed">
+              This charge will appear on your statement as <strong>"{receipt.descriptor}"</strong>.
+            </p>
+          )}
+
           {receipt.merchant.supportEmail && (
             <p className="text-xs text-muted-foreground bg-muted/60 border border-border rounded-md p-3 text-center leading-relaxed">
               Questions about this charge? Email{' '}
