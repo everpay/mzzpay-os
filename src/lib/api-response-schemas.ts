@@ -67,6 +67,12 @@ const transactionBaseSchema = z.object({
   processor_error_message: z.string().optional().nullable(),
   surcharge_amount: z.number().optional().nullable(),
   total_amount: z.number().optional().nullable(),
+  // Explicitly allowed — shown on admin surfaces and receipts
+  descriptor: z.string().optional().nullable(),
+  descriptor_text: z.string().optional().nullable(),
+  // Explicitly allowed in data — NEVER rendered in UI
+  client_id: z.string().optional().nullable(),
+  shieldhub_client_id: z.string().optional().nullable(),
   created_at: z.string(),
   updated_at: z.string().optional(),
 }).passthrough().transform(stripSensitive);
