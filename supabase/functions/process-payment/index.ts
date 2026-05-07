@@ -773,8 +773,22 @@ serve(async (req) => {
       console.error('Email notification setup error:', emailErr);
     }
 
+    // Declined transactions must surface as success:false so the client shows
+    // the decline banner instead of "Verifying charge…" + polling loop.
+    const isApproved = txStatus === 'completed' || txStatus === 'processing' || txStatus === 'pending';
+    const declineMessage = procErrorMessage || providerResponse?.error?.message || null;
+    const declineCode = procErrorCode || providerResponse?.error?.code || null;
+
     return new Response(
-      JSON.stringify({ success: true, transaction, providerResponse }),
+      JSON.stringify({
+        success: isApproved,
+        transaction,
+        providerResponse,
+        ...(txStatus === 'failed' ? {
+          decline_message: declineMessage,
+          decline_code: declineCode,
+        } : {}),
+      }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
@@ -955,9 +969,10 @@ async function processMzzPayPayment(data: PaymentRequest, req: Request) {
     amount: amountStr,
     currency: data.currency,
     transaction_reference: transactionReference,
-    // CRITICAL: Only send `descriptor_text`. Sending `descriptor` causes
-    // ShieldHub to interpret it as a processor selector which triggers
-    // "004 Processor not found". See Everpay Platform OS fix.
+    // ShieldHub needs BOTH fields: `descriptor` identifies the MID/processor
+    // for routing, and `descriptor_text` sets the statement descriptor.
+    // Omitting `descriptor` causes "004 Processor not found".
+    descriptor: descriptor,
     descriptor_text: descriptor,
     redirect_mode: 'modal',
     redirectback_url: threeDSReturnUrl,
