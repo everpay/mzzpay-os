@@ -447,36 +447,23 @@ export default function PayInvoice() {
       </div>
 
       {/* Retry overlay */}
-      {showRetryPanel && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl space-y-5">
-            <div className="mx-auto h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground text-center">Payment Failed</h2>
-            <p className="text-sm text-muted-foreground text-center">
-              {lastProcessorError || "Your payment couldn't be processed."}
-            </p>
-            <div className="space-y-3">
-              <Button className="w-full gap-2" disabled={isSubmitting} onClick={() => { setShowRetryPanel(false); handleSubmit(undefined, { isRetry: true }); }}>
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Retry Payment
-              </Button>
-              <Button
-                variant="outline" className="w-full gap-2"
-                onClick={() => {
-                  setShowRetryPanel(false);
-                  setPaymentMethod(paymentMethod === 'card' ? 'openbanking' : 'card');
-                }}
-              >
-                Try {paymentMethod === 'card' ? 'Bank Transfer' : 'Card'} Instead
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center">
-              Attempt {retryCount} of 3 · Secured by MZZPay
-            </p>
-          </div>
-        </div>
-      )}
+      <DeclineRetryOverlay
+        visible={showRetryPanel}
+        errorMessage={lastProcessorError || "Your payment couldn't be processed."}
+        retryCount={retryCount}
+        maxRetries={3}
+        isSubmitting={isSubmitting}
+        currentMethod={paymentMethod}
+        onRetry={() => {
+          setShowRetryPanel(false);
+          handleSubmit(undefined, { isRetry: true });
+        }}
+        onSwitchMethod={(m) => {
+          setShowRetryPanel(false);
+          setPaymentMethod(m as any);
+        }}
+        onDismiss={() => setShowRetryPanel(false)}
+      />
 
     </div>
   );
